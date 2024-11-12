@@ -97,30 +97,75 @@ function renderGraph(
         }
 
         initialize() {
-            this.dates = this.monthlyData.map((item) => item[this.dateKey]);
-            this.datasetsConfig = this.datasets.map((dataset) => {
-                const transformFunc = dataset.transform ? new Function('entry', dataset.transform) : null;
-                const dataValues = this.monthlyData.map((entry) => transformFunc ? transformFunc(entry) : entry[dataset.key]);
-                return {
-                    label: dataset.label,
-                    data: dataValues,
-                    backgroundColor: dataset.backgroundColor,
-                    borderColor: dataset.borderColor,
-                    borderWidth: 2,
-                    unit: dataset.unit,
-                    unitDivisor: dataset.unitDivisor,
-                    decimalPlaces: dataset.decimalPlaces || 0,
-                    startAtZero: dataset.startAtZero || false,
-                    hidden: dataset.hidden || false
-                };
-            });
-            this.datasetVisibility = this.datasetsConfig.map(ds => ds.hidden);
-            this.calculateInitialDateRange();
-            this.updateChart(this.startDateIndex, this.endDateIndex);
-            if (this.rangeslider && this.charttype !== 'pie') {
-                this.initializeSlider();
+    // For Pie Chart, handle object data (version => value format)
+    if (this.charttype === 'pie') {
+        // Pie chart datasets are typically based on the data values themselves (no dates)
+        const dataset = this.datasets[0]; // Assuming there's only one dataset for pie chart
+
+        // Extract labels and data values from the `monthlyData` object
+        const dataValues = [];
+        const labels = [];
+
+        // Loop through the keys of monthlyData (versions) to populate labels and data
+        for (let version in this.monthlyData) {
+            if (this.monthlyData.hasOwnProperty(version)) {
+                labels.push(version);  // Add version name as label
+                dataValues.push(this.monthlyData[version]);  // Add the corresponding value as data
             }
         }
+
+        // Now, assign these labels and data values to the pie chart dataset
+        this.datasetsConfig = [{
+            label: dataset.label,
+            data: dataValues,  // Pie chart uses the values (data) directly
+            backgroundColor: dataset.backgroundColor || this.datasets.map(ds => ds.backgroundColor),
+            borderColor: dataset.borderColor,
+            borderWidth: 2,
+            unit: dataset.unit,
+            unitDivisor: dataset.unitDivisor,
+            decimalPlaces: dataset.decimalPlaces || 0,
+            startAtZero: dataset.startAtZero || false,
+            hidden: dataset.hidden || false
+        }];
+    } else {
+        // For non-pie charts (line, bar, etc.), keep the original logic that handles dates
+        this.dates = this.monthlyData.map((item) => item[this.dateKey]);
+        this.datasetsConfig = this.datasets.map((dataset) => {
+            const transformFunc = dataset.transform ? new Function('entry', dataset.transform) : null;
+            const dataValues = this.monthlyData.map((entry) => transformFunc ? transformFunc(entry) : entry[dataset.key]);
+
+            return {
+                label: dataset.label,
+                data: dataValues,
+                backgroundColor: dataset.backgroundColor,
+                borderColor: dataset.borderColor,
+                borderWidth: 2,
+                unit: dataset.unit,
+                unitDivisor: dataset.unitDivisor,
+                decimalPlaces: dataset.decimalPlaces || 0,
+                startAtZero: dataset.startAtZero || false,
+                hidden: dataset.hidden || false
+            };
+        });
+    }
+
+    // Initialize dataset visibility
+    this.datasetVisibility = this.datasetsConfig.map(ds => ds.hidden);
+
+    // For Pie charts, we don't need to calculate date range
+    if (this.charttype !== 'pie') {
+        this.calculateInitialDateRange();
+    }
+
+    // Update the chart with the initial data
+    this.updateChart(this.startDateIndex, this.endDateIndex);
+
+    // Initialize the range slider if applicable (not needed for pie chart)
+    if (this.rangeslider && this.charttype !== 'pie') {
+        this.initializeSlider();
+    }
+}
+
 
         calculateInitialDateRange() {
             const startOffsetMonths = this.defaultrangeinmonths;

@@ -225,13 +225,13 @@ if ($data !== null) {
                             ]
                         ],
                         $dateKey = "date",
-                        $jsonUrl = "/api/v1/hosts?limit=5000", // JSON URL
+                        $jsonUrl = "/api/v1/hosts?limit=5", // JSON URL
                         $jsonData = null,
                         $charttype = 'pie',
 
                         $interval = 'month',
                         $rangeslider = false,
-                        $displaylegend = "false",
+                        $displaylegend = "true",
                         $defaultrangeinmonths = 6,
                         $displayYAxis = "false",
                         $unitType = 'bytes',
