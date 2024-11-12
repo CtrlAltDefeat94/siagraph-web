@@ -234,7 +234,7 @@ if ($data !== null) {
                         $displaylegend = "true",
                         $defaultrangeinmonths = 6,
                         $displayYAxis = "false",
-                        $unitType = 'bytes',
+                        $unitType = null,
                         $jsonKey = 'versions'
                     );
                     ?>

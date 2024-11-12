@@ -99,27 +99,36 @@ function renderGraph(
         initialize() {
     // For Pie Chart, handle object data (version => value format)
     if (this.charttype === 'pie') {
-        // Pie chart datasets are typically based on the data values themselves (no dates)
-        const dataset = this.datasets[0]; // Assuming there's only one dataset for pie chart
+        const dataset = this.datasets[0]; // Assume one dataset for pie chart
 
         // Extract labels and data values from the `monthlyData` object
         const dataValues = [];
         const labels = [];
+        const backgroundColors = [];
+
+        // Generate color function
+        const generateColor = (index) => `hsl(${(index * 137.5) % 360}, 70%, 60%)`;
 
         // Loop through the keys of monthlyData (versions) to populate labels and data
+        let index = 0;
         for (let version in this.monthlyData) {
             if (this.monthlyData.hasOwnProperty(version)) {
                 labels.push(version);  // Add version name as label
                 dataValues.push(this.monthlyData[version]);  // Add the corresponding value as data
+                backgroundColors.push(generateColor(index)); // Generate a unique color for each slice
+                index++;
             }
         }
 
-        // Now, assign these labels and data values to the pie chart dataset
+        // Now, set the chart's data labels
+        this.chartDataLabels = labels;  // Store the labels separately
+
+        // Assign these labels, data, and colors to the pie chart dataset
         this.datasetsConfig = [{
             label: dataset.label,
             data: dataValues,  // Pie chart uses the values (data) directly
-            backgroundColor: dataset.backgroundColor || this.datasets.map(ds => ds.backgroundColor),
-            borderColor: dataset.borderColor,
+            backgroundColor: backgroundColors,
+            borderColor: dataset.borderColor || '#fff', // Default border color if not set
             borderWidth: 2,
             unit: dataset.unit,
             unitDivisor: dataset.unitDivisor,
@@ -179,19 +188,46 @@ function renderGraph(
 
         formatTooltipLabel(context) {
             let label = '';
-            if (context.dataset.label) {
-                label = context.dataset.label + ': ';
-            }
-            let value = context.parsed.y;
-            const decimalPlaces = context.dataset.decimalPlaces;
-            if (context.dataset.unit) {
-                value = value / context.dataset.unitDivisor;
-                label += value.toFixed(decimalPlaces).replace(/\d(?=(\d{3})+\.)/g, '$&,') + ' ' + context.dataset.unit;
+
+            if (this.charttype === 'pie') {
+                // Access the label from the pie chart's data labels directly
+                console.log(context.chart.data);
+                const sliceName = context.chart.data.labels[context.dataIndex] || 'Unknown';
+
+                // Prepare the label text with the slice name
+                label = sliceName + ': ';
+                
+                // Access the raw value directly for pie charts
+                const value = context.raw !== undefined ? context.raw : 0;
+                const decimalPlaces = context.dataset.decimalPlaces || 0;
+
+                // Format the value with units and divisors, if specified
+                if (context.dataset.unit) {
+                    const formattedValue = (value / context.dataset.unitDivisor).toFixed(decimalPlaces)
+                        .replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                    label += `${formattedValue} ${context.dataset.unit}`;
+                } else {
+                    label += value.toFixed(decimalPlaces).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                }
             } else {
-                label += value.toFixed(decimalPlaces).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                // For non-pie charts (line, bar, etc.), use the standard approach with `context.parsed.y`
+                label = context.dataset.label ? context.dataset.label + ': ' : '';
+                let value = context.parsed.y;
+                const decimalPlaces = context.dataset.decimalPlaces;
+
+                if (context.dataset.unit) {
+                    value = value / context.dataset.unitDivisor;
+                    label += value.toFixed(decimalPlaces).replace(/\d(?=(\d{3})+\.)/g, '$&,') + ' ' + context.dataset.unit;
+                } else {
+                    label += value.toFixed(decimalPlaces).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                }
             }
+
             return label;
         }
+
+
+
 
         formatValue(value) {
             const bytesDivisors = { bytes: 1, KB: 1e3, MB: 1e6, GB: 1e9, TB: 1e12, PB: 1e15 };
@@ -213,106 +249,117 @@ function renderGraph(
         }
 
         updateChart(startDateIndex, endDateIndex) {
-            let filteredDates, filteredDatasets;
+    let filteredDates, filteredDatasets;
 
-            // Ensure proper handling of indexes
-            if (this.charttype === 'pie') {
-                const dataset = this.datasetsConfig[0];
-                filteredDatasets = [{
-                    ...dataset,
-                    data: dataset.data,
-                    backgroundColor: dataset.backgroundColor || this.datasets.map(ds => ds.backgroundColor)
-                }];
-                filteredDates = [];
-            } else {
-                // Slice the dates and datasets based on current index range
-                filteredDates = this.dates.slice(startDateIndex, endDateIndex + 1);
-                filteredDatasets = this.datasetsConfig.map((dataset, index) => ({
-                    ...dataset,
-                    data: dataset.data.slice(startDateIndex, endDateIndex + 1),
-                    hidden: this.datasetVisibility[index]
-                }));
-            }
+    // Ensure proper handling of indexes
+    if (this.charttype === 'pie') {
+        const dataset = this.datasetsConfig[0];
+        filteredDatasets = [{
+            ...dataset,
+            data: dataset.data,
+            backgroundColor: dataset.backgroundColor || this.datasets.map(ds => ds.backgroundColor)
+        }];
+        filteredDates = this.chartDataLabels;  // Use the stored pie chart labels here
+    } else {
+        // Slice the dates and datasets based on current index range
+        filteredDates = this.dates.slice(startDateIndex, endDateIndex + 1);
+        filteredDatasets = this.datasetsConfig.map((dataset, index) => ({
+            ...dataset,
+            data: dataset.data.slice(startDateIndex, endDateIndex + 1),
+            hidden: this.datasetVisibility[index]
+        }));
+    }
 
-            const yBeginAtZero = (this.charttype !== 'pie') && filteredDatasets.some(ds => ds.startAtZero);
+    const yBeginAtZero = (this.charttype !== 'pie') && filteredDatasets.some(ds => ds.startAtZero);
 
-            if (this.chart) {
-                // Update existing chart data
-                this.chart.data.labels = filteredDates;
-                this.chart.data.datasets = filteredDatasets;
-                if (this.charttype !== 'pie') {
-                    this.chart.options.scales.y.beginAtZero = yBeginAtZero;
-                }
-                this.chart.update();
-            } else {
-                // Create a new chart instance
-                const ctx = document.getElementById(this.canvasId).getContext("2d");
-                const options = {
-                    type: this.charttype,
-                    data: {
-                        labels: filteredDates,
-                        datasets: filteredDatasets
+    if (this.chart) {
+        // Update existing chart data
+        this.chart.data.labels = filteredDates;
+        this.chart.data.datasets = filteredDatasets;
+        if (this.charttype !== 'pie') {
+            this.chart.options.scales.y.beginAtZero = yBeginAtZero;
+        }
+        this.chart.update();
+    } else {
+        // Create a new chart instance
+        const ctx = document.getElementById(this.canvasId).getContext("2d");
+        const options = {
+            type: this.charttype,
+            data: {
+                labels: filteredDates,  // Now this will be set for pie charts as well
+                datasets: filteredDatasets
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        display: this.displaylegend,
+                        onClick: (event, legendItem, legend) => {
+                            const index = legendItem.datasetIndex;
+                            this.datasetVisibility[index] = !this.datasetVisibility[index];
+                            this.chart.getDatasetMeta(index).hidden = !this.datasetVisibility[index];
+                            this.chart.update();
+                        }
                     },
-                    options: {
-                        plugins: {
-                            legend: {
-                                display: this.displaylegend,
-                                onClick: (event, legendItem, legend) => {
-                                    const index = legendItem.datasetIndex;
-                                    this.datasetVisibility[index] = !this.datasetVisibility[index];
-                                    this.chart.getDatasetMeta(index).hidden = !this.datasetVisibility[index];
-                                    this.chart.update();
-                                }
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false,
-                                callbacks: {
-                                    label: context => this.formatTooltipLabel(context)
-                                }
-                            }
-                        },
-                        elements: {
-                            point: {
-                                radius: 0//this.charttype === 'pie' ? 0 : undefined
+                    tooltip: {
+                        mode: 'nearest',
+                        intersect: this.charttype === 'pie' ? true : false,
+                        callbacks: {
+                            label: (context) => {
+                                // Get the dataset index for the current hovered item
+                                const datasetIndex = context.datasetIndex;
+                                const dataIndex = context.dataIndex;
+                                const dataset = context.chart.data.datasets[datasetIndex];
+                                const label = context.chart.data.labels[dataIndex];
+                                const value = dataset.data[dataIndex];
+
+                                // Return a custom tooltip string
+                                return `${label}: ${this.formatValue(value)}`;
                             }
                         }
                     }
-                };
-
-                if (this.charttype !== 'pie') {
-                    options.options.scales = {
-                        x: {
-                            type: "time",
-                            time: {
-                                unit: this.interval,
-                                displayFormats: {
-                                    day: 'D MMM \'YY',
-                                    week: 'D MMM \'YY',
-                                    month: 'MMM \'YY'
-                                }
-                            },
-                            title: {
-                                display: false,
-                                text: "Date"
-                            }
-                        },
-                        y: {
-                            beginAtZero: yBeginAtZero,
-                            title: {
-                                display: this.displayYAxis === 'true',
-                                text: "Value"
-                            },
-                            ticks: {
-                                callback: value => this.formatValue(value)
-                            }
-                        }
-                    };
+                },
+                elements: {
+                    point: {
+                        radius: 0//this.charttype === 'pie' ? 0 : undefined
+                    }
                 }
-
-                this.chart = new Chart(ctx, options);
             }
+        };
+
+        if (this.charttype !== 'pie') {
+            options.options.scales = {
+                x: {
+                    type: "time",
+                    time: {
+                        unit: this.interval,
+                        displayFormats: {
+                            day: 'D MMM \'YY',
+                            week: 'D MMM \'YY',
+                            month: 'MMM \'YY'
+                        }
+                    },
+                    title: {
+                        display: false,
+                        text: "Date"
+                    }
+                },
+                y: {
+                    beginAtZero: yBeginAtZero,
+                    title: {
+                        display: this.displayYAxis === 'true',
+                        text: "Value"
+                    },
+                    ticks: {
+                        callback: value => this.formatValue(value)
+                    }
+                }
+            };
         }
+
+        this.chart = new Chart(ctx, options);
+    }
+}
+
 
         initializeSlider() {
             var dateRangeSlider = document.getElementById("dateRangeSlider-" + this.canvasId);
