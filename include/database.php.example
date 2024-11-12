@@ -1,0 +1,15 @@
+<?php
+
+require __DIR__ . '/../vendor/autoload.php'; // Ensure Predis is installed via Composer
+
+// MySQL database connection configuration
+$servername = ""; // Replace with your MySQL server address
+$username = ""; // Replace with your MySQL username
+$password = ""; // Replace with your MySQL password
+$database = ""; // Replace with the name of your MySQL database
+$mysqli = mysqli_connect($servername, $username, $password, $database);
+
+// Check connection
+if (!$mysqli) {
+    die("Failed to connect to MySQL: " . mysqli_connect_error());
+}
