@@ -294,6 +294,7 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
     const blockFoundTimeString = document.getElementById('block-found-time').textContent.trim();
     const extractedDateString = blockFoundTimeString.replace('Found at: ', '').trim();
 
+    let currentHeight=0;
 
     // Fix: Replace space with 'T' for valid ISO format
     const isoFormatString = extractedDateString.replace(' ', 'T');
@@ -301,13 +302,16 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
     // Create a new Date object from the string
     let blockFoundTime;
     async function fetchExplorerData() {
-        let currentHeight;
         let previousBlockId;
-
+        let newblock= false;
         // Fetch block height and related info
         const consensusData = await fetchData('https://explorer.siagraph.info/api/consensus/state');
         if (consensusData) {
+            if (consensusData.index.height>currentHeight) {
             currentHeight = consensusData.index.height;
+        
+            newblock=true;
+            }
             document.getElementById('block-height').innerText = currentHeight;
             document.getElementById('next-block').innerText = currentHeight + 1;
 
@@ -321,7 +325,6 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
             let count = 0;
             for (const item of txPoolData.transactions) {
                 if ("minerFees" in item) {
-                    console.log(item);
                     count++;
                 }
             }
@@ -335,18 +338,19 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
         }
 
         // Fetch previous block ID
-        if (currentHeight) {
+        if (currentHeight && newblock) {
             const previousBlockData = await fetchData(`https://explorer.siagraph.info/api/consensus/tip/${currentHeight - 1}`);
             if (previousBlockData) {
                 previousBlockId = previousBlockData.id;
             }
         }
 
-        const blockData = await fetchData(`https://explorer.siagraph.info/api/metrics/block`);
+        
 
 
         // Fetch block data for the previous block
-        if (previousBlockId) {
+        if (previousBlockId && newblock) {
+            const blockData = await fetchData(`https://explorer.siagraph.info/api/metrics/block`);
             const previousblockData = await fetchData(`https://explorer.siagraph.info/api/metrics/block/${previousBlockId}`);
             if (previousblockData && blockData) {
                 const newhosts = blockData['totalHosts'] - previousblockData['totalHosts'];

@@ -115,8 +115,8 @@ mysqli_close($mysqli);
 
       <div class="max-w-6xl mx-auto">
          <div class="flex justify-start mt-4 mb-2 gap-2">
-            <span class="hover:underline cursor-pointer flex items-center font-bold text-xl"
-               onclick="location.href='/host_explorer'">Top Hosts</span>
+            <a class="hover:underline cursor-pointer flex items-center font-bold text-xl"
+               href='/host_explorer'>Top Hosts</a>
             <span class="flex items-center font-bold text-xl ">/</span>
             <span class="flex items-center font-bold text-xl"><?php echo $settings['net_address']; ?></span>
          </div>
@@ -290,9 +290,9 @@ mysqli_close($mysqli);
                      </tbody>
                   </table>
                   <div class="flex justify-center items-center">
-                     <button id='recentbenchmarks'
+                  <a id='recentbenchmarks'
                         class="cursor-pointer hover:underline text-blue-500 font-bold rounded"
-                        onclick="location.href='/host_benchmarks?id=<?php echo $host_id; ?>'">View recent benchmarks</button>
+                         href='/host_benchmarks?id=<?php echo $host_id; ?>'>View recent benchmarks</a>
                   </div>
                </div>
                <!-- Other Placeholder Section -->

@@ -18,8 +18,8 @@
     <!-- Main Content Section -->
     <section id="main-content" class="container mt-4 pb-5 masonry-container">
         <div class="flex flex-col md:flex-row justify-between mt-4 mb-2">
-            <span class="flex md:mr-auto items-center font-bold text-xl cursor-pointer hover:underline mb-2 sm:mb-0"
-                onclick="location.href='/host_explorer'">Top Hosts</span>
+            <a class="flex md:mr-auto items-center font-bold text-xl cursor-pointer hover:underline mb-2 sm:mb-0"
+                href='/host_explorer'>Top Hosts</a>
 
             <div class="mb-2 md:ml-2 sm:mb-0 flex items-center space-x-2">
                 <input type="text" id="search" name="search" class="px-4 py-2 border rounded-md h-10"

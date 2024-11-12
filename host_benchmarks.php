@@ -186,13 +186,13 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
     <!-- Main Content Section -->
     <section id="main-content" class="container mt-4 pb-5 masonry-container">
         <div class="flex flex-wrap justify-start mt-4 mb-2 gap-2">
-            <span class="cursor-pointer hover:underline flex items-center font-bold text-xl"
-                onclick="location.href='/host_explorer'">Top Hosts</span>
+            <a class="cursor-pointer hover:underline flex items-center font-bold text-xl"
+                href='/host_explorer'>Top Hosts</a>
             <span class="flex items-center font-bold text-xl">/</span>
-            <span class="cursor-pointer hover:underline flex items-center font-bold text-xl"
-                onclick="location.href='/host.php?id=<?php echo $host_id; ?>'">
+            <a class="cursor-pointer hover:underline flex items-center font-bold text-xl"
+                href='/host.php?id=<?php echo $host_id; ?>'>
                 <?php echo $net_address; ?>
-            </span>
+            </a>
             <span class="flex items-center font-bold text-xl">/</span>
             <span class="flex items-center font-bold text-xl">Recent benchmarks</span>
         </div>
