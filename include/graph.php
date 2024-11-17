@@ -12,13 +12,14 @@ function renderGraph(
     $defaultrangeinmonths = 3,
     $displayYAxis = "true",
     $unitType = 'bytes',
-    $jsonKey = null
+    $jsonKey = null,
+    $height = 500
 ) {
     $encodedDatasets = json_encode($datasets);
     ?>
     <div id="canvasContainer-<?php echo htmlspecialchars($canvasid, ENT_QUOTES, 'UTF-8'); ?>">
         <canvas id="<?php echo htmlspecialchars($canvasid, ENT_QUOTES, 'UTF-8'); ?>"
-            style="height:500px !important;width: 100% !important;"></canvas>
+            style="height:<?php echo $height; ?>px !important;width: 100% !important;"></canvas>
 
         <?php if ($rangeslider && $charttype !== 'pie'): ?>
             <div id="dateRangeSlider-<?php echo htmlspecialchars($canvasid, ENT_QUOTES, 'UTF-8'); ?>"></div>
@@ -301,7 +302,7 @@ function renderGraph(
                         }
                     },
                     tooltip: {
-                        mode: 'nearest',
+                        mode: 'index',
                         intersect: this.charttype === 'pie' ? true : false,
                         callbacks: {
                             label: (context) => {
