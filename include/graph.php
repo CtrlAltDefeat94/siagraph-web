@@ -245,6 +245,13 @@ function renderGraph(
                 if (value >= metricDivisors.B) return "EUR "+(value / metricDivisors.B).toFixed(2) + ' B';
                 if (value >= metricDivisors.M) return "EUR "+(value / metricDivisors.M).toFixed(2) + ' M';
                 return "EUR "+value;
+            
+            }else if (this.unitType === 'usd') {
+                if (value >= metricDivisors.T) return "USD "+(value / metricDivisors.T).toFixed(2) + ' T';
+                if (value >= metricDivisors.B) return "USD "+(value / metricDivisors.B).toFixed(2) + ' B';
+                if (value >= metricDivisors.M) return "USD "+(value / metricDivisors.M).toFixed(2) + ' M';
+                return "USD "+value;
+                
             } else if (this.unitType === 'SC') {
                 return value.toFixed(2) + ' SC';
             }
