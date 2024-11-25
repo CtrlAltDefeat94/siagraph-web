@@ -275,9 +275,7 @@ $data = json_decode($tokenomics, true);
 </script>
 <body>
 <section id="graph-section" class="bg-light p-3 rounded-3 mt-4">
-        <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">
-                Coin growth</span>
-            </h2>
+        
             <section class="graph-container">
 
             </section></section>

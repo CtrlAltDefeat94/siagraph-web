@@ -452,7 +452,7 @@ mysqli_close($mysqli);
                   $displaylegend = "false",
                   $defaultrangeinmonths = 6,
                   $displayYAxis = "false",
-                  $unitType = 'fiat',
+                  $unitType = 'SC',
                   $jsonKey = 'dailydata',
                );
                ?>

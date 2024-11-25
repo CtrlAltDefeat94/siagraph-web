@@ -4,7 +4,10 @@
 - 
 
 */
-
+include_once 'include/graph.php';
+include_once "include/redis.php";
+include_once "include/utils.php";
+$currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,9 +29,9 @@
     <?php include "include/header.html" ?>
     <!-- Main Content Section -->
     <section id="main-content" class="container mt-4 pb-5">
-        
+
         <section id="graph-section" class="bg-light p-3 rounded-3 mt-4">
-        <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">
+            <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">
                 Coin growth</span>
             </h2>
             <section class="graph-container">
@@ -36,7 +39,45 @@
                 <?php include $_SERVER['DOCUMENT_ROOT'] . "/graphs/CoinGrowthGraph.php"; ?>
                 <!-- Add any additional content related to the Network graph -->
             </section>
-        </section>        
+        </section>
+        <div class="col-md-6">
+            <section id="graph2-section" class="bg-light p-3 rounded-3">
+                <!-- Graph Section for Network -->
+                <section class="graph-container">
+                    <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">
+                        Monthly Revenue
+                    </h2>
+                    <?php
+                    // Call the function with specific parameters
+                    renderGraph(
+                        $canvasid = "monthlyrevenue",
+                        $datasets = [
+                            [
+                                'label' => 'Monthly revenue',
+                                'key' => 'total_storage', // Modify based on your data
+                                'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
+                                'borderColor' => 'rgba(75, 192, 192, 1)',
+                                'transform' => "return entry['" . $currencyCookie . "'];",
+                                'startAtZero' => true
+                            ]
+                        ],
+                        $dateKey = "date",
+                        $jsonUrl = '/api/v1/revenue_monthly', // JSON URL
+                        $jsonData = null,#getCache($revenueMonthlyKey),
+                        $charttype = 'bar',
+
+                        $interval = 'month',
+                        $rangeslider = true,
+                        $displaylegend = false,
+                        $defaultrangeinmonths = 12,
+                        $displayYAxis = "false",
+                        $unitType = $currencyCookie,
+                        $jsonKey = null
+                    );
+                    ?>
+                </section>
+            </section>
+        </div>
         <!-- Footer Section -->
         <?php include "include/footer.html" ?>
 </body>

@@ -136,7 +136,6 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                     <div class="bg-gray-200 p-2 rounded-lg flex justify-between text-sm">
                         <!-- Block height and time on the left -->
                         <div>
-                            <!--<span class="text-gray-700 block">Current block:</span>-->
                             <span id="block-height" class="font-bold text-5xl"></span>
                             <!-- Time block was found -->
                             <span id="block-found-time" class="text-gray-500 text-sm block mt-1">
@@ -152,16 +151,16 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
 
                             <!-- New/renewed contracts and transactions -->
                             <div class="flex justify-end items-center space-x-2">
-                                <span class="text-gray-700">New contracts:</span>
-                                <span id="new-contracts" class="text-2xl font-semibold"></span>
+                                <span class="fs-6">New contracts:</span>
+                                <span id="new-contracts" class="glanceNumber fs-4"></span>
                             </div>
                             <div class="flex justify-end items-center space-x-2">
-                                <span class="text-gray-700">Completed contracts:</span>
-                                <span id="completed-contracts" class="text-2xl font-semibold"></span>
+                                <span class="fs-6">Completed contracts:</span>
+                                <span id="completed-contracts" class="glanceNumber fs-4"></span>
                             </div>
                             <div class="flex justify-end items-center space-x-2">
-                                <span class="text-gray-700">New hosts:</span>
-                                <span id="new-hosts" class="text-2xl font-semibold"></span>
+                                <span class="fs-6">New hosts:</span>
+                                <span id="new-hosts" class="glanceNumber fs-4"></span>
                             </div>
 
                         </div>
@@ -170,11 +169,11 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                     <!-- Bottom Section: Next Block and Unconfirmed Transactions -->
                     <div class="bg-gray-200 p-2 rounded-lg flex justify-between text-sm mt-2">
                         <div>
-                            <span class="block text-gray-700">Next block</span>
+                            <span class="block fs-6">Next block</span>
                             <span id="next-block" class="block font-semibold text-lg"></span>
                         </div>
                         <div class="flex flex-col items-end">
-                            <span class="block text-gray-700">Unconfirmed transactions</span>
+                            <span class="block fs-6">Unconfirmed transactions</span>
                             <span id=unconfirmed-transactions class="block font-semibold text-lg"></span>
                         </div>
                     </div>
@@ -265,7 +264,7 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                             $displaylegend = false,
                             $defaultrangeinmonths = 6,
                             $displayYAxis = "false",
-                            $unitType = 'fiat',
+                            $unitType = $currencyCookie,
                             $jsonKey = null
                         );
                         ?>
