@@ -42,6 +42,7 @@ $query = "SELECT
     h.total_storage,
     h.storage_price,
     h.version,
+    h.country,
     COALESCE(s.total_score, 0) AS total_score,
     COALESCE(today_stats.used_storage - yesterday_stats.used_storage, 0) AS used_storage_diff
 FROM
@@ -91,18 +92,7 @@ $rank=0;
 while ($row = mysqli_fetch_assoc($result)) {
 #foreach ($result as $row) {
 
-    // Get the version from the current row
-    $version = $row['version'];
 
-    // Track the total amount of each version
-    if (isset($versions[$version])) {
-        // Increment the count if version already exists
-        $versions[$version]++;
-    } else {
-        // Initialize the count for the version
-        $versions[$version] = 1;
-    }
-    unset($row['version']);
     $rank+=1;
     if ($queryParam === '' || stripos($row['net_address'], $queryParam) !== false) {
         $row['rank']=$rank;
@@ -113,6 +103,9 @@ while ($row = mysqli_fetch_assoc($result)) {
 
 // Pagination parameters
 $resultsPerPage =  isset($_GET["limit"]) ? $_GET["limit"] : 15;
+if ($resultsPerPage==0) {
+    $resultsPerPage=1000000;
+}
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? intval($_GET['page']) : 1; // Current page number
 
 // Calculate total number of pages

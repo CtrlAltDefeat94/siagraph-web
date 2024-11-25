@@ -76,11 +76,12 @@ if ($blockchaindata === null) {
 // Fetch all results as associative array
 $rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 foreach ($rows as $row) {
-    $date = new DateTime($row['date']);
+    $date = new DateTime($row['date'], new DateTimeZone('UTC'));
+    $dateiso = $date->format('Y-m-d\TH:i:s\Z');
     $formatted_date = $date->format('Y-m-d');
     $time_of_day = $date->format('H:i:s');
     $jsonlist_entry = array(
-        'date' => $formatted_date,
+        'date' => $dateiso,
         'total_storage' => $row['total_storage'],
         #'utilized_storage' => ($row['total_storage']-  $row['remaining_storage']),
         'utilized_storage' => $row['utilized_storage'],

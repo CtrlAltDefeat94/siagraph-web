@@ -52,14 +52,14 @@ $api_url = "https://api.siascan.com/metrics/revenue/daily";
 $coingecko_url = "https://api.coingecko.com/api/v3/coins/siacoin";
 
 // Convert DateTime objects to ISO 8601 format for API request
-$start_date_iso = $start_date_obj->format('c');
+$start_date_iso = $start_date_obj->modify('-31 days')->format('c');
 $end_date_iso = $end_date_obj->format('c');
 
 // Fetch metrics data
 $params = http_build_query(array('start' => $start_date_iso, 'end' => $end_date_iso));
-
 $cacheKey = "revenuedata";
 $cacheresult = getCache($cacheKey);
+
 if ($cacheresult) {
     $response = $cacheresult;
 } else {
@@ -70,6 +70,17 @@ if ($cacheresult) {
     } else {
         setCache($response, $cacheKey, 'day');
     }
+}
+$data = json_decode($response, true);
+$past30Days = array();
+$past30DaysYesterday = array();
+$currencies = array_keys($data[0]['revenue']);
+
+foreach ($currencies as $currency) {
+    #todo verify
+    $past30Days[$currency] = round((float) $data[count($data) - 2]['revenue'][$currency] - (float) $data[count($data) - 32]['revenue'][$currency], 2);
+    $yesterday[$currency] = round((float) $data[count($data) - 3]['revenue'][$currency] - (float) $data[count($data) - 33]['revenue'][$currency],2);
+    $past30DaysDifference[$currency] = $past30Days[$currency] - $yesterday[$currency];
 }
 
 $coinPriceResult = getCache($coinPriceKey);
@@ -113,7 +124,8 @@ $total_storage = $actualstats['total_storage'];
 $utilized_storage = $actualstats['utilized_storage'];
 $previous_total_storage = $changestats['total_storage'];
 #$previous_remaining_storage = $changestats['remaining_storage'];
-$utilized_difference = $utilized_storage - $changestats['utilized_storage'];;
+$utilized_difference = $utilized_storage - $changestats['utilized_storage'];
+;
 $total_difference = $total_storage - $previous_total_storage;
 
 $active_hosts = (int) $actualstats['active_hosts'];
@@ -137,7 +149,7 @@ $data = [
         "utilized_storage" => (int) $utilized_storage,
         "total_storage" => (int) $total_storage,
         "online_hosts" => (int) $active_hosts,
-        "30_day_revenue" => ["eur" => 0, "usd" => 0],  // Placeholder for revenue
+        "30_day_revenue" => $past30Days,
         "active_contracts" => 0,  // Adjust as needed
         "coin_price" => [
             "eur" => number_format($coin_price_today['eur'], 5),
@@ -148,7 +160,7 @@ $data = [
         "utilized_storage" => $utilized_difference,
         "total_storage" => $total_difference,
         "online_hosts" => $active_hosts_difference,
-        "30_day_revenue" => ["eur" => $eur_diff, "usd" => $usd_diff],
+        "30_day_revenue" => $past30DaysDifference,
         "active_contracts" => 0,  // Placeholder for active contract change
         "coin_price" => [
             "eur" => $eur_diff,
