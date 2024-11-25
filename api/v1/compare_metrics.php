@@ -75,13 +75,14 @@ $data = json_decode($response, true);
 $past30Days = array();
 $past30DaysYesterday = array();
 $currencies = array_keys($data[0]['revenue']);
-
+$latestday = count($data) - 2;
 foreach ($currencies as $currency) {
-    $past30Days[$currency] = round((float) $data[count($data) - 2]['revenue'][$currency] - (float) $data[count($data) - 32]['revenue'][$currency], 2);
-    $yesterday[$currency] = round((float) $data[count($data) - 3]['revenue'][$currency] - (float) $data[count($data) - 33]['revenue'][$currency],2);
-    $past30DaysDifference[$currency] = $past30Days[$currency] - $yesterday[$currency];
+    $past30Days[$currency] = round((float) $data[$latestday]['revenue'][$currency] - (float) $data[$latestday - 30]['revenue'][$currency], 2);
+    $yesterday[$currency] = round((float) $data[$latestday - 1]['revenue'][$currency] - (float) $data[$latestday - 31]['revenue'][$currency], 2);
+    $past30DaysDifference[$currency] = round( (float)$past30Days[$currency] - (float) $yesterday[$currency],2);
 }
-
+$activeContracts = (int) $data[$latestday]['active'];
+$activeContractsYesterday = (int) $data[$latestday - 1]['active'];
 $coinPriceResult = getCache($coinPriceKey);
 if ($coinPriceResult) {
     $response = $coinPriceResult;
@@ -91,9 +92,9 @@ if ($coinPriceResult) {
         echo json_encode(["error" => "Unable to fetch data."]);
         return;
     } else {
-        $coin_price_data = json_decode($coin_price_response, true);
-
+        $coin_price_data = json_decode($coin_price_response, true);        
         $coin_price_today = $coin_price_data['market_data']['current_price'];
+
         if ($coin_price_today) {
             setCache($coin_price_today, $coinPriceKey, 'hour');
         }
@@ -137,10 +138,10 @@ $date = $start_date_obj->format("d-m-Y");
 $coin_price_yesterday_response = file_get_contents($coingecko_url . '/history?date=' . $date);
 $coin_price_yesterday_data = json_decode($coin_price_yesterday_response, true);
 $coin_price_yesterday = $coin_price_yesterday_data['market_data']['current_price'];
-$eur_diff = number_format($coin_price_today['eur'] - $coin_price_yesterday['eur'], 5);
-$usd_diff = number_format($coin_price_today['usd'] - $coin_price_yesterday['usd'], 5);
-$dateformat = "d F Y";
 
+$eur_diff = (float) number_format($coin_price_today['eur'] - $coin_price_yesterday['eur'], 5);
+$usd_diff = (float) number_format($coin_price_today['usd'] - $coin_price_yesterday['usd'], 5);
+$dateformat = "d F Y";
 $data = [
     "actual_date" => $end_date_obj->format($dateformat),
     "change_date" => $start_date_obj->format($dateformat),
@@ -149,10 +150,10 @@ $data = [
         "total_storage" => (int) $total_storage,
         "online_hosts" => (int) $active_hosts,
         "30_day_revenue" => $past30Days,
-        "active_contracts" => 0,  // Adjust as needed
+        "active_contracts" => $activeContracts,  // Adjust as needed
         "coin_price" => [
-            "eur" => number_format($coin_price_today['eur'], 5),
-            "usd" => number_format($coin_price_today['usd'], 5)
+            "eur" => (float) round($coin_price_today['eur'], 5),
+            "usd" =>(float) round($coin_price_today['usd'], 5)
         ] # number_format instead of round for testing
     ],
     "change" => [
@@ -160,7 +161,7 @@ $data = [
         "total_storage" => $total_difference,
         "online_hosts" => $active_hosts_difference,
         "30_day_revenue" => $past30DaysDifference,
-        "active_contracts" => 0,  // Placeholder for active contract change
+        "active_contracts" => $activeContracts - $activeContractsYesterday,  // Placeholder for active contract change
         "coin_price" => [
             "eur" => $eur_diff,
             "usd" => $usd_diff

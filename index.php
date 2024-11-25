@@ -72,7 +72,7 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                                         <span class="fs-6">30-day Network Revenue</span>
                                         <br>
                                         <span id="stats3a"
-                                            class="glanceNumber fs-4"><?php echo !empty($recentstats) ? $recentstats['actual']['30_day_revenue'][$currencyCookie] : 0; ?></span>
+                                            class="glanceNumber fs-4"><?php echo strtoupper($currencyCookie) . " " ;echo !empty($recentstats) ? $recentstats['actual']['30_day_revenue'][$currencyCookie] : 0; ?></span>
                                         <span id="stats3b"
                                             class="fs-6">(<?php echo !empty($recentstats) ? prependPlusIfNeeded($recentstats['change']['30_day_revenue'][$currencyCookie]) : 0; ?>)</span>
                                     </div>
@@ -441,8 +441,8 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
 
         // Update contracts
         elements.stats2a.textContent = stats.stats2;
-        elements.stats2b.textContent = stats.stats2Change;
-
+        elements.stats2b.textContent = `(${stats.stats2Change})`;
+console.log(typeof  stats.stats3Change);
         // Update revenue (currency sensitive)
         elements.stats3a.textContent = formatCurrency(stats.stats3);
         elements.stats3b.textContent = formatCurrencyChange(stats.stats3Change);

@@ -22,7 +22,7 @@ $fullHosts=0;
 foreach ($json_data['hosts'] as $host) {
     if (!isset($versions[$host['version']])) {
         $versions[$host['version']] = 1;
-    } else {
+    } else { 
         $versions[$host['version']]++;
     }
 

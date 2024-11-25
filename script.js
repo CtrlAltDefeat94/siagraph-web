@@ -12,6 +12,7 @@ function displayStorageMetric(id, actualValue, changeValue) {
 }
 
 
+
     function switchLightDarkMode() {
         // Check if the 'mode' cookie exists
         var modeCookie = getCookie('mode');
