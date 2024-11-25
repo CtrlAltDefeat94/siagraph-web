@@ -77,7 +77,6 @@ $past30DaysYesterday = array();
 $currencies = array_keys($data[0]['revenue']);
 
 foreach ($currencies as $currency) {
-    #todo verify
     $past30Days[$currency] = round((float) $data[count($data) - 2]['revenue'][$currency] - (float) $data[count($data) - 32]['revenue'][$currency], 2);
     $yesterday[$currency] = round((float) $data[count($data) - 3]['revenue'][$currency] - (float) $data[count($data) - 33]['revenue'][$currency],2);
     $past30DaysDifference[$currency] = $past30Days[$currency] - $yesterday[$currency];
