@@ -43,7 +43,7 @@ foreach ($json_data['hosts'] as $host) {
     $countries[$host['country']]['total_storage'] += (int) $host['total_storage'];
 
 }
-$versions = json_encode($versions, true);
+#$versions = json_encode($versions, true);
 // Check if data was successfully loaded from JSON
 
     // Extract relevant data
