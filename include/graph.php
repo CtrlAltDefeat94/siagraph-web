@@ -30,7 +30,7 @@ function renderGraph(
                 (function () {
                     var options = {
                         canvasId: "<?php echo htmlspecialchars($canvasid, ENT_QUOTES, 'UTF-8'); ?>",
-                        jsonData: <?php echo $jsonData ? json_encode($jsonData) : 'null'; ?>,
+                        jsonData: <?php echo json_encode(empty($jsonData) ? null : (is_string($jsonData) ? json_decode($jsonData, true) : $jsonData)); ?>,
                         jsonUrl: "<?php echo htmlspecialchars($jsonUrl, ENT_QUOTES); ?>",
                         unitType: "<?php echo $unitType; ?>",
                         datasets: <?php echo $encodedDatasets; ?>,
@@ -241,17 +241,17 @@ function renderGraph(
                 if (value >= bytesDivisors.KB) return (value / bytesDivisors.KB).toFixed(2) + ' KB';
                 return value + ' bytes';
             } else if (this.unitType === 'eur') {
-                if (value >= metricDivisors.T) return "EUR "+(value / metricDivisors.T).toFixed(2) + ' T';
-                if (value >= metricDivisors.B) return "EUR "+(value / metricDivisors.B).toFixed(2) + ' B';
-                if (value >= metricDivisors.M) return "EUR "+(value / metricDivisors.M).toFixed(2) + ' M';
-                return "EUR "+value;
-            
-            }else if (this.unitType === 'usd') {
-                if (value >= metricDivisors.T) return "USD "+(value / metricDivisors.T).toFixed(2) + ' T';
-                if (value >= metricDivisors.B) return "USD "+(value / metricDivisors.B).toFixed(2) + ' B';
-                if (value >= metricDivisors.M) return "USD "+(value / metricDivisors.M).toFixed(2) + ' M';
-                return "USD "+value;
-                
+                if (value >= metricDivisors.T) return "EUR " + (value / metricDivisors.T).toFixed(2) + ' T';
+                if (value >= metricDivisors.B) return "EUR " + (value / metricDivisors.B).toFixed(2) + ' B';
+                if (value >= metricDivisors.M) return "EUR " + (value / metricDivisors.M).toFixed(2) + ' M';
+                return "EUR " + value;
+
+            } else if (this.unitType === 'usd') {
+                if (value >= metricDivisors.T) return "USD " + (value / metricDivisors.T).toFixed(2) + ' T';
+                if (value >= metricDivisors.B) return "USD " + (value / metricDivisors.B).toFixed(2) + ' B';
+                if (value >= metricDivisors.M) return "USD " + (value / metricDivisors.M).toFixed(2) + ' M';
+                return "USD " + value;
+
             } else if (this.unitType === 'SC') {
                 return value.toFixed(2) + ' SC';
             }

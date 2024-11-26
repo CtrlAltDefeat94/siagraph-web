@@ -13,7 +13,11 @@ $exploredKey = 'explored';
 
 ### Key names end ###
 
-
+$redisConfig = [
+    'scheme' => 'tcp',
+    'host' => '127.0.0.1', // Change this to your Redis server address if needed
+    'port' => 6379,        // Change this to your Redis server port if needed
+];
 
 function calculateCacheLifetime($option)
 {
@@ -39,46 +43,32 @@ function calculateCacheLifetime($option)
 
 function getCache($cacheKey)
 {
-    // Connect to Redis
+    global $redisConfig;
     try {
-        $redis = new Predis\Client([
-            'scheme' => 'tcp',
-            'host' => '127.0.0.1', // Adjust if necessary
-            'port' => 6379,        // Adjust if necessary
-        ]);
+        $redis = new Predis\Client($redisConfig);
 
         // Retrieve the data from Redis
         $cachedData = $redis->get($cacheKey);
 
         if ($cachedData === null) {
-            return false;
+            return null;
         }
-
-
-
-
-
         return $cachedData;
-
     } catch (Exception $e) {
         error_log("Error: " . $e->getMessage());
-        return false;
+        return null;
     }
 }
 
 
 function setCache($data, $cacheKey, $cacheLifetimeOption = 'hour')
 {
-    // Calculate the cache lifetime
+    global $redisConfig;
     $cacheLifetime = calculateCacheLifetime($cacheLifetimeOption);
 
     // Connect to Redis
     try {
-        $redis = new Predis\Client([
-            'scheme' => 'tcp',
-            'host' => '127.0.0.1', // Change this to your Redis server address if needed
-            'port' => 6379,        // Change this to your Redis server port if needed
-        ]);
+        $redis = new Predis\Client($redisConfig);
 
         // Check Redis connection
         if (!$redis->ping()) {

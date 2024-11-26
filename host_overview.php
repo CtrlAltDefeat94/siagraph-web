@@ -291,7 +291,7 @@ foreach ($json_data['hosts'] as $host) {
                             ]
                         ],
                         $dateKey = "date",
-                        $jsonUrl = null,
+                        $jsonUrl = "",
                         $jsonData = $versions,
                         $charttype = 'pie',
                         $interval = 'month',
@@ -325,7 +325,7 @@ foreach ($json_data['hosts'] as $host) {
                             ]
                         ],
                         $dateKey = "date",
-                        $jsonUrl = null,
+                        $jsonUrl = "",
                         $jsonData = $versions,
                         $charttype = null,
                         $interval = 'month',

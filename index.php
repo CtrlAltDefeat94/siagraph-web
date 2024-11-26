@@ -442,7 +442,6 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
         // Update contracts
         elements.stats2a.textContent = stats.stats2;
         elements.stats2b.textContent = `(${stats.stats2Change})`;
-console.log(typeof  stats.stats3Change);
         // Update revenue (currency sensitive)
         elements.stats3a.textContent = formatCurrency(stats.stats3);
         elements.stats3b.textContent = formatCurrencyChange(stats.stats3Change);
