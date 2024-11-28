@@ -75,9 +75,11 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                                         <span class="fs-6">30-day Network Revenue</span>
                                         <br>
                                         <span id="stats3a"
-                                            class="glanceNumber fs-4"><?php echo strtoupper($currencyCookie) . " " ;echo !empty($recentstats) ? $recentstats['actual']['30_day_revenue'][$currencyCookie] : 0; ?></span>
+                                            class="glanceNumber fs-4"><?php echo strtoupper($currencyCookie) . " ";
+                                            echo !empty($recentstats) ? $recentstats['actual']['30_day_revenue'][$currencyCookie] : 0; ?></span>
                                         <span id="stats3b"
-                                            class="fs-6">(<?php echo !empty($recentstats) ? prependPlusIfNeeded($recentstats['change']['30_day_revenue'][$currencyCookie]) : 0; ?>)</span>
+                                            class="fs-6">(<?php echo strtoupper($currencyCookie) . " ";
+                                            echo !empty($recentstats) ? prependPlusIfNeeded($recentstats['change']['30_day_revenue'][$currencyCookie]) : 0; ?>)</span>
                                     </div>
                                 </div>
                             </div>
@@ -115,7 +117,8 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                                             class="glanceNumber fs-4"><?php echo strtoupper($currencyCookie) . " " . (!empty($recentstats) ? $recentstats['actual']['coin_price'][$currencyCookie] : 0); ?>
                                         </span>
                                         <span id="stats6b"
-                                            class="fs-6">(<?php echo !empty($recentstats) ? prependPlusIfNeeded(string: $recentstats['change']['coin_price'][$currencyCookie]) : 0; ?>)</span>
+                                            class="fs-6">(<?php echo strtoupper($currencyCookie) . " ";
+                                            echo !empty($recentstats) ? prependPlusIfNeeded(string: $recentstats['change']['coin_price'][$currencyCookie]) : 0; ?>)</span>
                                     </div>
                                 </div>
                             </div>
@@ -146,7 +149,7 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                             </span>
                             <!-- Time since the block was found (HH:MM:SS format) -->
                             <span id="time-since-found" class="text-gray-600 text-sm block">Time since: 00:00:00</span>
-                            <span id="time-average" class="text-gray-600 text-sm block">Recent average: 00:00:00</span>
+                            <!--<span id="time-average" class="text-gray-600 text-sm block">Recent average: 00:00:00</span>-->
                         </div>
 
                         <!-- Right-side stats (new contracts, new transactions, connected peers) -->
@@ -296,7 +299,7 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
     const blockFoundTimeString = document.getElementById('block-found-time').textContent.trim();
     const extractedDateString = blockFoundTimeString.replace('Found at: ', '').trim();
 
-    let currentHeight=0;
+    let currentHeight = 0;
 
     // Fix: Replace space with 'T' for valid ISO format
     const isoFormatString = extractedDateString.replace(' ', 'T');
@@ -305,14 +308,14 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
     let blockFoundTime;
     async function fetchExplorerData() {
         let previousBlockId;
-        let newblock= false;
+        let newblock = false;
         // Fetch block height and related info
         const consensusData = await fetchData('https://explorer.siagraph.info/api/consensus/state');
         if (consensusData) {
-            if (consensusData.index.height>currentHeight) {
-            currentHeight = consensusData.index.height;
-        
-            newblock=true;
+            if (consensusData.index.height > currentHeight) {
+                currentHeight = consensusData.index.height;
+
+                newblock = true;
             }
             document.getElementById('block-height').innerText = currentHeight;
             document.getElementById('next-block').innerText = currentHeight + 1;
@@ -323,7 +326,7 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
 
         // Fetch unconfirmed transactions
         const txPoolData = await fetchData('https://explorer.siagraph.info/api/txpool/transactions');
-        if (txPoolData) {
+        if (txPoolData && txPoolData.transactions) {
             let count = 0;
             for (const item of txPoolData.transactions) {
                 if ("minerFees" in item) {
@@ -347,7 +350,6 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
             }
         }
 
-        
 
 
         // Fetch block data for the previous block

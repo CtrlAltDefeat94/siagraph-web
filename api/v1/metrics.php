@@ -19,7 +19,16 @@ if ($cacheresult) {
 }
 
 
-$query = "SELECT date, ROUND(total_storage,0) AS total_storage, ROUND(utilized_storage,0) AS utilized_storage, active_hosts, total_hosts FROM NetworkStats ORDER BY date";
+$query = "SELECT 
+    date, 
+    NULLIF(ROUND(total_storage, 0), 0) AS total_storage, 
+    NULLIF(ROUND(utilized_storage, 0), 0) AS utilized_storage, 
+    NULLIF(active_hosts, 0) AS active_hosts, 
+    NULLIF(total_hosts, 0) AS total_hosts
+FROM 
+    NetworkStats 
+ORDER BY 
+    date";
 #$query = "SELECT date, ROUND(total_storage,0) AS total_storage, ROUND(remaining_storage,0) AS remaining_storage, active_hosts, total_hosts FROM NetworkStats ORDER BY date";
 
 // Execute the query

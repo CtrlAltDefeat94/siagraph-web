@@ -24,107 +24,120 @@ include_once "include/redis.php";
     <!-- Header Section -->
     <?php include "include/header.html" ?>
     <!-- Main Content Section -->
-    <section id="main-content" class="container mt-4 pb-5">
+    <section id="main-content" class="container mt-4 pb-5 max-w-screen-xl">
+        <!-- Row for new section and additional info section -->
+        <div class="row align-items-start mt-4">
+            <div class="col-md-6">
+                <section id="graph-section" class="bg-light p-3 rounded-3 ">
+                    <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">
+                        Storage size
+                    </h2>
+                    <section class="graph-container">
+                        <?php
 
-        <section id="graph-section" class="bg-light p-3 rounded-3 mt-4">
-            <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">
-                Storage size
-            </h2>
-            <section class="graph-container">
-                <?php
+                        // Define datasets with their keys and labels
+                        
+                        renderGraph(
+                            $canvasid = "networkstorage",
+                            $datasets = [
+                                [
+                                    'label' => 'Utilized Storage',
+                                    'key' => 'total_storage', // Modify based on your data
+                                    'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
+                                    'borderColor' => 'rgba(75, 192, 192, 1)',
+                                    'transform' => "return entry['utilized_storage'];",
+                                    'unit' => 'PB',
+                                    'unitDivisor' => 1e15,
+                                    'decimalPlaces' => 2,
+                                    'startAtZero' => true,
+                                    'displayZero' => false 
+                                ],
+                                [
+                                    'label' => 'Total Storage',
+                                    'key' => 'total_storage',
+                                    'backgroundColor' => 'rgba(255, 99, 132, 0.2)',
+                                    'borderColor' => 'rgba(255, 99, 132, 1)',
+                                    'transform' => "return entry['total_storage'];",
+                                    'unit' => 'PB',
+                                    'unitDivisor' => 1e15,
+                                    'decimalPlaces' => 2,
+                                    'startAtZero' => true,
+                                    'displayZero' => false 
+                                ]
+                            ],
+                            $dateKey = "date",
+                            $jsonUrl = "/api/v1/metrics", // JSON URL
+                            $jsonData = null,#getCache($metricsKey),             // JSON key for date
+                            $charttype = 'line',
+                            $interval = 'week',
+                            $rangeslider = true,
+                            $displaylegend = "true",
+                            $defaultrangeinmonths = 12,
+                            $displayYAxis = "false",
+                            $unitType = 'bytes'
+                        );
+                        ?>
 
-                // Define datasets with their keys and labels
-                
-                renderGraph(
-                    $canvasid = "networkstorage",
-                    $datasets = [
-                        [
-                            'label' => 'Utilized Storage',
-                            'key' => 'total_storage', // Modify based on your data
-                            'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
-                            'borderColor' => 'rgba(75, 192, 192, 1)',
-                            'transform' => "return entry['utilized_storage'];",
-                            'unit' => 'PB',
-                            'unitDivisor' => 1e15,
-                            'decimalPlaces' => 2,
-                            'startAtZero' => true
-                        ],
-                        [
-                            'label' => 'Total Storage',
-                            'key' => 'total_storage',
-                            'backgroundColor' => 'rgba(255, 99, 132, 0.2)',
-                            'borderColor' => 'rgba(255, 99, 132, 1)',
-                            'transform' => "return entry['total_storage'];",
-                            'unit' => 'PB',
-                            'unitDivisor' => 1e15,
-                            'decimalPlaces' => 2,
-                            'startAtZero' => true
-                        ]
-                    ],
-                    $dateKey = "date",
-                    $jsonUrl = "/api/v1/metrics", // JSON URL
-                    $jsonData = null,#getCache($metricsKey),             // JSON key for date
-                    $charttype = 'line',
-                    $interval = 'week',
-                    $rangeslider = true,
-                    $displaylegend = "true",
-                    $defaultrangeinmonths = 12,
-                    $displayYAxis = "false",
-                    $unitType = 'bytes'
-                );
-                ?>
+                        <!-- Add any additional content related to the Network graph -->
+                    </section>
+                </section>
+            </div>
 
-                <!-- Add any additional content related to the Network graph -->
-            </section>
-        </section>
-        <section id="graph-section" class="bg-light p-3 rounded-3 mt-4">
-            <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">
-                Hosts
-            </h2>
-            <section class="graph-container">
-                <?php
+            <div class="col-md-6">
+                <section id="graph2-section" class="bg-light p-3 rounded-3">
+                    <!-- Graph Section for Network -->
+                    <section class="graph-container">
+                        <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">
+                            Hosts
+                        </h2>
+                        <section class="graph2-container">
+                            <?php
 
-                // Define datasets with their keys and labels
-                
-                renderGraph(
-                    $canvasid = "hostcount",
-                    $datasets = [
-                        [
-                            'label' => 'Active Hosts',
-                            'key' => 'active_hosts', // Modify based on your data
-                            'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
-                            'borderColor' => 'rgba(75, 192, 192, 1)',
-                            'decimalPlaces' => 0, // No decimal places
-                            'startAtZero' => false // Set to true to start y-axis at zero
-                        ],
-                        [
-                            'label' => 'Total Hosts',
-                            'key' => 'total_hosts',
-                            'backgroundColor' => 'rgba(255, 99, 132, 0.2)',
-                            'borderColor' => 'rgba(255, 99, 132, 1)',
-                            'decimalPlaces' => 0, // No decimal places
-                            'startAtZero' => false,
-                            "hidden" => true
-                        ]
-                    ],
-                    $dateKey = "date",
-                    $jsonUrl = "/api/v1/metrics", // JSON URL
-                    $jsonData = null,//#getCache($metricsKey),             // JSON key for date
-                    $charttype = 'line',
-                    $interval = 'week',
-                    $rangeslider = true,
-                    $displaylegend = "true",
-                    $defaultrangeinmonths = 12,
-                    $displayYAxis = "false",
-                    $unitType = null
-                );
-                ?>
+                            // Define datasets with their keys and labels
+                            
+                            renderGraph(
+                                $canvasid = "hostcount",
+                                $datasets = [
+                                    [
+                                        'label' => 'Active Hosts',
+                                        'key' => 'active_hosts', // Modify based on your data
+                                        'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
+                                        'borderColor' => 'rgba(75, 192, 192, 1)',
+                                        'decimalPlaces' => 0, // No decimal places
+                                        'startAtZero' => false, // Set to true to start y-axis at zero
+                                        'displayZero' => false 
+                                    ],
+                                    [
+                                        'label' => 'Total Hosts',
+                                        'key' => 'total_hosts',
+                                        'backgroundColor' => 'rgba(255, 99, 132, 0.2)',
+                                        'borderColor' => 'rgba(255, 99, 132, 1)',
+                                        'decimalPlaces' => 0, // No decimal places
+                                        'startAtZero' => false,
+                                        "hidden" => true,
+                                        'displayZero' => false 
+                                    ]
+                                ],
+                                $dateKey = "date",
+                                $jsonUrl = "/api/v1/metrics", // JSON URL
+                                $jsonData = null,//#getCache($metricsKey),             // JSON key for date
+                                $charttype = 'line',
+                                $interval = 'week',
+                                $rangeslider = true,
+                                $displaylegend = "true",
+                                $defaultrangeinmonths = 12,
+                                $displayYAxis = "false",
+                                $unitType = null
+                            );
+                            ?>
+                        </section>
+                    </section>
+            </div>
+        </div>
+    </section>
 
-                <!-- Add any additional content related to the Network graph -->
-            </section>
-        </section>
-        <!-- Footer Section -->
-        <?php include "include/footer.html" ?>
+    <!-- Footer Section -->
+    <?php include "include/footer.html" ?>
 </body>
 <!-- Import Moment.js library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
