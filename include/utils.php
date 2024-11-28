@@ -93,3 +93,34 @@ function getData($query = false, $data = false, $cacheLifetimeOption = 'hour')
         return $data;
     }
 }
+function calculate_average_excluding_outliers($values) {
+    // Ensure the input is an array and has values
+    if (!is_array($values) || count($values) === 0) {
+        return null; // Return null if input is invalid
+    }
+
+    // Sort values to calculate quartiles
+    sort($values);
+    $count = count($values);
+
+    // Calculate Q1 and Q3
+    $q1 = $values[floor(($count - 1) * 0.25)];
+    $q3 = $values[floor(($count - 1) * 0.75)];
+    $iqr = $q3 - $q1;
+
+    // Define bounds for outliers
+    $lower_bound = $q1 - 1.5 * $iqr;
+    $upper_bound = $q3 + 1.5 * $iqr;
+
+    // Filter out values outside the bounds
+    $filtered_values = array_filter($values, function ($value) use ($lower_bound, $upper_bound) {
+        return $value >= $lower_bound && $value <= $upper_bound;
+    });
+
+    // Calculate and return the average of the filtered values
+    if (count($filtered_values) > 0) {
+        return array_sum($filtered_values) / count($filtered_values);
+    }
+
+    return null; // Return null if no valid values remain
+}

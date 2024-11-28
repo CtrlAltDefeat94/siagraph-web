@@ -4,7 +4,10 @@ include_once "include/redis.php";
 include_once "include/utils.php";
 
 $recentstats = getCache($recentStatsKey);
-$recentstats = json_decode($recentstats, true);
+if (isset($recentstats)) {
+    $recentstats = json_decode($recentstats, true);
+}
+
 $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
 
 ?>

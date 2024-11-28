@@ -18,6 +18,9 @@ if (empty($json_data)) {
 $json_data = json_decode($json_data, true);
 $versions = [];
 $countries = [];
+$storage_prices = [];
+$upload_prices = [];
+$download_prices = [];
 $fullHosts=0;
 foreach ($json_data['hosts'] as $host) {
     if (!isset($versions[$host['version']])) {
@@ -41,6 +44,11 @@ foreach ($json_data['hosts'] as $host) {
     $countries[$host['country']]['host_count']++;
     $countries[$host['country']]['used_storage'] += (int) $host['used_storage'];
     $countries[$host['country']]['total_storage'] += (int) $host['total_storage'];
+    if ($host['country'] >0){
+        $storage_prices[]=$host['storage_price']/ pow(10, 12)*4320;
+        $upload_prices[]=$host['upload_price']/ pow(10, 12);
+        $download_prices[]=$host['download_price']/ pow(10, 12);
+    }
 
 }
 #$versions = json_encode($versions, true);
@@ -67,11 +75,11 @@ foreach ($json_data['hosts'] as $host) {
     $stats6b_value = 0;
 */
 
-    $stats1a_value = 0;
+    $stats1a_value = round(calculate_average_excluding_outliers($storage_prices),1);
     $stats1b_value = 0;
-    $stats2a_value = 0;
+    $stats2a_value = round(calculate_average_excluding_outliers($upload_prices),1);
     $stats2b_value = 0;
-    $stats3a_value = 0;
+    $stats3a_value = round(calculate_average_excluding_outliers($download_prices),1);
     $stats3b_value = 0;
     $stats4a_value = count($json_data['hosts']);
     $stats4b_value = 0;

@@ -1,5 +1,6 @@
 <?php
 include_once "../../include/redis.php";
+include_once "../../include/database.php";
 
 header('Content-Type: application/json');
 $queryString = http_build_query($_GET);
@@ -14,7 +15,6 @@ if ($cacheresult) {
 }
 
 
-include_once "../../include/database.php";
 
 // Fetch start and end dates from query parameters
 $start_date = isset($_GET['change']) ? $_GET['change'] : null;
