@@ -262,7 +262,7 @@ foreach ($json_data['hosts'] as $host) {
                                 'unit' => 'TB',
                                 'unitDivisor' => 1e12,
                                 'decimalPlaces' => 2,
-                                'startAtZero' => true
+                                'startAtZero' => false
                             ]
                         ],
                         $dateKey = "date",

@@ -17,7 +17,11 @@ if ($cacheresult) {
     echo $cacheresult;
     die;
 }
-
+if (isset($_GET['start'])) {
+    $start_date = $_GET['start'];
+} else {
+    $start_date="1970-01-01";
+}
 
 $query = "SELECT 
     date, 
@@ -27,6 +31,7 @@ $query = "SELECT
     NULLIF(total_hosts, 0) AS total_hosts
 FROM 
     NetworkStats 
+WHERE date>='{$start_date}'
 ORDER BY 
     date";
 #$query = "SELECT date, ROUND(total_storage,0) AS total_storage, ROUND(remaining_storage,0) AS remaining_storage, active_hosts, total_hosts FROM NetworkStats ORDER BY date";

@@ -49,8 +49,7 @@ include_once "include/redis.php";
                                     'unit' => 'PB',
                                     'unitDivisor' => 1e15,
                                     'decimalPlaces' => 2,
-                                    'startAtZero' => true,
-                                    'displayZero' => false 
+                                    'startAtZero' => true
                                 ],
                                 [
                                     'label' => 'Total Storage',
@@ -61,8 +60,7 @@ include_once "include/redis.php";
                                     'unit' => 'PB',
                                     'unitDivisor' => 1e15,
                                     'decimalPlaces' => 2,
-                                    'startAtZero' => true,
-                                    'displayZero' => false 
+                                    'startAtZero' => true
                                 ]
                             ],
                             $dateKey = "date",
@@ -104,8 +102,7 @@ include_once "include/redis.php";
                                         'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
                                         'borderColor' => 'rgba(75, 192, 192, 1)',
                                         'decimalPlaces' => 0, // No decimal places
-                                        'startAtZero' => false, // Set to true to start y-axis at zero
-                                        'displayZero' => false 
+                                        'startAtZero' => false // Set to true to start y-axis at zero
                                     ],
                                     [
                                         'label' => 'Total Hosts',
@@ -114,12 +111,11 @@ include_once "include/redis.php";
                                         'borderColor' => 'rgba(255, 99, 132, 1)',
                                         'decimalPlaces' => 0, // No decimal places
                                         'startAtZero' => false,
-                                        "hidden" => true,
-                                        'displayZero' => false 
+                                        "hidden" => true
                                     ]
                                 ],
                                 $dateKey = "date",
-                                $jsonUrl = "/api/v1/metrics", // JSON URL
+                                $jsonUrl = "/api/v1/metrics?start=2024-02-18", // JSON URL
                                 $jsonData = null,//#getCache($metricsKey),             // JSON key for date
                                 $charttype = 'line',
                                 $interval = 'week',

@@ -519,13 +519,20 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
         return string;
     }
     function updateTimeSinceFound() {
-        const now = new Date();
-        const elapsed = Math.floor((now - blockFoundTime) / 1000);
-        const hours = String(Math.floor(elapsed / 3600)).padStart(2, '0');
-        const minutes = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
-        const seconds = String(elapsed % 60).padStart(2, '0');
+    const now = new Date();
+    const elapsed = Math.floor((now - blockFoundTime) / 1000);
+    const days = Math.floor(elapsed / 86400); // Number of full days
+    const hours = String(Math.floor((elapsed % 86400) / 3600)).padStart(2, '0'); // Remaining hours
+    const minutes = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+    const seconds = String(elapsed % 60).padStart(2, '0');
+
+    if (days > 0) {
+        timeSinceElement.textContent = `Time since: ${days} days ${hours}:${minutes}:${seconds}`;
+    } else {
         timeSinceElement.textContent = `Time since: ${hours}:${minutes}:${seconds}`;
     }
+}
+
 
     // Call functions on page load
     if (!cachedData) {
