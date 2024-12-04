@@ -52,14 +52,13 @@ $api_url = "https://api.siascan.com/metrics/revenue/daily";
 $coingecko_url = "https://api.coingecko.com/api/v3/coins/siacoin";
 
 // Convert DateTime objects to ISO 8601 format for API request
-$start_date_iso = $start_date_obj->modify('-31 days')->format('c');
-$end_date_iso = $end_date_obj->format('c');
+$start_date_iso = $start_date_obj->modify('-30 days')->format('c');
+$end_date_iso = $end_date_obj->modify('-1 day')->format('c');
 
 // Fetch metrics data
 $params = http_build_query(array('start' => $start_date_iso, 'end' => $end_date_iso));
 $cacheKey = "revenuedata";
 $cacheresult = getCache($cacheKey);
-
 if ($cacheresult) {
     $response = $cacheresult;
 } else {
@@ -75,14 +74,18 @@ $data = json_decode($response, true);
 $past30Days = array();
 $past30DaysYesterday = array();
 $currencies = array_keys($data[0]['revenue']);
-$latestday = count($data) - 2;
+$today = $data[31];
+$yesterday = $data[30];
+$thirtydaysago = $data[1];
+$thirtydaysagoyesterday = $data[0];
+
 foreach ($currencies as $currency) {
-    $past30Days[$currency] = round((float) $data[$latestday]['revenue'][$currency] - (float) $data[$latestday - 30]['revenue'][$currency], 2);
-    $yesterday[$currency] = round((float) $data[$latestday - 1]['revenue'][$currency] - (float) $data[$latestday - 31]['revenue'][$currency], 2);
+    $past30Days[$currency] = round((float) $today['revenue'][$currency] - (float) $thirtydaysago['revenue'][$currency], 2);
+    $yesterday[$currency] = round((float) $yesterday['revenue'][$currency] - (float) $thirtydaysagoyesterday['revenue'][$currency], 2);
     $past30DaysDifference[$currency] = round( (float)$past30Days[$currency] - (float) $yesterday[$currency],2);
 }
-$activeContracts = (int) $data[$latestday]['active'];
-$activeContractsYesterday = (int) $data[$latestday - 1]['active'];
+$activeContracts = (int) $today['active'];
+$activeContractsYesterday = (int) $yesterday['active'];
 $coinPriceResult = getCache($coinPriceKey);
 if ($coinPriceResult) {
     $response = $coinPriceResult;
