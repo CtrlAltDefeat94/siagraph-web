@@ -64,7 +64,7 @@ include_once "include/redis.php";
                                 ]
                             ],
                             $dateKey = "date",
-                            $jsonUrl = "/api/v1/metrics", // JSON URL
+                            $jsonUrl = "/api/v1/daily/growth", // JSON URL
                             $jsonData = null,#getCache($metricsKey),             // JSON key for date
                             $charttype = 'line',
                             $interval = 'week',
@@ -115,7 +115,7 @@ include_once "include/redis.php";
                                     ]
                                 ],
                                 $dateKey = "date",
-                                $jsonUrl = "/api/v1/metrics?start=2024-02-18", // JSON URL
+                                $jsonUrl = "/api/v1/daily/growth?start=2024-02-18", // JSON URL
                                 $jsonData = null,//#getCache($metricsKey),             // JSON key for date
                                 $charttype = 'line',
                                 $interval = 'week',

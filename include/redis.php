@@ -9,7 +9,6 @@ $recentStatsKey = 'compare_metrics';
 $revenueMonthlyKey = 'revenue_monthly';
 $metricsKey = 'metrics';
 $hostKey = 'host';
-$exploredKey = 'explored';
 
 ### Key names end ###
 

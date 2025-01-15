@@ -142,20 +142,19 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                     <div class="bg-gray-200 p-2 rounded-lg flex justify-between text-sm">
                         <!-- Block height and time on the left -->
                         <div>
-                            <span id="block-height" class="font-bold text-5xl"></span>
+                            <span id="block-height" class="font-bold text-5xl">0</span>
                             <!-- Time block was found -->
                             <span id="block-found-time" class="text-gray-500 text-sm block mt-1">
                                 Found at: 1970-01-01
                             </span>
                             <!-- Time since the block was found (HH:MM:SS format) -->
                             <span id="time-since-found" class="text-gray-600 text-sm block">Time since: 00:00:00</span>
-                            <!--<span id="time-average" class="text-gray-600 text-sm block">Recent average: 00:00:00</span>-->
+                            <span id="time-average" class="text-gray-600 text-sm block">Recent average: 00:00:00</span>
+
                         </div>
 
-                        <!-- Right-side stats (new contracts, new transactions, connected peers) -->
                         <div class="text-right space-y-2">
 
-                            <!-- New/renewed contracts and transactions -->
                             <div class="flex justify-end items-center space-x-2">
                                 <span class="fs-6">New contracts:</span>
                                 <span id="new-contracts" class="glanceNumber fs-4"></span>
@@ -168,11 +167,9 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                                 <span class="fs-6">New hosts:</span>
                                 <span id="new-hosts" class="glanceNumber fs-4"></span>
                             </div>
-
                         </div>
                     </div>
 
-                    <!-- Bottom Section: Next Block and Unconfirmed Transactions -->
                     <div class="bg-gray-200 p-2 rounded-lg flex justify-between text-sm mt-2">
                         <div>
                             <span class="block fs-6">Next block</span>
@@ -183,15 +180,10 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                             <span id=unconfirmed-transactions class="block font-semibold text-lg"></span>
                         </div>
                     </div>
-
-                    <!-- Input box and send button at the bottom -->
-                    <!--
-                    <div class="mt-2 flex space-x-2">
-                        <input type="text" id="input-box" placeholder="Enter search"
-                            class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button id="send-button"
-                            class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Search</button>
-                    </div> -->
+                    <div class="flex justify-center items-center mt-2 space-x-2">
+                        <span class="text-gray-600 font-bold text-sm">Estimated hardfork activation date:</span>
+                        <span id="estimated-v2-time" class="text-gray-600 font-bold text-sm">00:00:00</span>
+                    </div>
                 </section>
             </div>
 
@@ -206,13 +198,12 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                             Utilized Storage
                         </h2>
                         <?php
-                        // Call the function with specific parameters
                         renderGraph(
                             $canvasid = "networkstorage",
                             $datasets = [
                                 [
                                     'label' => 'Utilized Storage',
-                                    'key' => 'total_storage', // Modify based on your data
+                                    'key' => 'total_storage', 
                                     'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
                                     'borderColor' => 'rgba(75, 192, 192, 1)',
                                     'transform' => "return entry['utilized_storage'];",
@@ -223,7 +214,7 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                                 ]
                             ],
                             $dateKey = "date",
-                            $jsonUrl = "/api/v1/metrics", // JSON URL
+                            $jsonUrl = "/api/v1/daily/growth", // JSON URL
                             $jsonData = getCache($metricsKey),             // JSON key for date
                             $charttype = 'line',
                             $interval = 'month',
@@ -261,7 +252,7 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                                 ]
                             ],
                             $dateKey = "date",
-                            $jsonUrl = '/api/v1/revenue_monthly', // JSON URL
+                            $jsonUrl = '/api/v1/monthly/revenue', // JSON URL
                             $jsonData = null,#getCache($revenueMonthlyKey),
                             $charttype = 'bar',
 
@@ -292,11 +283,12 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
 </body>
 
 <script>
-    const url = '/api/v1/compare_metrics';
+    const url = '/api/v1/daily/compare_metrics';
     const cachedData = <?php echo json_encode($recentstats); ?>;
     const currencyCookie = document.cookie.replace(/(?:(?:^|.*;\s*)currency\s*=\s*([^;]*).*$)|^.*$/, "$1") || 'eur';
     const timeSinceElement = document.getElementById('time-since-found');
     const blockFoundTimeString = document.getElementById('block-found-time').textContent.trim();
+    const estimatedV2TimeString = document.getElementById('estimated-v2-time').textContent.trim();
     const extractedDateString = blockFoundTimeString.replace('Found at: ', '').trim();
 
     let currentHeight = 0;
@@ -306,69 +298,42 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
 
     // Create a new Date object from the string
     let blockFoundTime;
+    let estimatedV2Time;
     async function fetchExplorerData() {
-        let previousBlockId;
-        let newblock = false;
-        // Fetch block height and related info
-        const consensusData = await fetchData('https://explorer.siagraph.info/api/consensus/state');
-        if (consensusData) {
-            if (consensusData.index.height > currentHeight) {
-                currentHeight = consensusData.index.height;
+        // Fetch the consolidated explorer metrics JSON data
+        const explorerData = await fetchData('/api/v1/explorer_metrics');
 
-                newblock = true;
-            }
-            document.getElementById('block-height').innerText = currentHeight;
-            document.getElementById('next-block').innerText = currentHeight + 1;
+        if (explorerData) {
+            // Extract data from the fetched JSON object
+            const {
+                blockHeight,
+                averageFoundSeconds,
+                blockFoundTime: fetchedBlockFoundTime,
+                estimatedV2Time: fetchedEstimatedV2Time,
+                unconfirmedTransactions,
+                connectedPeers,
+                newHosts,
+                completedContracts,
+                newContracts
+            } = explorerData;
 
-            blockFoundTime = new Date(consensusData.prevTimestamps[0]);
-            document.getElementById('block-found-time').innerText = blockFoundTime.toLocaleString();
+            blockFoundTime = fetchedBlockFoundTime;
+            estimatedV2Time = fetchedEstimatedV2Time;
+            // Update the HTML elements with the fetched data
+            let minutes = Math.floor(averageFoundSeconds / 60);  // Get the number of full minutes
+            let seconds = averageFoundSeconds % 60;
+            let averageFoundTime = `Recent average: ${minutes} minutes ${seconds} seconds`;
+            document.getElementById('block-height').innerText = blockHeight;
+            document.getElementById('next-block').innerText = blockHeight + 1;
+            document.getElementById('block-found-time').innerText = new Date(blockFoundTime).toLocaleString();
+            document.getElementById('estimated-v2-time').innerText = new Date(estimatedV2Time).toLocaleString();
+            document.getElementById('time-average').innerText = averageFoundTime;
+            document.getElementById('unconfirmed-transactions').innerText = unconfirmedTransactions;
+            document.getElementById('connected-peers').innerText = connectedPeers;
+            document.getElementById('new-hosts').innerText = newHosts;
+            document.getElementById('completed-contracts').innerText = completedContracts;
+            document.getElementById('new-contracts').innerText = newContracts;
         }
-
-        // Fetch unconfirmed transactions
-        const txPoolData = await fetchData('https://explorer.siagraph.info/api/txpool/transactions');
-        if (txPoolData && txPoolData.transactions) {
-            let count = 0;
-            for (const item of txPoolData.transactions) {
-                if ("minerFees" in item) {
-                    count++;
-                }
-            }
-            document.getElementById('unconfirmed-transactions').innerText = count;
-        }
-
-        // Fetch connected peers
-        const peersData = await fetchData('https://explorer.siagraph.info/api/syncer/peers');
-        if (peersData) {
-            document.getElementById('connected-peers').innerText = peersData.length;
-        }
-
-        // Fetch previous block ID
-        if (currentHeight && newblock) {
-            const previousBlockData = await fetchData(`https://explorer.siagraph.info/api/consensus/tip/${currentHeight - 1}`);
-            if (previousBlockData) {
-                previousBlockId = previousBlockData.id;
-            }
-        }
-
-
-
-        // Fetch block data for the previous block
-        if (previousBlockId && newblock) {
-            const blockData = await fetchData(`https://explorer.siagraph.info/api/metrics/block`);
-            const previousblockData = await fetchData(`https://explorer.siagraph.info/api/metrics/block/${previousBlockId}`);
-            if (previousblockData && blockData) {
-                const newhosts = blockData['totalHosts'] - previousblockData['totalHosts'];
-                document.getElementById('new-hosts').innerText = newhosts;
-                const completedcontracts = (blockData['failedContracts'] + blockData['successfulContracts']) -
-                    (previousblockData['failedContracts'] + previousblockData['successfulContracts']);
-                document.getElementById('completed-contracts').innerText = completedcontracts;
-                const newcontracts = (blockData['activeContracts'] + blockData['failedContracts'] + blockData['successfulContracts']) -
-                    (previousblockData['activeContracts'] + previousblockData['failedContracts'] + previousblockData['successfulContracts']);
-                document.getElementById('new-contracts').innerText = newcontracts;
-
-            }
-        }
-
     }
     async function fetchData(url) {
         try {
@@ -519,19 +484,20 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
         return string;
     }
     function updateTimeSinceFound() {
-    const now = new Date();
-    const elapsed = Math.floor((now - blockFoundTime) / 1000);
-    const days = Math.floor(elapsed / 86400); // Number of full days
-    const hours = String(Math.floor((elapsed % 86400) / 3600)).padStart(2, '0'); // Remaining hours
-    const minutes = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
-    const seconds = String(elapsed % 60).padStart(2, '0');
+        const now = new Date();
+        const blockFoundTimeDate = new Date(blockFoundTime)
+        const elapsed = Math.floor((now - blockFoundTimeDate) / 1000);
+        const days = Math.floor(elapsed / 86400); // Number of full days
+        const hours = String(Math.floor((elapsed % 86400) / 3600)).padStart(2, '0'); // Remaining hours
+        const minutes = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+        const seconds = String(elapsed % 60).padStart(2, '0');
 
-    if (days > 0) {
-        timeSinceElement.textContent = `Time since: ${days} days ${hours}:${minutes}:${seconds}`;
-    } else {
-        timeSinceElement.textContent = `Time since: ${hours}:${minutes}:${seconds}`;
+        if (days > 0) {
+            timeSinceElement.textContent = `Time since: ${days} days ${hours}:${minutes}:${seconds}`;
+        } else {
+            timeSinceElement.textContent = `Time since: ${hours}:${minutes}:${seconds}`;
+        }
     }
-}
 
 
     // Call functions on page load

@@ -33,7 +33,7 @@ shuffle($rows);
 // Fetch the result rows and group them by the 'network' column
 foreach ($rows as $row) {
     $network = $row['network'];
-
+    unset($row['network']);
     if (!isset($groupedData[$network])) {
         $groupedData[$network] = [];
     }

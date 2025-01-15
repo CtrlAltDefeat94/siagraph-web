@@ -44,7 +44,7 @@
                   <thead>
                      <tr class="bg-primary text-white">
                         <th class="px-4 py-2">Address</th>
-                        <th class="px-4 py-2 text-right">Version</th>
+                        <th class="px-4 py-2 text-right">Protocol Version</th>
                         <th class="px-4 py-2 text-right">Last Scanned</th>
                      </tr>
                   </thead>
@@ -59,7 +59,7 @@
                   <thead>
                      <tr class="bg-primary text-white">
                         <th class="px-4 py-2">Address</th>
-                        <th class="px-4 py-2 text-right">Version</th>
+                        <th class="px-4 py-2 text-right">Protocol Version</th>
                         <th class="px-4 py-2 text-right">Last Scanned</th>
                      </tr>
                   </thead>
