@@ -59,7 +59,7 @@ $blockData = fetchData('https://explorer.siagraph.info/api/blocks/' . $blockData
 $blockCompareTime = new DateTime($blockData['timestamp']);
 $totalSeconds = compareDates($blockFoundTime, $blockCompareTime);
 #echo $totalSeconds/144;
-$secondsuntilV2=round((513400 - $blockHeight) * ($totalSeconds/144));
+$secondsuntilV2=round((526000 - $blockHeight) * ($totalSeconds/144));
 $data['estimatedV2Time'] = $blockFoundTime->modify("+{$secondsuntilV2} seconds")->format('Y-m-d\TH:i:s\Z');
 
 
