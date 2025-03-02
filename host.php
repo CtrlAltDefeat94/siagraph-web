@@ -91,7 +91,7 @@ mysqli_close($mysqli);
 <head>
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>SiaGraph</title>
+   <title>SiaGraph Host Explorer - <?php echo $settings['net_address']; ?></title>
    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
@@ -115,8 +115,8 @@ mysqli_close($mysqli);
 
       <div class="max-w-6xl mx-auto">
          <div class="flex justify-start mt-4 mb-2 gap-2">
-            <a class="hover:underline cursor-pointer flex items-center font-bold text-xl"
-               href='/host_explorer'>Top Hosts</a>
+            <a class="hover:underline cursor-pointer flex items-center font-bold text-xl" href='/host_explorer'>Top
+               Hosts</a>
             <span class="flex items-center font-bold text-xl ">/</span>
             <span class="flex items-center font-bold text-xl"><?php echo $settings['net_address']; ?></span>
          </div>
@@ -290,9 +290,8 @@ mysqli_close($mysqli);
                      </tbody>
                   </table>
                   <div class="flex justify-center items-center">
-                  <a id='recentbenchmarks'
-                        class="cursor-pointer hover:underline text-blue-500 font-bold rounded"
-                         href='/host_benchmarks?id=<?php echo $host_id; ?>'>View recent benchmarks</a>
+                     <a id='recentbenchmarks' class="cursor-pointer hover:underline text-blue-500 font-bold rounded"
+                        href='/host_benchmarks?id=<?php echo $host_id; ?>'>View recent benchmarks</a>
                   </div>
                </div>
                <!-- Other Placeholder Section -->

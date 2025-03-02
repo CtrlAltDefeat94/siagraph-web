@@ -34,40 +34,42 @@ foreach ($data['benchmarks'] as $benchmark) {
     }
     $groupedBenchmarks[$node][] = $benchmark;
 }
-
-// Calculate stats for 24-hour windows
 function calculate24HourStats($timestamps, $speeds)
 {
-    $averageSpeeds = [];
-    $stdDevs = [];
-    $windowSize = 24 * 60 * 60; // 24 hours in seconds
+    $dailySpeeds = [];
+    $dailyAverages = [];
+    $dailyStdDevs = [];
 
-    for ($i = 0; $i < count($timestamps); $i++) {
-        $currentTimestamp = strtotime($timestamps[$i]);
-        $windowSpeeds = [];
+    // Group speeds by date
+    foreach ($timestamps as $index => $timestamp) {
+        $date = date('Y-m-d', strtotime($timestamp)); // Extract date (YYYY-MM-DD)
+        $dailySpeeds[$date][] = $speeds[$index];
+    }
 
-        for ($j = 0; $j <= $i; $j++) {
-            $compareTimestamp = strtotime($timestamps[$j]);
-            if ($currentTimestamp - $compareTimestamp <= $windowSize) {
-                $windowSpeeds[] = $speeds[$j];
-            }
-        }
+    // Calculate stats per day
+    foreach ($dailySpeeds as $date => $speeds) {
+        $average = array_sum($speeds) / count($speeds);
+        $dailyAverages[$date] = $average;
 
-        $average = count($windowSpeeds) > 0 ? array_sum($windowSpeeds) / count($windowSpeeds) : 0;
-        $averageSpeeds[] = $average;
-
-        if (count($windowSpeeds) > 1) {
-            $squaredDiffs = array_map(function ($speed) use ($average) {
-                return pow($speed - $average, 2);
-            }, $windowSpeeds);
-            $stdDev = sqrt(array_sum($squaredDiffs) / count($windowSpeeds));
+        if (count($speeds) > 1) {
+            $squaredDiffs = array_map(fn($speed) => pow($speed - $average, 2), $speeds);
+            $stdDev = sqrt(array_sum($squaredDiffs) / count($speeds));
         } else {
             $stdDev = 0;
         }
-        $stdDevs[] = $stdDev;
+        $dailyStdDevs[$date] = $stdDev;
     }
 
-    return [$averageSpeeds, $stdDevs];
+    // Format results with time set to 00:00:00
+    $formattedResults = [];
+    foreach ($dailyAverages as $date => $average) {
+        $formattedResults[] = [
+            'timestamp' => $date . ' 00:00:00',
+            'average_speed' => $average,
+            'std_dev' => $dailyStdDevs[$date]
+        ];
+    }
+    return $formattedResults;
 }
 
 $timestamps = [];
@@ -117,9 +119,9 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
         $formattedDate = (new DateTime('now', new DateTimeZone('UTC')))
             ->modify('-7 days')->setTime(0, 0, 0)->format('Y-m-d\TH:i:s\Z');
 
-        // Construct the API URL
-        $url = "https://api.hostscore.info/v1/hosts/benchmarks?network=mainnet&host=" . $public_key . "&all=true&from=" . $formattedDate;
-
+        // Construct the API URL        // Construct the API URL
+        $url = "https://api.hostscore.info/v1/hosts/benchmarks?network=mainnet&host=" . ltrim($public_key, "ed25519:") . "&all=true&from=" . $formattedDate;
+        
         // Fetch data from the API
         $response = file_get_contents($url);
 
@@ -186,8 +188,8 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
     <!-- Main Content Section -->
     <section id="main-content" class="container mt-4 pb-5 masonry-container">
         <div class="flex flex-wrap justify-start mt-4 mb-2 gap-2">
-            <a class="cursor-pointer hover:underline flex items-center font-bold text-xl"
-                href='/host_explorer'>Top Hosts</a>
+            <a class="cursor-pointer hover:underline flex items-center font-bold text-xl" href='/host_explorer'>Top
+                Hosts</a>
             <span class="flex items-center font-bold text-xl">/</span>
             <a class="cursor-pointer hover:underline flex items-center font-bold text-xl"
                 href='/host.php?id=<?php echo $host_id; ?>'>
