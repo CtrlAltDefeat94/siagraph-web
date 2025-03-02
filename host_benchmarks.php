@@ -246,7 +246,7 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                             <th class="px-4 py-2">Node</th>
                             <th class="px-4 py-2">Upload Speed</th>
                             <th class="px-4 py-2">Download Speed</th>
-                            <th class="px-4 py-2">Time to First Sector</th>
+                            <th class="px-4 py-2">Time to First Byte</th>
                             <th class="px-4 py-2">Success</th>
                         </tr>
                     </thead>
