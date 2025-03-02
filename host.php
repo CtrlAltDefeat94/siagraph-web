@@ -270,7 +270,7 @@ mysqli_close($mysqli);
                            </td>
                         </tr>
                         <tr class="bg-gray-100">
-                           <td class="px-4 py-2 font-semibold">Time to First Sector</td>
+                           <td class="px-4 py-2 font-semibold">Time to First Byte</td>
                            <td class="px-4 py-2 text-right">
                               <?php echo round($benchmark['ttfb'] / 1000 / 1000, 2) . " ms (" . ($node_scores['global']['ttfb_score'] ?? 0) . "/10)"; ?>
                            </td>
