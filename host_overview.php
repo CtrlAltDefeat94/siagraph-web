@@ -10,7 +10,7 @@ $data = null;
 $json_data = getCache(md5("hosts?limit=0"));
 if (empty($json_data)) {
     // Retrieve JSON data from the API
-    $apiUrl = "https://alpha.siagraph.info/api/v1/hosts?limit=0";
+    $apiUrl = "https://siagraph.info/api/v1/hosts?limit=0";
 
     // Use file_get_contents to fetch the data
     $json_data = file_get_contents($apiUrl);
