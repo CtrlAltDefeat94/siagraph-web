@@ -120,7 +120,7 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
             ->modify('-7 days')->setTime(0, 0, 0)->format('Y-m-d\TH:i:s\Z');
 
         // Construct the API URL        // Construct the API URL
-        $url = "https://api.hostscore.info/v1/hosts/benchmarks?network=mainnet&host=" . ltrim($public_key, "ed25519:") . "&all=true&from=" . $formattedDate;
+        $url = "https://api.hostscore.info/v1/hosts/benchmarks?network=mainnet&host=" .$public_key . "&all=true&from=" . $formattedDate;
         
         // Fetch data from the API
         $response = file_get_contents($url);
