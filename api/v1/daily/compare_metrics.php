@@ -136,7 +136,7 @@ $total_difference = $total_storage - $previous_total_storage;
 
 $active_hosts = (int) $actualstats['active_hosts'];
 $previous_active_hosts = (int) $comparestats['active_hosts'];
-$active_hosts_difference = $previous_active_hosts - $active_hosts;
+$active_hosts_difference = $active_hosts - $previous_active_hosts;
 
 // Fetch coin price data for yesterday
 $date = $start_date_obj->format("d-m-Y");
