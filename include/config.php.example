@@ -1,0 +1,13 @@
+<?php
+$SETTINGS = array(
+    "database" => array(
+        "servername" => "",
+        "username" => "",
+        "password" => "",
+        "database" => ""
+    ),
+    "explorer" => "https://explorer.siagraph.info",
+    "network" => "mainnet",
+    "last_scan_host_online" => "12 HOUR",
+    "siagraph_base_url" => "https://siagraph.info",
+);
