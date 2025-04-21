@@ -1,6 +1,78 @@
 <?php
+// Include configuration
+include_once "../../include/config.php";
 
-function isPortOpen($host, $port, $timeout = 2) {
+// Initialize response array
+$response = array(
+    'public_key' => '',
+    'net_address' => '',
+    'v2' => false,
+    'online' => false,
+    'uptime' => 0,
+    'last_announcement' => null,
+    'last_scan' => 0,
+    'next_scan' => 0,
+    'ipv4_enabled' => false,
+    'ipv6_enabled' => false,
+    'software_version' => null,
+    'protocol_version' => null,
+    'used_storage' => 0,
+    'total_storage' => 0,
+    'remaining_capacity_percentage' => 0,
+    'port_status' => array(
+        'ipv4_rhp2' => false,
+        'ipv4_rhp3' => false,
+        'ipv4_rhp4' => false,
+        'ipv6_rhp2' => false,
+        'ipv6_rhp3' => false,
+        'ipv6_rhp4' => false,
+    ),
+    "settings" => [
+        "acceptingcontracts" => null,
+        "storageprice" => null,
+        "collateral" => null,
+        "contractprice" => null,
+        "egressprice" => null,
+        "ingressprice" => null,
+        "maxcollateral" => null,
+        "maxduration" => null,
+        "freesectorprice" => null,
+        "ephemeralaccountexpiry" => null,
+        "maxdownloadbatchsize" => null,
+        "maxephemeralaccountbalance" => null,
+        "maxrevisebatchsize" => null,
+        "baserpcprice" => null,
+        "sectorsize" => null,
+        "siamuxport" => null,
+        "windowsize" => null,
+    ],
+    'warnings' => [],
+    'errors' => []
+);
+
+//////////////////////////////
+// Utility Functions
+//////////////////////////////
+
+// Fetch JSON data using POST request
+function fetchJsonPost($url, $postData = [])
+{
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    return ($httpCode >= 200 && $httpCode < 300) ? json_decode($response, true) : null;
+}
+
+// Check if a given port is open
+function isPortOpen($host, $port, $timeout = 2)
+{
     $connection = @fsockopen($host, $port, $errno, $errstr, $timeout);
     if ($connection) {
         fclose($connection);
@@ -9,32 +81,36 @@ function isPortOpen($host, $port, $timeout = 2) {
     return false;
 }
 
-function fetchJson($url) {
+// Fetch JSON from a URL using GET
+function fetchJson($url)
+{
     $response = @file_get_contents($url);
-    if ($response === FALSE) {
-        return null;
-    }
-    return json_decode($response, true);
+    return $response === FALSE ? null : json_decode($response, true);
 }
 
-function checkIPVersion($host) {
+// Determine if the host has IPv4/IPv6 capability
+function checkIPVersion($host)
+{
     $is_ipv4 = filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false;
     $is_ipv6 = filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false;
 
-    // If it's not an IP address, perform a DNS lookup
+    // If not a direct IP, resolve DNS records
     if (!$is_ipv4 && !$is_ipv6) {
-        $ipv4_records = dns_get_record($host, DNS_A);
-        $ipv6_records = dns_get_record($host, DNS_AAAA);
-
-        $is_ipv4 = !empty($ipv4_records);
-        $is_ipv6 = !empty($ipv6_records);
+        $is_ipv4 = !empty(dns_get_record($host, DNS_A));
+        $is_ipv6 = !empty(dns_get_record($host, DNS_AAAA));
     }
 
     return ['ipv4' => $is_ipv4, 'ipv6' => $is_ipv6];
 }
 
+//////////////////////////////
+// Main Logic
+//////////////////////////////
+
+// Set response content type
 header('Content-Type: application/json');
 
+// Validate presence of net_address param
 if (!isset($_GET['net_address'])) {
     echo json_encode(['error' => 'Missing net_address parameter']);
     exit;
@@ -42,7 +118,7 @@ if (!isset($_GET['net_address'])) {
 
 $net_address = $_GET['net_address'];
 
-// Validate and extract hostname/IP and port
+// Validate net_address format (host:port)
 if (!preg_match('/^([\w\.-]+):(\d+)$/', $net_address, $matches)) {
     echo json_encode(['error' => 'Invalid net_address format']);
     exit;
@@ -51,60 +127,143 @@ if (!preg_match('/^([\w\.-]+):(\d+)$/', $net_address, $matches)) {
 $host = $matches[1];
 $main_port = (int) $matches[2];
 
-// Check if the host is IPv4 or IPv6 accessible
-$ip_versions = checkIPVersion($host);
+// Fetch host info from explorer API
+$public_key_url = $SETTINGS['explorer'] . "/api/hosts";
+$postData = ["netAddresses" => [$net_address]];
 
-// Fetch public key from siagraph.info
-$public_key_url = "https://siagraph.info/api/v1/hosts?query=" . urlencode($net_address);
-$public_key_data = fetchJson($public_key_url);
+$hostsdata = fetchJsonPost($public_key_url, $postData);
 
-if (!$public_key_data || empty($public_key_data['hosts'][0]['public_key'])) {
-    echo json_encode([
-        'error' => 'Failed to retrieve public key',
-        'net_address' => $net_address
-    ]);
-    exit;
-}
+if (!empty($hostsdata) && is_array($hostsdata)) {
+    $ip_versions = checkIPVersion($host);
+    $response['ipv4_enabled'] = $ip_versions['ipv4'];
+    $response['ipv6_enabled'] = $ip_versions['ipv6'];
 
-$public_key = $public_key_data['hosts'][0]['public_key'];
+    $host_info_data = end($hostsdata);
 
-// Fetch additional host info from explorer.siagraph.info
-$host_info_url = "https://explorer.siagraph.info/api/pubkey/" . urlencode($public_key) . "/host";
-$host_info_data = fetchJson($host_info_url);
+    // Populate response from host info
+    if (isset($host_info_data['publicKey'])) {
+        $response['public_key'] = $host_info_data['publicKey'];
+        $response['net_address'] = $net_address;
+        $response['v2'] = $host_info_data['v2'];
+        $response['last_announcement'] = $host_info_data['lastAnnouncement'];
 
-if (!$host_info_data || (isset($host_info_data['lastScanSuccessful']) && !$host_info_data['lastScanSuccessful'])) {
-    echo json_encode([
-        'error' => 'Last scan was unsuccessful',
-        'net_address' => $net_address,
-        'public_key' => $public_key
-    ]);
-    exit;
-}
+        $response['last_scan'] = $host_info_data['lastScan'];
+        $response['next_scan'] = $host_info_data['nextScan'];
+        if ($host_info_data['successfulInteractions'] > 0 && $host_info_data['totalScans'] > 0) {
+            $response['uptime'] = round($host_info_data['successfulInteractions'] / $host_info_data['totalScans'], 2);
+        }
+        if (!$response['v2']) {
+            ### V1 host
+            $response['total_storage'] = $host_info_data['settings']['totalstorage'];
+            $response['used_storage'] = $response['total_storage'] - $host_info_data['settings']['remainingstorage'];
+            $response['total_storage'] = $host_info_data['settings']['release'];
+            $response['software_version'] = $host_info_data['settings']['release'];
+            $response['protocol_version'] = $host_info_data['settings']['version'];
+            $response['settings']["acceptingcontracts"] = $host_info_data['settings']['acceptingcontracts'];
+            $response['settings']["baserpcprice"] = $host_info_data['settings']['baserpcprice'];
+            $response['settings']["collateral"] = $host_info_data['settings']['collateral'];
+            $response['settings']["contractprice"] = $host_info_data['settings']['contractprice'];
+            $response['settings']["egressprice"] = $host_info_data['settings']['downloadbandwidthprice'];
+            $response['settings']["ingressprice"] = $host_info_data['settings']['uploadbandwidthprice'];
+            $response['settings']["ephemeralaccountexpiry"] = $host_info_data['settings']['ephemeralaccountexpiry'];
+            $response['settings']["maxcollateral"] = $host_info_data['settings']['maxcollateral'];
+            $response['settings']["maxdownloadbatchsize"] = $host_info_data['settings']['maxdownloadbatchsize'];
+            $response['settings']["maxephemeralaccountbalance"] = $host_info_data['settings']['maxephemeralaccountbalance'];
+            $response['settings']["maxrevisebatchsize"] = $host_info_data['settings']['maxrevisebatchsize'];
+            $response['settings']["maxduration"] = $host_info_data['settings']['maxduration'];
+            $response['settings']["freesectorprice"] = $host_info_data['settings']['sectoraccessprice'];
+            $response['settings']["sectorsize"] = $host_info_data['settings']['sectorsize'];
+            $response['settings']["siamuxport"] = $host_info_data['settings']['siamuxport'];
+            $response['settings']["storageprice"] = $host_info_data['settings']['storageprice'];
+            $response['settings']["windowsize"] = $host_info_data['settings']['windowsize'];
 
-// Check if siamuxport is available
-$siamux_port = isset($host_info_data['settings']['siamuxport']) ? (int) $host_info_data['settings']['siamuxport'] : null;
+        } else {
+            ### V2 host
+            $response['total_storage'] = $host_info_data['v2Settings']['totalStorage'] * 4096 * 1024;
+            $response['used_storage'] = $response['total_storage'] - ($host_info_data['v2Settings']['remainingStorage'] * 4096 * 1024);
 
-// Ports to scan: main port + siamuxport (if available)
-$ports_to_scan = [$main_port];
-if ($siamux_port) {
-    $ports_to_scan[] = $siamux_port;
-}
+            $response['software_version'] = $host_info_data['v2Settings']['release'];
+            $response['protocol_version'] = implode('.', $host_info_data['v2Settings']['protocolVersion']);
 
-// Scan ports only if the host is accessible via at least one IP version
-$results = [];
-if ($ip_versions['ipv4'] || $ip_versions['ipv6']) {
-    foreach ($ports_to_scan as $port) {
-        $results[$port] = isPortOpen($host, $port) ? 'open' : 'closed';
+            $response['settings']["acceptingcontracts"] = $host_info_data['v2Settings']['acceptingContracts'];
+            $response['settings']["collateral"] = $host_info_data['v2Settings']['prices']['collateral'];
+            $response['settings']["contractprice"] = $host_info_data['v2Settings']['prices']['contractPrice'];
+            $response['settings']["egressprice"] = $host_info_data['v2Settings']['prices']['egressPrice'];
+            $response['settings']["ingressprice"] = $host_info_data['v2Settings']['prices']['ingressPrice'];
+            $response['settings']["maxcollateral"] = $host_info_data['v2Settings']['maxCollateral'];
+            $response['settings']["maxduration"] = $host_info_data['v2Settings']['maxContractDuration'];
+            $response['settings']["storageprice"] = $host_info_data['v2Settings']['prices']['storagePrice'];
+            $response['settings']["freesectorprice"] = $host_info_data['v2Settings']['prices']['freeSectorPrice'];
+        }
+
+        // Determine relevant ports depending on version
+        if ($response['v2']) {
+            $ports = ['rhp4' => $main_port];
+        } else {
+            $siamux_port = isset($host_info_data['settings']['siamuxport']) ? (int) $host_info_data['settings']['siamuxport'] : null;
+            $rhp4_port = $siamux_port ? $siamux_port + 1 : null;
+
+            $ports = [
+                'rhp2' => $main_port,
+                'rhp3' => $siamux_port,
+                'rhp4' => $rhp4_port
+            ];
+        }
+        // Check if ports are open for IPv4 and IPv6
+        foreach ($ports as $rhp => $port) {
+            if ($port !== null) {
+                if ($response['ipv4_enabled']) {
+                    $response['port_status']['ipv4_' . $rhp] = isPortOpen($host, $port);
+                }
+                if ($response['ipv6_enabled']) {
+                    $response['port_status']['ipv6_' . $rhp] = isPortOpen($host, $port);
+                }
+            }
+        }
+        if ($host_info_data['lastScanSuccessful'] && reset($response['port_status'])) {
+            $response['online'] = true;
+        }
+        $response['remaining_capacity_percentage'] = 100 - round($response['used_storage'] / $response['total_storage'] * 100, 2);
+
+
+        // Port RHP4 checks based on blockchain height
+        if ($response['online']) {
+            if ($block_height < 526000 && !$response['port_status']['ipv4_rhp4']) {
+                $response['warnings'][] = "RHP4 port 9984 not open. If another port number is configured, this warning may be ignored.";
+            } elseif ($block_height >= 526000 && $block_height <= 530000 && !$response['port_status']['ipv4_rhp4']) {
+                $response['errors'][] = "RHP4 port not open. Host function may be limited";
+            } elseif ($block_height >= 530000 && !$response['port_status']['ipv4_rhp4']) {
+                $response['errors'][] = "RHP4 port not open. Host is unusable.";
+            }
+        } else {
+            $response['errors'][] = "Host is offline.";
+        }
+
+        // Error & Warning Conditions
+        if (new DateTime($response['last_announcement']) < (new DateTime())->sub(new DateInterval('P6M'))) {
+            $response['errors'][] = "Last announcement is longer than 6 months ago.";
+        }
+
+        if (!$response['settings']['acceptingcontracts']) {
+            $response['errors'][] = "Not accepting contracts.";
+        }
+
+        if (!empty($response['remaining_capacity_percentage'])) {
+            if ($response['remaining_capacity_percentage'] == 0) {
+                $response['errors'][] = "Host is full. Consider adding more storage.";
+            } elseif ($response['remaining_capacity_percentage'] <= 5) {
+                $response['warnings'][] = "Host is almost full. Consider adding more storage.";
+            }
+        }
+
     }
+
+} else {
+    $response['errors'][] = "Netaddress not found. Verify the net address, or try (re)announcing the host.";
 }
 
-echo json_encode([
-    #'net_address' => $net_address,
-    #'host' => $host,
-    'ipv4_accessible' => $ip_versions['ipv4'],
-    'ipv6_accessible' => $ip_versions['ipv6'],
-    'scanned_ports' => $results,
-    'host_info' => $host_info_data
-]);
+//////////////////////////////
+// Output
+//////////////////////////////
 
-?>
+echo json_encode($response);
