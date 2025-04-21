@@ -156,7 +156,6 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
             ### V1 host
             $response['total_storage'] = $host_info_data['settings']['totalstorage'];
             $response['used_storage'] = $response['total_storage'] - $host_info_data['settings']['remainingstorage'];
-            $response['total_storage'] = $host_info_data['settings']['release'];
             $response['software_version'] = $host_info_data['settings']['release'];
             $response['protocol_version'] = $host_info_data['settings']['version'];
             $response['settings']["acceptingcontracts"] = $host_info_data['settings']['acceptingcontracts'];
