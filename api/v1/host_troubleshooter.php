@@ -219,7 +219,7 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
                 }
             }
         }
-        if ($host_info_data['lastScanSuccessful'] && reset($response['port_status'])) {
+        if ($host_info_data['lastScanSuccessful']) {
             $response['online'] = true;
         }
         $response['remaining_capacity_percentage'] = 100 - round($response['used_storage'] / $response['total_storage'] * 100, 2);
@@ -228,7 +228,7 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
         // Port RHP4 checks based on blockchain height
         if ($response['online']) {
             if ($block_height < 526000 && !$response['port_status']['ipv4_rhp4']) {
-                $response['warnings'][] = "RHP4 port 9984 not open. If another port number is configured, this warning may be ignored.";
+                $response['warnings'][] = "RHP4 port not open. If another port number is configured, this warning may be ignored.";
             } elseif ($block_height >= 526000 && $block_height <= 530000 && !$response['port_status']['ipv4_rhp4']) {
                 $response['errors'][] = "RHP4 port not open. Host function may be limited";
             } elseif ($block_height >= 530000 && !$response['port_status']['ipv4_rhp4']) {
