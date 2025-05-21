@@ -1,7 +1,21 @@
 <?php
 // Include configuration
 include_once "../../include/config.php";
+include_once "../../include/redis.php";
 
+if (isset($_GET['scan'])) {
+    $scan = $_GET['scan'];
+} else {
+    $scan=true;
+}
+
+$cacheKey = 'host_troubleshooter:' . $_GET['net_address'];
+$cacheresult = getCache($cacheKey);
+if (!$scan && $cacheresult) {
+    echo $cacheresult;
+    echo "kaas";
+    die;
+}
 // Initialize response array
 $response = array(
     'public_key' => '',
@@ -133,6 +147,8 @@ $postData = ["netAddresses" => [$net_address]];
 
 $hostsdata = fetchJsonPost($public_key_url, $postData);
 
+$troubleshootdURL = $SETTINGS['troubleshootd_base_url'] . "/troubleshoot";
+
 if (!empty($hostsdata) && is_array($hostsdata)) {
     $ip_versions = checkIPVersion($host);
     $response['ipv4_enabled'] = $ip_versions['ipv4'];
@@ -149,6 +165,11 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
 
         $response['last_scan'] = $host_info_data['lastScan'];
         $response['next_scan'] = $host_info_data['nextScan'];
+
+
+        $postTroubleshootdData = ["netAddresses" => [$net_address]];
+        $troubleshootdData = fetchJsonPost($public_key_url, $postData);
+
         if ($host_info_data['successfulInteractions'] > 0 && $host_info_data['totalScans'] > 0) {
             $response['uptime'] = round($host_info_data['successfulInteractions'] / $host_info_data['totalScans'], 2);
         }
@@ -222,20 +243,23 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
         if ($host_info_data['lastScanSuccessful']) {
             $response['online'] = true;
         }
-        $response['remaining_capacity_percentage'] = 100 - round($response['used_storage'] / $response['total_storage'] * 100, 2);
-
+        if ($response['used_storage'] && $response['total_storage']) {
+            $response['remaining_capacity_percentage'] = 100 - round($response['used_storage'] / $response['total_storage'] * 100, 2);
+        } else {
+            $response['remaining_capacity_percentage'] = 0;
+        }
 
         // Port RHP4 checks based on blockchain height
         if ($response['online']) {
             if ($block_height < 526000 && !$response['port_status']['ipv4_rhp4']) {
-                $response['warnings'][] = "RHP4 port not open. If another port number is configured, this warning may be ignored.";
+                $response['warnings'][] = "Default RHP4 port not open. Make sure to open or configure this port before block height 526.000.<br>If another port than ". $ports['rhp4'] ." is configured, this warning may be ignored and will disappear after block 526.000.";
             } elseif ($block_height >= 526000 && $block_height <= 530000 && !$response['port_status']['ipv4_rhp4']) {
                 $response['errors'][] = "RHP4 port not open. Host function may be limited";
             } elseif ($block_height >= 530000 && !$response['port_status']['ipv4_rhp4']) {
                 $response['errors'][] = "RHP4 port not open. Host is unusable.";
             }
         } else {
-            $response['errors'][] = "Host is offline.";
+            $response['errors'][] = "Last host scan failed.";
         }
 
         // Error & Warning Conditions
@@ -264,5 +288,5 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
 //////////////////////////////
 // Output
 //////////////////////////////
-
+setCache(json_encode($response), $cacheKey, 'hour');
 echo json_encode($response);
