@@ -41,7 +41,8 @@ if (!$hostCacheResult) {
 } else {
    $hostdata = $hostCacheResult;
 }
-
+$parts = explode(':', $hostdata['net_address']);
+$assumed_rhp4_port = end($parts)+2;
 // Troubleshooter cache key (based on net address)
 $troubleshooterCacheKey = 'host_troubleshooter:' . $hostdata['net_address'];
 $troubleshooterCacheResult = json_decode(getCache($troubleshooterCacheKey), true);
@@ -111,7 +112,7 @@ if (!$troubleshooterCacheResult) {
          </div>
          <?php if ($troubleshootData['port_status']['ipv4_rhp4'] === false): ?>
             <div class="mb-4 p-4 bg-red-400 border-l-4 border-red-500 text-red-700 rounded">
-               ❌ RHP4 is not accesible on port 9984. Make sure RHP4 is accessible before block height 526.000.
+               ❌ Failed to connect to RHP4 via port <?php echo $assumed_rhp4_port; ?>. Make sure RHP4 is accessible before block height 526.000.
             </div>
          <?php endif; ?>
          <div class="grid grid-cols-1 md:grid-cols-2 flex justify-center gap-5">
