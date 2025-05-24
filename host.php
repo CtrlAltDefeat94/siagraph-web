@@ -109,7 +109,7 @@ if (!$troubleshooterCacheResult) {
             <span class="flex items-center font-bold text-xl ">/</span>
             <span class="flex items-center font-bold text-xl"><?php echo $hostdata['net_address']; ?></span>
          </div>
-         <?php if (!empty($troubleshootData['port_status']['ipv4_rhp4'])): ?>
+         <?php if ($troubleshootData['port_status']['ipv4_rhp4'] === false): ?>
             <div class="mb-4 p-4 bg-red-400 border-l-4 border-red-500 text-red-700 rounded">
                ❌ RHP4 is not accesible on port 9984. Make sure RHP4 is accessible before block height 526.000.
             </div>
