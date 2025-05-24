@@ -133,7 +133,7 @@ include_once "include/redis.php";
     </section>
 
     <!-- Footer Section -->
-    <?php include "include/footer.html" ?>
+    <?php include "include/footer.php" ?>
 </body>
 <!-- Import Moment.js library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>

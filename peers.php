@@ -72,7 +72,7 @@
       </div>
    </section>
    <!-- Footer Section -->
-   <?php include "include/footer.html" ?>
+   <?php include "include/footer.php" ?>
 
    <script>
       $(document).ready(function () {
