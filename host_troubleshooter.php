@@ -83,7 +83,7 @@
     </div> <!-- end #resultsSection -->
 
   </section>
-  <?php include "include/footer.html" ?>
+  <?php include "include/footer.php" ?>
 </body>
 <script>
   function getQueryParam(param) {
@@ -416,6 +416,13 @@
       default: return 'SC';
     }
   }
+  function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Copied to clipboard!");
+        }).catch(err => {
+            console.error("Error copying text: ", err);
+        });
+    }
   loadHostData();
 </script>
 </body>

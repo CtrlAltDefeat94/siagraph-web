@@ -249,7 +249,6 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
             $response['remaining_capacity_percentage'] = 0;
         }
 
-        // Port RHP4 checks based on blockchain height
         if ($response['online']) {
             if ($block_height < 526000 && !$response['port_status']['ipv4_rhp4']) {
                 $response['warnings'][] = "Default RHP4 port not open. Make sure to open or configure this port before block height 526.000.<br>If another port than ". $ports['rhp4'] ." is configured, this warning may be ignored and will disappear after block 526.000.";
@@ -261,22 +260,21 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
         } else {
             $response['errors'][] = "Last host scan failed.";
         }
-
-        // Error & Warning Conditions
         if (new DateTime($response['last_announcement']) < (new DateTime())->sub(new DateInterval('P6M'))) {
             $response['errors'][] = "Last announcement is longer than 6 months ago.";
         }
-
         if (!$response['settings']['acceptingcontracts']) {
             $response['errors'][] = "Not accepting contracts.";
         }
-
         if (!empty($response['remaining_capacity_percentage'])) {
             if ($response['remaining_capacity_percentage'] == 0) {
                 $response['errors'][] = "Host is full. Consider adding more storage.";
             } elseif ($response['remaining_capacity_percentage'] <= 5) {
                 $response['warnings'][] = "Host is almost full. Consider adding more storage.";
             }
+        }
+        if ($response['settings']['contractprice']>0.2) {
+            $response['warnings'][] = "Expensive contract price. Hosts should use the default of 0.15SC";
         }
 
     }
