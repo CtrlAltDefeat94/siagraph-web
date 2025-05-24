@@ -427,7 +427,7 @@ if (!$troubleshooterCacheResult) {
                "maxdownloadbatchsize": data.settings.maxdownloadbatchsize,
                "Max ephemeral account balance": (data.settings.max_ephemeral_account_balance / 1e24).toFixed(4) + " SC",
                "maxrevisebatchsize": data.settings.maxrevisebatchsize,
-               "Sector size": data.settings.sector_size.toLocaleString() + " bytes",
+               "Sector size": data.settings.sectorsize.toLocaleString() + " bytes",
                "siamuxport": data.settings.siamuxport,
                "Window size": data.settings.windowsize + " Blocks"
             });
