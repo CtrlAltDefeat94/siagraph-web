@@ -273,7 +273,7 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
                 $response['warnings'][] = "Host is almost full. Consider adding more storage.";
             }
         }
-        if ($response['settings']['contractprice']>0.2) {
+        if ($response['settings']['contractprice']/1e24>0.2) {
             $response['warnings'][] = "Expensive contract price. Hosts should use the default of 0.15SC";
         }
 
