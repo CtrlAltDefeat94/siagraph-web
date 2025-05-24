@@ -1,6 +1,7 @@
 <?php
 include_once "../../include/database.php";
 include_once "../../include/redis.php";
+include_once "../../include/config.php";
 
 header('Content-Type: application/json');
 $cacheKey = md5(basename(__FILE__) . http_build_query($_GET));
@@ -31,7 +32,7 @@ $sortOrder = in_array($sortValue, ["age", "net_address"]) ? "asc" : "desc";
 if (isset($_GET["showinactive"]) && $_GET["showinactive"] === "true") {
     $whereClause = "";
 } else {
-    $whereClause = "WHERE h.last_updated >= UTC_DATE()";
+    $whereClause = "last_successful_scan >= UTC_TIMESTAMP() - INTERVAL " . $SETTINGS['last_scan_host_online'];
 }
 
 $query = "SELECT
@@ -44,46 +45,50 @@ $query = "SELECT
     h.download_price,
     h.total_storage,
     h.storage_price,
-    h.version,
-    h.country,
+    h.protocol_version,
+    h.software_version,
+    c.country_name,
+    c.region,
     COALESCE(s.total_score, 0) AS total_score,
     COALESCE(today_stats.used_storage - yesterday_stats.used_storage, 0) AS used_storage_diff
 FROM
     Hosts h
-LEFT JOIN
-    (SELECT
+LEFT JOIN Countries c
+    ON h.country = c.country_code
+LEFT JOIN (
+    SELECT
         public_key,
         total_score
     FROM
         BenchmarkScores
     WHERE
         node = 'Global'
-        AND date = UTC_DATE()) s
-ON
-    h.public_key = s.public_key
-LEFT JOIN
-    (SELECT
+        AND date = UTC_DATE()
+) s
+    ON h.public_key = s.public_key
+LEFT JOIN (
+    SELECT
         public_key,
         used_storage
     FROM
         HostsDailyStats
     WHERE
-        date = UTC_DATE() - INTERVAL 1 DAY) yesterday_stats
-ON
-    h.public_key = yesterday_stats.public_key
-LEFT JOIN
-    (SELECT
+        date = UTC_DATE() - INTERVAL 1 DAY
+) yesterday_stats
+    ON h.public_key = yesterday_stats.public_key
+LEFT JOIN (
+    SELECT
         public_key,
         used_storage
     FROM
         HostsDailyStats
     WHERE
-        date = UTC_DATE()) today_stats
-ON
-    h.public_key = today_stats.public_key
+        date = UTC_DATE()
+) today_stats
+    ON h.public_key = today_stats.public_key
+WHERE 
 $whereClause
 ORDER BY $sortColumn $sortOrder";
-
 $result = mysqli_query($mysqli, $query);
 #$result = getData($query, 'hour');
 

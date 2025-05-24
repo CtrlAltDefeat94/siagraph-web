@@ -272,7 +272,7 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
     </section>
 
     <!-- Footer Section -->
-    <?php include "include/footer.html" ?>
+    <?php include "include/footer.php" ?>
     <!-- Import Moment.js library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <!-- Import Chart.js 3 library with Moment adapter -->
@@ -293,8 +293,6 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
 
     let currentHeight = 0;
 
-    // Fix: Replace space with 'T' for valid ISO format
-    const isoFormatString = extractedDateString.replace(' ', 'T');
 
     // Create a new Date object from the string
     let blockFoundTime;
