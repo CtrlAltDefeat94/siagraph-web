@@ -38,7 +38,7 @@ try {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     $response = curl_exec($ch);
     if (curl_errno($ch)) {
-        throw new Exception(curl_error($ch));
+        throw new Exception(message: curl_error($ch));
     }
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     if ($http_code != 200) {
@@ -249,7 +249,7 @@ if ($settings) {
 
 
 // update cache
-#setCache(json_encode($response), $cacheKey, 'hour');
+setCache(json_encode($response), $cacheKey, 'hour');
 
 
 echo json_encode($response);

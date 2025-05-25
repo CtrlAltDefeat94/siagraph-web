@@ -248,17 +248,55 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
         } else {
             $response['remaining_capacity_percentage'] = 0;
         }
+// RHP2
+if (!empty($troubleshootdData['rhp2']['warnings'])) {
+    foreach ($troubleshootdData['rhp2']['warnings'] as $warning) {
+        $response['warnings'][] = 'RHP2: ' . $warning;
+    }
+}
+if (!empty($troubleshootdData['rhp2']['errors'])) {
+    foreach ($troubleshootdData['rhp2']['errors'] as $error) {
+        $response['errors'][] = 'RHP2: ' . $error;
+    }
+}
 
+// RHP3
+if (!empty($troubleshootdData['rhp3']['warnings'])) {
+    foreach ($troubleshootdData['rhp3']['warnings'] as $warning) {
+        $response['warnings'][] = 'RHP3: ' . $warning;
+    }
+}
+if (!empty($troubleshootdData['rhp3']['errors'])) {
+    foreach ($troubleshootdData['rhp3']['errors'] as $error) {
+        $response['errors'][] = 'RHP3: ' . $error;
+    }
+}
+
+// RHP4 (array of entries)
+if (!empty($troubleshootdData['rhp4'])) {
+    foreach ($troubleshootdData['rhp4'] as $index => $rhp4) {
+        if (!empty($rhp4['warnings'])) {
+            foreach ($rhp4['warnings'] as $warning) {
+                $response['warnings'][] = 'RHP4: ' . $warning;
+            }
+        }
+        if (!empty($rhp4['errors'])) {
+            foreach ($rhp4['errors'] as $error) {
+                $response['errors'][] = 'RHP4: ' . $error;
+            }
+        }
+    }
+}
         if ($response['online']) {
             if ($block_height < 526000 && !$response['port_status']['ipv4_rhp4']) {
-                $response['warnings'][] = "Default RHP4 port not open. Make sure to open or configure this port before block height 526.000.<br>If another port than ". $ports['rhp4'] ." is configured, this warning may be ignored and will disappear after block 526.000.";
+                $response['warnings'][] = "";
             } elseif ($block_height >= 526000 && $block_height <= 530000 && !$response['port_status']['ipv4_rhp4']) {
                 $response['errors'][] = "RHP4 port not open. Host function may be limited";
             } elseif ($block_height >= 530000 && !$response['port_status']['ipv4_rhp4']) {
                 $response['errors'][] = "RHP4 port not open. Host is unusable.";
             }
         } else {
-            $response['errors'][] = "Last host scan failed.";
+            $response['errors'][] = "Failed to connect to host.";
         }
         if (new DateTime($response['last_announcement']) < (new DateTime())->sub(new DateInterval('P6M'))) {
             $response['errors'][] = "Last announcement is longer than 6 months ago.";
@@ -268,9 +306,9 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
         }
         if (!empty($response['remaining_capacity_percentage'])) {
             if ($response['remaining_capacity_percentage'] == 0) {
-                $response['errors'][] = "Host is full. Consider adding more storage.";
+                $response['errors'][] = "Host is full.";
             } elseif ($response['remaining_capacity_percentage'] <= 5) {
-                $response['warnings'][] = "Host is almost full. Consider adding more storage.";
+                $response['warnings'][] = "Host is almost full.";
             }
         }
         if ($response['settings']['contractprice']/1e24>0.2) {
