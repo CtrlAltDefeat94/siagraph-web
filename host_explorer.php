@@ -10,13 +10,16 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
+    <script src="script.js"></script>
 </head>
 
 <body>
     <!-- Header Section -->
     <?php include "include/header.html"; ?>
     <!-- Main Content Section -->
-    <section id="main-content" class="container mt-4 pb-5 masonry-container">
+<!--    <section id="main-content" class="container mt-4 pb-5 masonry-container">-->
+<section id="main-content" class="container mt-4 pb-5 max-w-screen-xl">
+
         <div class="flex flex-col md:flex-row justify-between mt-4 mb-2">
             <a class="flex md:mr-auto items-center font-bold text-xl cursor-pointer hover:underline mb-2 sm:mb-0"
                 href='/host_explorer'>Top Hosts</a>
@@ -53,13 +56,16 @@
             <table id="hostTable" class="table-auto min-w-full border-collapse">
                 <thead>
                     <tr class="bg-gray-100">
-                        <th class="px-4 py-2">#</th>
-                        <th class="px-4 py-2">Host</th>
-                        <th class="px-4 py-2">24h growth</th>
-                        <th class="px-4 py-2">Used Storage</th>
-                        <th class="px-4 py-2">Total Storage</th>
-                        <th class="px-4 py-2">Price</th>
-                        <th class="px-4 py-2">Score</th>
+                        <th class="px-4 py-2 w-8">#</th>
+                        <th class="px-4 py-2 w-80">Host</th>
+                        <!--<th class="px-4 py-2">24h growth</th>-->
+                        <th class="px-4 py-2 w-32">Country</th>
+                        <th class="px-4 py-2 w-32">
+                            Used Storage<span class="text-xs text-gray-500 ml-1">(24h)</span>
+                        </th>
+                        <th class="px-4 py-2 w-28">Total Storage</th>
+                        <th class="px-4 py-2 w-24">Price</th>
+                        <th class="px-4 py-2 w-16">Score</th>
                     </tr>
                 </thead>
                 <!-- Table body -->
@@ -72,7 +78,7 @@
         <div id="pagination" class="flex justify-center mt-4"></div>
     </section>
     <!-- Footer Section -->
-    <?php include "include/footer.html" ?>
+    <?php include "include/footer.php" ?>
 
     <!-- JavaScript -->
     <script>
@@ -195,14 +201,17 @@
                 const isEvenRow = index % 2 === 0;
                 const row = document.createElement('tr');
                 row.innerHTML = `
-            <td class="border px-4 py-2">${host.rank}</td>
-            <td class="border px-4 py-2"><a href="/host?id=${host.host_id}" class="hover:underline">${host.net_address}</a></td>
-            <td class="border px-4 py-2" id="storage-diff-${host.host_id}"></td>
-            <td class="border px-4 py-2">${((host.used_storage / (1000 * 1000 * 1000* 1000)).toFixed(2)).toLocaleString()} TB</td>
-            <td class="border px-4 py-2">${((host.total_storage / (1000 * 1000 * 1000* 1000)).toFixed(2)).toLocaleString()} TB</td>
-            <td class="border px-4 py-2">${Math.round(host.storage_price / (10 ** 12) * 4320).toLocaleString()} SC</td>
-            <td class="border px-4 py-2">${Math.round(host.total_score)}</td>
-        `;
+                    <td class="border px-4 py-2">${host.rank}</td>
+                    <td class="border px-4 py-2"><a href="/host?id=${host.host_id}" class="hover:underline">${host.net_address}</a></td>
+                    <td class="border px-4 py-2">${host.country_name}</td>
+                    <td class="border px-4 py-2">
+                        ${((host.used_storage / (1000 * 1000 * 1000 * 1000)).toFixed(2)).toLocaleString()} TB
+                        <span id="storage-diff-${host.host_id}" class="text-xs text-gray-500 ml-1"></span>
+                    </td>
+                    <td class="border px-4 py-2">${((host.total_storage / (1000 * 1000 * 1000 * 1000)).toFixed(2)).toLocaleString()} TB</td>
+                    <td class="border px-4 py-2">${Math.round(host.storage_price / (10 ** 12) * 4320).toLocaleString()} SC</td>
+                    <td class="border px-4 py-2">${Math.round(host.total_score)}</td>
+                `;
                 row.className = isEvenRow ? 'bg-gray-50' : 'bg-gray-25';
                 tableBody.appendChild(row);
             });
@@ -283,13 +292,14 @@
                 const storageDiff = Math.round(host.used_storage_diff / (1000 * 1000 * 1000));
 
                 if (storageDiff > 0) {
-                    storageDiffElement.innerHTML = `+${storageDiff.toLocaleString()} GB`;
+                    storageDiffElement.innerHTML = `(+${storageDiff.toLocaleString()} GB)`;
                     storageDiffElement.style.color = 'green';
                 } else if (storageDiff < 0) {
-                    storageDiffElement.innerHTML = `${storageDiff.toLocaleString()} GB`;
+                    storageDiffElement.innerHTML = `(${storageDiff.toLocaleString()} GB)`;
                     storageDiffElement.style.color = 'red';
                 } else {
-                    storageDiffElement.innerHTML = `${storageDiff.toLocaleString()} GB`;
+                    //storageDiffElement.innerHTML = `(${storageDiff.toLocaleString()} GB)`;
+                    storageDiffElement.innerHTML = ``;
                 }
             }
         }

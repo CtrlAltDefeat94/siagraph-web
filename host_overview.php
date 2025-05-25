@@ -3,6 +3,7 @@
 include_once 'include/graph.php';
 include_once "include/redis.php";
 include_once "include/utils.php";
+include_once "include/config.php";
 
 // Assuming hostdata.json is in the same directory as this PHP file
 #$json_data = file_get_contents('../rawdata/hostdata.json');
@@ -10,7 +11,7 @@ $data = null;
 $json_data = getCache(md5("hosts?limit=0"));
 if (empty($json_data)) {
     // Retrieve JSON data from the API
-    $apiUrl = "https://siagraph.info/api/v1/hosts?limit=0";
+    $apiUrl = $SETTINGS['siagraph_base_url'] . "/api/v1/hosts?limit=0";
 
     // Use file_get_contents to fetch the data
     $json_data = file_get_contents($apiUrl);
@@ -21,72 +22,72 @@ $countries = [];
 $storage_prices = [];
 $upload_prices = [];
 $download_prices = [];
-$fullHosts=0;
+$fullHosts = 0;
 foreach ($json_data['hosts'] as $host) {
-    if (!isset($versions[$host['version']])) {
-        $versions[$host['version']] = 1;
-    } else { 
-        $versions[$host['version']]++;
+    if (!isset($versions[$host['software_version']])) {
+        $versions[$host['software_version']] = 1;
+    } else {
+        $versions[$host['software_version']]++;
     }
 
     // Initialize country data if not already set
-    if (!isset($countries[$host['country']])) {
-        $countries[$host['country']] = [
+    if (!isset($countries[$host['country_name']])) {
+        $countries[$host['country_name']] = [
             'host_count' => 0,
             'used_storage' => 0,
             'total_storage' => 0
         ];
     }
-    if ($host['total_storage']-$host['used_storage']==0) {
+    if ($host['total_storage'] - $host['used_storage'] == 0) {
         $fullHosts++;
     }
     // Update stats for the country
-    $countries[$host['country']]['host_count']++;
-    $countries[$host['country']]['used_storage'] += (int) $host['used_storage'];
-    $countries[$host['country']]['total_storage'] += (int) $host['total_storage'];
-    if ($host['country'] >0){
-        $storage_prices[]=$host['storage_price']/ pow(10, 12)*4320;
-        $upload_prices[]=$host['upload_price']/ pow(10, 12);
-        $download_prices[]=$host['download_price']/ pow(10, 12);
+    $countries[$host['country_name']]['host_count']++;
+    $countries[$host['country_name']]['used_storage'] += (int) $host['used_storage'];
+    $countries[$host['country_name']]['total_storage'] += (int) $host['total_storage'];
+    if ($host['country_name'] > 0) {
+        $storage_prices[] = $host['storage_price'] / pow(10, 12) * 4320;
+        $upload_prices[] = $host['upload_price'] / pow(10, 12);
+        $download_prices[] = $host['download_price'] / pow(10, 12);
     }
 
 }
 #$versions = json_encode($versions, true);
 // Check if data was successfully loaded from JSON
 
-    // Extract relevant data
-    /*$avg_storage_price = $data['average_prices']['avg_storage_price'];
-    $avg_download_price = $data['average_prices']['avg_download_price'];
-    $avg_upload_price = $data['average_prices']['avg_upload_price'];
-    $avg_max_collateral = $data['average_prices']['avg_max_collateral'];
+// Extract relevant data
+/*$avg_storage_price = $data['average_prices']['avg_storage_price'];
+$avg_download_price = $data['average_prices']['avg_download_price'];
+$avg_upload_price = $data['average_prices']['avg_upload_price'];
+$avg_max_collateral = $data['average_prices']['avg_max_collateral'];
 
-    // Example data for stats1-6 (replace this with your actual data retrieval logic)
-    $stats1a_value = $avg_storage_price;
-    $stats1b_value = 0;
-    $stats2a_value = $avg_upload_price;
-    $stats2b_value = 0;
-    $stats3a_value = $avg_download_price;
-    $stats3b_value = 0;
-    $stats4a_value = $data['hosts_count'];
-    $stats4b_value = 0;
-    $stats5a_value = $data['filled_count'];
-    $stats5b_value = 0;
-    $stats6a_value = $data['error_count'];
-    $stats6b_value = 0;
+// Example data for stats1-6 (replace this with your actual data retrieval logic)
+$stats1a_value = $avg_storage_price;
+$stats1b_value = 0;
+$stats2a_value = $avg_upload_price;
+$stats2b_value = 0;
+$stats3a_value = $avg_download_price;
+$stats3b_value = 0;
+$stats4a_value = $data['hosts_count'];
+$stats4b_value = 0;
+$stats5a_value = $data['filled_count'];
+$stats5b_value = 0;
+$stats6a_value = $data['error_count'];
+$stats6b_value = 0;
 */
 
-    $stats1a_value = round(calculate_average_excluding_outliers($storage_prices),1);
-    $stats1b_value = 0;
-    $stats2a_value = round(calculate_average_excluding_outliers($upload_prices),1);
-    $stats2b_value = 0;
-    $stats3a_value = round(calculate_average_excluding_outliers($download_prices),1);
-    $stats3b_value = 0;
-    $stats4a_value = count($json_data['hosts']);
-    $stats4b_value = 0;
-    $stats5a_value = $fullHosts;
-    $stats5b_value = 0;
-    $stats6a_value = "N/A";
-    $stats6b_value = 0;
+$stats1a_value = round(calculate_average_excluding_outliers($storage_prices), 1);
+$stats1b_value = 0;
+$stats2a_value = round(calculate_average_excluding_outliers($upload_prices), 1);
+$stats2b_value = 0;
+$stats3a_value = round(calculate_average_excluding_outliers($download_prices), 1);
+$stats3b_value = 0;
+$stats4a_value = count($json_data['hosts']);
+$stats4b_value = 0;
+$stats5a_value = $fullHosts;
+$stats5b_value = 0;
+$stats6a_value = "N/A";
+$stats6b_value = 0;
 
 ?>
 <!DOCTYPE html>
@@ -254,7 +255,7 @@ foreach ($json_data['hosts'] as $host) {
                         $canvasid = "maxhoststorage",
                         $datasets = [
                             [
-                                'label' => 'Used Storage',
+                               'label' => 'Used Storage',
                                 'key' => 'max_used_storage',
                                 'backgroundColor' => 'rgba(255, 99, 132, 0.2)',
                                 'borderColor' => 'rgba(255, 99, 132, 1)',
@@ -266,7 +267,7 @@ foreach ($json_data['hosts'] as $host) {
                             ]
                         ],
                         $dateKey = "date",
-                        $jsonUrl = "/api/v1/metrics_monthly", // JSON URL
+                        $jsonUrl = "/api/v1/monthly/metrics", // JSON URL
                         $jsonData = null,
                         $charttype = 'bar',
 
@@ -286,16 +287,20 @@ foreach ($json_data['hosts'] as $host) {
             <section id="graph-section-1" class="w-[24%] bg-light p-3 rounded-md mt-4">
                 <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-t-md">Host Versions</h2>
                 <section class="graph-container">
-                    <?php 
+                    <?php
+                    // todo fix
                     renderGraph(
                         $canvasid = "hostversions-1",
                         $datasets = [
                             [
-                                'label' => '1.6.0',
-                                'key' => '1.6.0',
-                                'backgroundColor' => 'rgba(255, 99, 132, 0.2)',
-                                'borderColor' => 'rgba(255, 99, 132, 1)',
-                                'transform' => "return entry['1.6.0'];",
+                                'label' => 'Versions', // only used in legend/tooltip setup
+                                'backgroundColor' => null,
+                                'borderColor' => '#fff',
+                                'unit' => null,
+                                'unitDivisor' => 1,
+                                'decimalPlaces' => 0,
+                                'startAtZero' => false,
+                                'hidden' => false
                             ]
                         ],
                         $dateKey = "date",
@@ -319,8 +324,9 @@ foreach ($json_data['hosts'] as $host) {
             <section id="graph-section-2" class="w-[24%] bg-light p-3 rounded-md mt-4">
                 <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-t-md">Host Errors</h2>
                 <section class="graph-container">
-                    <?php 
-                        echo "N/A";
+                    <?php
+                    // todo fix
+                    echo "N/A";
                     renderGraph(
                         $canvasid = "hosterrors",
                         $datasets = [
@@ -344,7 +350,7 @@ foreach ($json_data['hosts'] as $host) {
                         $unitType = null,
                         $jsonKey = null,
                         $height = 170
-                    ); 
+                    );
                     ?>
                 </section>
             </section>

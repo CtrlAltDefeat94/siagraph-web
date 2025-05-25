@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/../vendor/autoload.php'; // Ensure Predis is installed via Composer
-
+include_once "config.php";
 ### Key names start ###
 
 $peerListKey = "peerlist";
@@ -9,12 +9,11 @@ $recentStatsKey = 'compare_metrics';
 $revenueMonthlyKey = 'revenue_monthly';
 $metricsKey = 'metrics';
 $hostKey = 'host';
-
 ### Key names end ###
 
 $redisConfig = [
     'scheme' => 'tcp',
-    'host' => '127.0.0.1', // Change this to your Redis server address if needed
+    'host' => $SETTINGS['redis_ip'], // Change this to your Redis server address if needed
     'port' => 6379,        // Change this to your Redis server port if needed
 ];
 

@@ -79,7 +79,7 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
             </section>
         </div>
         <!-- Footer Section -->
-        <?php include "include/footer.html" ?>
+        <?php include "include/footer.php" ?>
 </body>
 <!-- Import Moment.js library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>

@@ -9,7 +9,7 @@ include_once "include/database.php";
 include_once "include/utils.php";
 include_once "include/graph.php";
 include_once "include/redis.php";
-
+include_once "include/config.php";
 // Fetch host and public key data
 $host_id = isset($_GET['id']) ? $_GET['id'] : null;
 $publickeyquery = "SELECT public_key, net_address from Hosts where host_id= '$host_id'";
@@ -106,6 +106,7 @@ list($uploadUpperBound, $uploadLowerBound) = calculateBounds($avgUploadSpeeds, $
 // PHP function to fetch and display data
 function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sortOrder = 'desc')
 {
+    global $SETTINGS;
     $data = null; // Initialize data variable
 
     if (isset($_GET['public_key'])) {
@@ -120,8 +121,7 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
             ->modify('-7 days')->setTime(0, 0, 0)->format('Y-m-d\TH:i:s\Z');
 
         // Construct the API URL        // Construct the API URL
-        $url = "https://api.hostscore.info/v1/hosts/benchmarks?network=mainnet&host=" .$public_key . "&all=true&from=" . $formattedDate;
-        
+        $url = "https://api.hostscore.info/v1/hosts/benchmarks?network=". $SETTINGS['network']."&host=" .$public_key . "&all=true&from=" . $formattedDate;
         // Fetch data from the API
         $response = file_get_contents($url);
 

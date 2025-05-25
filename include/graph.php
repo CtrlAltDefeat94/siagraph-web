@@ -114,9 +114,9 @@ function renderGraph(
                 let index = 0;
                 for (let version in this.monthlyData) {
                     if (this.monthlyData.hasOwnProperty(version)) {
-                        labels.push(version);  // Add version name as label
-                        dataValues.push(this.monthlyData[version]);  // Add the corresponding value as data
-                        backgroundColors.push(generateColor(index)); // Generate a unique color for each slice
+                        labels.push(version);
+                        dataValues.push(this.monthlyData[version]);
+                        backgroundColors.push(generateColor(index));
                         index++;
                     }
                 }
@@ -127,9 +127,9 @@ function renderGraph(
                 // Assign these labels, data, and colors to the pie chart dataset
                 this.datasetsConfig = [{
                     label: dataset.label,
-                    data: dataValues,  // Pie chart uses the values (data) directly
+                    data: dataValues,
                     backgroundColor: backgroundColors,
-                    borderColor: dataset.borderColor || '#fff', // Default border color if not set
+                    borderColor: dataset.borderColor || '#fff',
                     borderWidth: 2,
                     unit: dataset.unit,
                     unitDivisor: dataset.unitDivisor,
@@ -323,15 +323,36 @@ function renderGraph(
                                         return dateOnly; // Return the formatted date for other chart types
                                     },
                                     label: (context) => {
-                                        // Get the dataset index for the current hovered item
-                                        const datasetIndex = context.datasetIndex;
-                                        const dataIndex = context.dataIndex;
-                                        const dataset = context.chart.data.datasets[datasetIndex];
-                                        const label = context.chart.data.labels[dataIndex];
-                                        const value = dataset.data[dataIndex];
+                                        if (this.charttype === 'pie') {
+                                            const value = context.raw;
+                                            const dataLabel = context.chart.data.labels[context.dataIndex]; // actual label like "1.6.0"
+                                            const dataset = context.dataset;
+                                            const decimalPlaces = dataset.decimalPlaces || 0;
 
-                                        // Return a custom tooltip string
-                                        return `${context.dataset.label}: ${this.formatValue(value)}`;
+                                            let formattedValue;
+                                            if (dataset.unit) {
+                                                formattedValue = (value / dataset.unitDivisor).toFixed(decimalPlaces)
+                                                    .replace(/\d(?=(\d{3})+\.)/g, '$&,') + ' ' + dataset.unit;
+                                            } else {
+                                                formattedValue = value.toFixed(decimalPlaces).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                                            }
+
+                                            return `${dataLabel}: ${formattedValue}`;
+                                        } else {
+                                            const dataset = context.dataset;
+                                            const value = context.parsed.y;
+                                            const decimalPlaces = dataset.decimalPlaces || 0;
+
+                                            let formattedValue;
+                                            if (dataset.unit) {
+                                                formattedValue = (value / dataset.unitDivisor).toFixed(decimalPlaces)
+                                                    .replace(/\d(?=(\d{3})+\.)/g, '$&,') + ' ' + dataset.unit;
+                                            } else {
+                                                formattedValue = value.toFixed(decimalPlaces).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                                            }
+
+                                            return `${dataset.label}: ${formattedValue}`;
+                                        }
                                     }
                                 }
                             }

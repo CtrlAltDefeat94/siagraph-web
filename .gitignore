@@ -1,4 +1,4 @@
-include/database.php
+include/config.php
 OLD/*
 *.svg
 *.json
