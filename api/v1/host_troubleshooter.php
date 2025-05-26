@@ -245,15 +245,16 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
                     'rhp4' => $rhp4_port
                 ];
             }
-        }
-        // Check if ports are open for IPv4 and IPv6
-        foreach ($ports as $rhp => $port) {
-            if ($port !== null) {
-                if ($response['ipv4_enabled']) {
-                    $response['port_status']['ipv4_' . $rhp] = isPortOpen($host, $port);
-                }
-                if ($response['ipv6_enabled']) {
-                    $response['port_status']['ipv6_' . $rhp] = isPortOpen($host, $port);
+
+            // Check if ports are open for IPv4 and IPv6
+            foreach ($ports as $rhp => $port) {
+                if ($port !== null) {
+                    if ($response['ipv4_enabled']) {
+                        $response['port_status']['ipv4_' . $rhp] = isPortOpen($host, $port);
+                    }
+                    if ($response['ipv6_enabled']) {
+                        $response['port_status']['ipv6_' . $rhp] = isPortOpen($host, $port);
+                    }
                 }
             }
         }
