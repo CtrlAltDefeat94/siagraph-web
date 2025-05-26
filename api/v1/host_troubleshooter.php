@@ -13,7 +13,6 @@ $cacheKey = 'host_troubleshooter:' . $_GET['net_address'];
 $cacheresult = getCache($cacheKey);
 if (!$scan && $cacheresult) {
     echo $cacheresult;
-    echo "kaas";
     die;
 }
 // Initialize response array
@@ -34,12 +33,12 @@ $response = array(
     'total_storage' => 0,
     'remaining_capacity_percentage' => 0,
     'port_status' => array(
-        'ipv4_rhp2' => false,
-        'ipv4_rhp3' => false,
-        'ipv4_rhp4' => false,
-        'ipv6_rhp2' => false,
-        'ipv6_rhp3' => false,
-        'ipv6_rhp4' => false,
+        'ipv4_rhp2' => null,
+        'ipv4_rhp3' => null,
+        'ipv4_rhp4' => null,
+        'ipv6_rhp2' => null,
+        'ipv6_rhp3' => null,
+        'ipv6_rhp4' => null,
     ),
     "settings" => [
         "acceptingcontracts" => null,
@@ -233,17 +232,19 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
         }
 
         // Determine relevant ports depending on version
-        if ($response['v2']) {
-            $ports = ['rhp4' => $main_port];
-        } else {
-            $siamux_port = isset($host_info_data['settings']['siamuxport']) ? (int) $host_info_data['settings']['siamuxport'] : null;
-            $rhp4_port = $siamux_port ? $siamux_port + 1 : null;
+        if ($scan) {
+            if ($response['v2']) {
+                $ports = ['rhp4' => $main_port];
+            } else {
+                $siamux_port = isset($host_info_data['settings']['siamuxport']) ? (int) $host_info_data['settings']['siamuxport'] : null;
+                $rhp4_port = $siamux_port ? $siamux_port + 1 : null;
 
-            $ports = [
-                'rhp2' => $main_port,
-                'rhp3' => $siamux_port,
-                'rhp4' => $rhp4_port
-            ];
+                $ports = [
+                    'rhp2' => $main_port,
+                    'rhp3' => $siamux_port,
+                    'rhp4' => $rhp4_port
+                ];
+            }
         }
         // Check if ports are open for IPv4 and IPv6
         foreach ($ports as $rhp => $port) {
