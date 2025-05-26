@@ -6,7 +6,7 @@ include_once "../../include/redis.php";
 if (isset($_GET['scan'])) {
     $scan = $_GET['scan'];
 } else {
-    $scan=true;
+    $scan = true;
 }
 
 $cacheKey = 'host_troubleshooter:' . $_GET['net_address'];
@@ -147,7 +147,6 @@ $postData = ["netAddresses" => [$net_address]];
 
 $hostsdata = fetchJsonPost($public_key_url, $postData);
 
-$troubleshootdURL = $SETTINGS['troubleshootd_base_url'] . "/troubleshoot";
 
 if (!empty($hostsdata) && is_array($hostsdata)) {
     $ip_versions = checkIPVersion($host);
@@ -167,8 +166,25 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
         $response['next_scan'] = $host_info_data['nextScan'];
 
 
-        $postTroubleshootdData = ["netAddresses" => [$net_address]];
-        $troubleshootdData = fetchJsonPost($public_key_url, $postData);
+        $troubleshootdURL = $SETTINGS['troubleshootd_base_url'] . "/troubleshoot";
+        if (!$response['v2']) {
+            $postTroubleshootdData = ["netAddresses" => [$net_address]];
+            $postTroubleshootdData = [
+                "publicKey" => $response['public_key'],
+                "rhp2NetAddress" => $net_address
+            ];
+        } else {
+            $postTroubleshootdData = [
+                "publicKey" => $response['public_key'],
+                "rhp4NetAddresses" => [
+                    [
+                        "address" => $net_address,
+                        "protocol" => "siamux"
+                    ]
+                ]
+            ];
+        }
+        $troubleshootdData = fetchJsonPost($troubleshootdURL, $postTroubleshootdData);
 
         if ($host_info_data['successfulInteractions'] > 0 && $host_info_data['totalScans'] > 0) {
             $response['uptime'] = round($host_info_data['successfulInteractions'] / $host_info_data['totalScans'], 2);
@@ -248,60 +264,58 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
         } else {
             $response['remaining_capacity_percentage'] = 0;
         }
-// RHP2
-if (!empty($troubleshootdData['rhp2']['warnings'])) {
-    foreach ($troubleshootdData['rhp2']['warnings'] as $warning) {
-        $response['warnings'][] = 'RHP2: ' . $warning;
-    }
-}
-if (!empty($troubleshootdData['rhp2']['errors'])) {
-    foreach ($troubleshootdData['rhp2']['errors'] as $error) {
-        $response['errors'][] = 'RHP2: ' . $error;
-    }
-}
-
-// RHP3
-if (!empty($troubleshootdData['rhp3']['warnings'])) {
-    foreach ($troubleshootdData['rhp3']['warnings'] as $warning) {
-        $response['warnings'][] = 'RHP3: ' . $warning;
-    }
-}
-if (!empty($troubleshootdData['rhp3']['errors'])) {
-    foreach ($troubleshootdData['rhp3']['errors'] as $error) {
-        $response['errors'][] = 'RHP3: ' . $error;
-    }
-}
-
-// RHP4 (array of entries)
-if (!empty($troubleshootdData['rhp4'])) {
-    foreach ($troubleshootdData['rhp4'] as $index => $rhp4) {
-        if (!empty($rhp4['warnings'])) {
-            foreach ($rhp4['warnings'] as $warning) {
-                $response['warnings'][] = 'RHP4: ' . $warning;
+        // RHP2
+        if (!empty($troubleshootdData['rhp2']['warnings'])) {
+            foreach ($troubleshootdData['rhp2']['warnings'] as $warning) {
+                $response['warnings'][] = 'RHP2: ' . $warning;
             }
         }
-        if (!empty($rhp4['errors'])) {
-            foreach ($rhp4['errors'] as $error) {
-                $response['errors'][] = 'RHP4: ' . $error;
+        if (!empty($troubleshootdData['rhp2']['errors'])) {
+            foreach ($troubleshootdData['rhp2']['errors'] as $error) {
+                $response['errors'][] = 'RHP2: ' . $error;
             }
         }
-    }
-}
+
+        // RHP3
+        if (!empty($troubleshootdData['rhp3']['warnings'])) {
+            foreach ($troubleshootdData['rhp3']['warnings'] as $warning) {
+                $response['warnings'][] = 'RHP3: ' . $warning;
+            }
+        }
+        if (!empty($troubleshootdData['rhp3']['errors'])) {
+            foreach ($troubleshootdData['rhp3']['errors'] as $error) {
+                $response['errors'][] = 'RHP3: ' . $error;
+            }
+        }
+
+        // RHP4 (array of entries)
+        if (!empty($troubleshootdData['rhp4'])) {
+            foreach ($troubleshootdData['rhp4'] as $index => $rhp4) {
+                if (!empty($rhp4['warnings'])) {
+                    foreach ($rhp4['warnings'] as $warning) {
+                        $response['warnings'][] = 'RHP4: ' . $warning;
+                    }
+                }
+                if (!empty($rhp4['errors'])) {
+                    foreach ($rhp4['errors'] as $error) {
+                        $response['errors'][] = 'RHP4: ' . $error;
+                    }
+                }
+            }
+        }
         if ($response['online']) {
             if ($block_height < 526000 && !$response['port_status']['ipv4_rhp4']) {
-                $response['warnings'][] = "";
+                $response['warnings'][] = "RHP4 port not open.";
             } elseif ($block_height >= 526000 && $block_height <= 530000 && !$response['port_status']['ipv4_rhp4']) {
                 $response['errors'][] = "RHP4 port not open. Host function may be limited";
             } elseif ($block_height >= 530000 && !$response['port_status']['ipv4_rhp4']) {
                 $response['errors'][] = "RHP4 port not open. Host is unusable.";
             }
-        } else {
-            $response['errors'][] = "Failed to connect to host.";
         }
         if (new DateTime($response['last_announcement']) < (new DateTime())->sub(new DateInterval('P6M'))) {
             $response['errors'][] = "Last announcement is longer than 6 months ago.";
         }
-        if (!$response['settings']['acceptingcontracts']) {
+        if ($response['online'] && !$response['settings']['acceptingcontracts']) {
             $response['errors'][] = "Not accepting contracts.";
         }
         if (!empty($response['remaining_capacity_percentage'])) {
@@ -311,7 +325,7 @@ if (!empty($troubleshootdData['rhp4'])) {
                 $response['warnings'][] = "Host is almost full.";
             }
         }
-        if ($response['settings']['contractprice']/1e24>0.2) {
+        if ($response['settings']['contractprice'] / 1e24 > 0.2) {
             $response['warnings'][] = "Expensive contract price. Hosts should use the default of 0.15SC";
         }
 
