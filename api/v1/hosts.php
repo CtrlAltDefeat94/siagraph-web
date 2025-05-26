@@ -32,7 +32,7 @@ $sortOrder = in_array($sortValue, ["age", "net_address"]) ? "asc" : "desc";
 if (isset($_GET["showinactive"]) && $_GET["showinactive"] === "true") {
     $whereClause = "";
 } else {
-    $whereClause = "last_successful_scan >= UTC_TIMESTAMP() - INTERVAL " . $SETTINGS['last_scan_host_online'];
+    $whereClause = "WHERE last_successful_scan >= UTC_TIMESTAMP() - INTERVAL " . $SETTINGS['last_scan_host_online'];
 }
 
 $query = "SELECT
@@ -86,7 +86,6 @@ LEFT JOIN (
         date = UTC_DATE()
 ) today_stats
     ON h.public_key = today_stats.public_key
-WHERE 
 $whereClause
 ORDER BY $sortColumn $sortOrder";
 $result = mysqli_query($mysqli, $query);
