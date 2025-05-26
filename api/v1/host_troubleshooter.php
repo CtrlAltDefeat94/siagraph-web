@@ -3,15 +3,14 @@
 include_once "../../include/config.php";
 include_once "../../include/redis.php";
 
+$scan = true; // default
 if (isset($_GET['scan'])) {
-    $scan = $_GET['scan'];
-} else {
-    $scan = true;
+    $scan = filter_var($_GET['scan'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 }
 
 $cacheKey = 'host_troubleshooter:' . $_GET['net_address'];
 $cacheresult = getCache($cacheKey);
-if (!$scan && $cacheresult) {
+if (!$scan && !empty($cacheresult)) {
     echo $cacheresult;
     die;
 }
@@ -231,7 +230,6 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
             $response['settings']["freesectorprice"] = $host_info_data['v2Settings']['prices']['freeSectorPrice'];
         }
 
-        // Determine relevant ports depending on version
         if ($scan) {
             if ($response['v2']) {
                 $ports = ['rhp4' => $main_port];
@@ -305,7 +303,7 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
                 }
             }
         }
-        if ($response['online']) {
+        if ($response['online'] && $scan) {
             if ($block_height < 526000 && !$response['port_status']['ipv4_rhp4']) {
                 $response['warnings'][] = "RHP4 port not open.";
             } elseif ($block_height >= 526000 && $block_height <= 530000 && !$response['port_status']['ipv4_rhp4']) {
