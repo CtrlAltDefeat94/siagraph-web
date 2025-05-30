@@ -247,7 +247,7 @@ if (!$troubleshooterCacheResult) {
                         'startAtZero' => true
                      ],
                      [
-                        'label' => 'T+otal Storage',
+                        'label' => 'Total Storage',
                         'key' => 'total_storage', // Modify based on your data
                         'backgroundColor' => 'rgba(255, 99, 132, 0.2)',
                         'borderColor' => 'rgba(255, 99, 132, 1)',
@@ -424,8 +424,8 @@ if (!$troubleshooterCacheResult) {
             // V1
             Object.assign(structuredData, {
                "Base RPC price": data.settings.baserpcprice,
-               "ephemeralaccountexpiry": data.settings.ephemeralaccountexpiry,
-               "maxdownloadbatchsize": data.settings.maxdownloadbatchsize,
+               "Emperheral Account Expiry": data.settings.ephemeralaccountexpiry,
+               "Max Download Batch Size": data.settings.maxdownloadbatchsize/1024/1024 + "MB",
                "Max ephemeral account balance": (data.settings.max_ephemeral_account_balance / 1e24).toFixed(4) + " SC",
                "maxrevisebatchsize": data.settings.maxrevisebatchsize,
                "Sector size": data.settings.sectorsize.toLocaleString() + " bytes",

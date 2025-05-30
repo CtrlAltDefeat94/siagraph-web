@@ -3,7 +3,9 @@
 include_once "../../include/config.php";
 include_once "../../include/redis.php";
 
-$scan = true; // default
+header('Content-Type: application/json');
+
+$scan = true; 
 if (isset($_GET['scan'])) {
     $scan = filter_var($_GET['scan'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 }
@@ -119,8 +121,6 @@ function checkIPVersion($host)
 // Main Logic
 //////////////////////////////
 
-// Set response content type
-header('Content-Type: application/json');
 
 // Validate presence of net_address param
 if (!isset($_GET['net_address'])) {
@@ -265,40 +265,41 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
             $response['remaining_capacity_percentage'] = 0;
         }
         // RHP2
-        if (!empty($troubleshootdData['rhp2']['warnings'])) {
-            foreach ($troubleshootdData['rhp2']['warnings'] as $warning) {
-                $response['warnings'][] = 'RHP2: ' . $warning;
-            }
-        }
-        if (!empty($troubleshootdData['rhp2']['errors'])) {
-            foreach ($troubleshootdData['rhp2']['errors'] as $error) {
-                $response['errors'][] = 'RHP2: ' . $error;
-            }
-        }
-
-        // RHP3
-        if (!empty($troubleshootdData['rhp3']['warnings'])) {
-            foreach ($troubleshootdData['rhp3']['warnings'] as $warning) {
-                $response['warnings'][] = 'RHP3: ' . $warning;
-            }
-        }
-        if (!empty($troubleshootdData['rhp3']['errors'])) {
-            foreach ($troubleshootdData['rhp3']['errors'] as $error) {
-                $response['errors'][] = 'RHP3: ' . $error;
-            }
-        }
-
-        // RHP4 (array of entries)
-        if (!empty($troubleshootdData['rhp4'])) {
-            foreach ($troubleshootdData['rhp4'] as $index => $rhp4) {
-                if (!empty($rhp4['warnings'])) {
-                    foreach ($rhp4['warnings'] as $warning) {
-                        $response['warnings'][] = 'RHP4: ' . $warning;
-                    }
+        if (!$response['v2']=="true") {
+            if (!empty($troubleshootdData['rhp2']['warnings'])) {
+                foreach ($troubleshootdData['rhp2']['warnings'] as $warning) {
+                    $response['warnings'][] = 'RHP2: ' . $warning;
                 }
-                if (!empty($rhp4['errors'])) {
-                    foreach ($rhp4['errors'] as $error) {
-                        $response['errors'][] = 'RHP4: ' . $error;
+            }
+            if (!empty($troubleshootdData['rhp2']['errors'])) {
+                foreach ($troubleshootdData['rhp2']['errors'] as $error) {
+                    $response['errors'][] = 'RHP2: ' . $error;
+                }
+            }
+
+            // RHP3
+            if (!empty($troubleshootdData['rhp3']['warnings'])) {
+                foreach ($troubleshootdData['rhp3']['warnings'] as $warning) {
+                    $response['warnings'][] = 'RHP3: ' . $warning;
+                }
+            }
+            if (!empty($troubleshootdData['rhp3']['errors'])) {
+                foreach ($troubleshootdData['rhp3']['errors'] as $error) {
+                    $response['errors'][] = 'RHP3: ' . $error;
+                }
+            }
+        } else {
+            if (!empty($troubleshootdData['rhp4'])) {
+                foreach ($troubleshootdData['rhp4'] as $index => $rhp4) {
+                    if (!empty($rhp4['warnings'])) {
+                        foreach ($rhp4['warnings'] as $warning) {
+                            $response['warnings'][] = 'RHP4: ' . $warning;
+                        }
+                    }
+                    if (!empty($rhp4['errors'])) {
+                        foreach ($rhp4['errors'] as $error) {
+                            $response['errors'][] = 'RHP4: ' . $error;
+                        }
                     }
                 }
             }
