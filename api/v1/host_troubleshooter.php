@@ -5,14 +5,14 @@ include_once "../../include/redis.php";
 
 header('Content-Type: application/json');
 
-$scan = true; 
+$scan = true;
 if (isset($_GET['scan'])) {
     $scan = filter_var($_GET['scan'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 }
 
 $cacheKey = 'host_troubleshooter:' . $_GET['net_address'];
 $cacheresult = getCache($cacheKey);
-if (!$scan && !empty($cacheresult)) {
+if (!$scan == true && !empty($cacheresult)) {
     echo $cacheresult;
     die;
 }
@@ -238,21 +238,30 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
                 $rhp4_port = $siamux_port ? $siamux_port + 1 : null;
 
                 $ports = [
-                    'rhp2' => $main_port,
-                    'rhp3' => $siamux_port,
+                    #'rhp2' => $main_port,
+                    #'rhp3' => $siamux_port,
                     'rhp4' => $rhp4_port
                 ];
             }
+        }
 
-            // Check if ports are open for IPv4 and IPv6
-            foreach ($ports as $rhp => $port) {
-                if ($port !== null) {
-                    if ($response['ipv4_enabled']) {
-                        $response['port_status']['ipv4_' . $rhp] = isPortOpen($host, $port);
-                    }
-                    if ($response['ipv6_enabled']) {
-                        $response['port_status']['ipv6_' . $rhp] = isPortOpen($host, $port);
-                    }
+        // todo remove after work
+        $siamux_port = isset($host_info_data['settings']['siamuxport']) ? (int) $host_info_data['settings']['siamuxport'] : null;
+        $rhp4_port = $siamux_port ? $siamux_port + 1 : null;
+        $ports = [
+            'rhp4' => $rhp4_port
+        ];
+
+
+
+        // Check if ports are open for IPv4 and IPv6
+        foreach ($ports as $rhp => $port) {
+            if ($port !== null) {
+                if ($response['ipv4_enabled']) {
+                    $response['port_status']['ipv4_' . $rhp] = isPortOpen($host, $port);
+                }
+                if ($response['ipv6_enabled']) {
+                    $response['port_status']['ipv6_' . $rhp] = isPortOpen($host, $port);
                 }
             }
         }
@@ -265,7 +274,7 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
             $response['remaining_capacity_percentage'] = 0;
         }
         // RHP2
-        if (!$response['v2']=="true") {
+        if (!$response['v2'] == "true") {
             if (!empty($troubleshootdData['rhp2']['warnings'])) {
                 foreach ($troubleshootdData['rhp2']['warnings'] as $warning) {
                     $response['warnings'][] = 'RHP2: ' . $warning;
@@ -316,14 +325,11 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
         if (new DateTime($response['last_announcement']) < (new DateTime())->sub(new DateInterval('P6M'))) {
             $response['errors'][] = "Last announcement is longer than 6 months ago.";
         }
-        if ($response['online'] && !$response['settings']['acceptingcontracts']) {
-            $response['errors'][] = "Not accepting contracts.";
-        }
         if (!empty($response['remaining_capacity_percentage'])) {
             if ($response['remaining_capacity_percentage'] == 0) {
                 $response['errors'][] = "Host is full.";
             } elseif ($response['remaining_capacity_percentage'] <= 5) {
-                $response['warnings'][] = "Host is almost full.";
+                $response['warnings'][] = "Host has less than 5% capacity remaining.";
             }
         }
         if ($response['settings']['contractprice'] / 1e24 > 0.2) {
