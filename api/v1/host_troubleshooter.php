@@ -230,6 +230,7 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
             $response['settings']["freesectorprice"] = $host_info_data['v2Settings']['prices']['freeSectorPrice'];
         }
 
+        # todo revisit after fork
         if ($scan) {
             if ($response['v2']) {
                 $ports = ['rhp4' => $main_port];
@@ -238,21 +239,12 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
                 $rhp4_port = $siamux_port ? $siamux_port + 1 : null;
 
                 $ports = [
-                    #'rhp2' => $main_port,
-                    #'rhp3' => $siamux_port,
+                    'rhp2' => $main_port,
+                    'rhp3' => $siamux_port,
                     'rhp4' => $rhp4_port
                 ];
             }
         }
-
-        // todo remove after work
-        $siamux_port = isset($host_info_data['settings']['siamuxport']) ? (int) $host_info_data['settings']['siamuxport'] : null;
-        $rhp4_port = $siamux_port ? $siamux_port + 1 : null;
-        $ports = [
-            'rhp4' => $rhp4_port
-        ];
-
-
 
         // Check if ports are open for IPv4 and IPv6
         foreach ($ports as $rhp => $port) {
@@ -313,7 +305,8 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
                 }
             }
         }
-        if ($response['online'] && $scan) {
+        if ($response['online'] && !$response['v2'] && $response['port_status']['ipv4_rhp4'] !== null) {
+
             if ($block_height < 526000 && !$response['port_status']['ipv4_rhp4']) {
                 $response['warnings'][] = "RHP4 port not open.";
             } elseif ($block_height >= 526000 && $block_height <= 530000 && !$response['port_status']['ipv4_rhp4']) {

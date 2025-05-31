@@ -42,7 +42,7 @@ if (!$hostCacheResult) {
    $hostdata = $hostCacheResult;
 }
 $parts = explode(':', $hostdata['net_address']);
-$assumed_rhp4_port = end($parts)+2;
+$assumed_rhp4_port = end($parts) + 2;
 // Troubleshooter cache key (based on net address)
 $troubleshooterCacheKey = 'host_troubleshooter:' . $hostdata['net_address'];
 $troubleshooterCacheResult = json_decode(getCache($troubleshooterCacheKey), true);
@@ -112,7 +112,8 @@ if (!$troubleshooterCacheResult) {
          </div>
          <?php if ($troubleshootData['port_status']['ipv4_rhp4'] === false): ?>
             <div class="mb-4 p-4 bg-red-400 border-l-4 border-red-500 text-red-700 rounded">
-               ❌ Failed to connect to RHP4 via port <?php echo $assumed_rhp4_port; ?>. Make sure RHP4 is accessible before block height 526.000.
+               ❌ Failed to connect to RHP4 via port <?php echo $assumed_rhp4_port; ?>. Make sure RHP4 is accessible before
+               block height 526.000.
             </div>
          <?php endif; ?>
          <div class="grid grid-cols-1 md:grid-cols-2 flex justify-center gap-5">
@@ -120,8 +121,16 @@ if (!$troubleshooterCacheResult) {
             <!-- Left Section -->
             <div class="bg-white rounded-lg shadow-lg p-6 w-full overflow-x-auto max-w-xl">
                <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">Host stats</h2>
-               <table id="storageStatsTable" class="table-auto w-full border-collapse sm:table-fixed">
+               <table id="storageStatsTable" class="table w-full border-collapse block md:table">
                   <tbody id="hostStats"></tbody>
+               </table>
+
+               <div class="flex justify-center items-center mt-3">
+                  <a class="cursor-pointer hover:underline text-blue-500 font-bold rounded" data-bs-toggle="modal"
+                     data-bs-target="#subscribeModal">
+                     🔔 Subscribe to alerts
+                  </a>
+               </div>
                </table>
 
                <!--<div id="connectionStatus" class="mt-4"></div> -->
@@ -133,10 +142,13 @@ if (!$troubleshooterCacheResult) {
                   <!--<h2 class="text-2xl font-semibold mb-4">World Map</h2>-->
                   <div id="map" class="w-full h-64"></div>
                </div>
+
+
+
                <!-- Other Placeholder Section -->
                <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
                   <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">HostScore Benchmarks</h2>
-                  <table id="storageStatsTable" class="table-auto min-w-full border-collapse">
+                  <table id="hostscoreBenchmarks" class="table-auto min-w-full border-collapse">
                      <tbody>
                         <tr class="bg-gray-200">
                            <td class="px-4 py-2 font-semibold">Final score</td>
@@ -169,11 +181,12 @@ if (!$troubleshooterCacheResult) {
                         href='/host_benchmarks?id=<?php echo $host_id; ?>'>View recent benchmarks</a>
                   </div>
                </div>
+
                <!-- Other Placeholder Section -->
                <div class="bg-white rounded-lg shadow-lg p-6">
                   <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">Averages of hosts with
                      final score <?php echo (end($hostdata['node_scores']['global'])['total_score'] ?? 0); ?></h2>
-                  <table id="storageStatsTable" class="table-auto min-w-full border-collapse">
+                  <table id="hostAverages" class="table-auto min-w-full border-collapse">
                      <tbody>
                         <tr class="bg-gray-200">
                            <td class="px-4 py-2 font-semibold">Contract price</td>
@@ -341,6 +354,40 @@ if (!$troubleshooterCacheResult) {
    <div id="toast" class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg hidden z-50">
       Copied to clipboard!
    </div>
+   <!-- Subscription Modal -->
+   <div class="modal fade" id="subscribeModal" tabindex="-1" aria-labelledby="subscribeModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+         <div class="modal-content">
+            <div class="modal-header">
+               <h5 class="modal-title" id="subscribeModalLabel">Subscribe to Alerts</h5>
+               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="subscribeForm"> <!-- ✅ Proper form opening -->
+               <div class="modal-body">
+                  <div class="mb-3">
+                     <label for="service" class="form-label">Delivery Method</label>
+                     <select class="form-select" id="service" required>
+                        <option value="email">📧 Email</option>
+                        <option value="pushover">📲 Pushover</option>
+                     </select>
+                  </div>
+                  <div class="mb-3">
+                     <label for="destination" class="form-label">Destination</label>
+                     <input type="text" class="form-control" id="destination"
+                        placeholder="you@example.com or pushover user key" required>
+                  </div>
+                  <div id="subscriptionStatus" class="mt-2 text-center small"></div>
+               </div>
+               <div class="modal-footer p-0 pt-2 justify-content-between">
+                  <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-primary btn-sm" id="submitSubscriptionBtn">Subscribe</button>
+
+               </div>
+            </form> <!-- ✅ Proper form closing -->
+         </div>
+      </div>
+   </div>
+
 </body>
 <link href="https://cdn.jsdelivr.net/npm/nouislider@14.7.0/distribute/nouislider.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/nouislider@14.7.0/distribute/nouislider.min.js"></script>
@@ -425,7 +472,7 @@ if (!$troubleshooterCacheResult) {
             Object.assign(structuredData, {
                "Base RPC price": data.settings.baserpcprice,
                "Emperheral Account Expiry": data.settings.ephemeralaccountexpiry,
-               "Max Download Batch Size": data.settings.maxdownloadbatchsize/1024/1024 + "MB",
+               "Max Download Batch Size": data.settings.maxdownloadbatchsize / 1024 / 1024 + "MB",
                "Max ephemeral account balance": (data.settings.max_ephemeral_account_balance / 1e24).toFixed(4) + " SC",
                "maxrevisebatchsize": data.settings.maxrevisebatchsize,
                "Sector size": data.settings.sectorsize.toLocaleString() + " bytes",
@@ -437,8 +484,12 @@ if (!$troubleshooterCacheResult) {
          }
          let rowIndex = 0;
          for (const key in structuredData) {
-            const bgColor = rowIndex % 2 === 0 ? 'bg-gray-200' : 'bg-gray-100';
-            const row = `<tr class='${bgColor}'><td class='px-4 py-2 font-semibold'>${key}</td><td class='px-4 py-2 text-right'>${structuredData[key]}</td></tr>`;
+            const bgColor = rowIndex % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200';
+            const row = `
+     <div class="w-full ${bgColor} px-4 py-2 flex flex-col md:flex-row md:items-center justify-between border-b">
+       <div class="font-semibold text-sm md:text-base">${key}</div>
+       <div class="text-left text-sm md:text-base mt-1 md:mt-0">${structuredData[key]}</div>
+     </div>`;
             hostStats.innerHTML += row;
             rowIndex++;
          }
@@ -491,8 +542,6 @@ if (!$troubleshooterCacheResult) {
       }
 
 
-
-
    }
    function copyToClipboard(text) {
       navigator.clipboard.writeText(text).then(() => {
@@ -512,13 +561,73 @@ if (!$troubleshooterCacheResult) {
          toast.classList.add("hidden");
       }, 2000);
    }
+   document.addEventListener("DOMContentLoaded", function () {
+         const subscribeForm = document.getElementById("subscribeModal");
+         const submitBtn = document.getElementById("submitSubscriptionBtn");
+
+         const serviceInput = document.getElementById("service");
+         const destinationInput = document.getElementById("destination");
+         const statusDiv = document.getElementById("subscriptionStatus");
+
+         const publicKey = "ed25519:96bf3099f428f3affe45dcb30b904e5f4f3f33da368d9316d32b4fe0e4bec223";
+
+         submitBtn.addEventListener("click", async function () {
+            const service = serviceInput.value.trim();
+            const destination = destinationInput.value.trim();
+
+            // Basic validation
+            if (!service || !destination) {
+               statusDiv.textContent = "Please complete all fields.";
+               statusDiv.classList.remove("text-success");
+               statusDiv.classList.add("text-danger");
+               return;
+            }
+
+            // Clear status
+            statusDiv.textContent = "Submitting...";
+            statusDiv.classList.remove("text-danger", "text-success");
+
+            try {
+               const response = await fetch("https://alpha.siagraph.info/api/v1/alerts/subscribe", {
+                  method: "POST",
+                  headers: {
+                     "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                     public_key: publicKey,
+                     service: service,
+                     destination: destination,
+                  }),
+               });
+
+               const data = await response.json();
+
+               if (response.ok) {
+                  statusDiv.textContent = "Successfully subscribed!";
+                  statusDiv.classList.remove("text-danger");
+                  statusDiv.classList.add("text-success");
+                  // Optionally clear the form
+                  destinationInput.value = "";
+               } else {
+                  statusDiv.textContent = data.error || "Subscription failed.";
+                  statusDiv.classList.remove("text-success");
+                  statusDiv.classList.add("text-danger");
+               }
+            } catch (err) {
+               statusDiv.textContent = "An error occurred. Please try again.";
+               statusDiv.classList.remove("text-success");
+               statusDiv.classList.add("text-danger");
+               console.error("Subscription error:", err);
+            }
+         });
+      });
    // Call the initMap function when the page has finished loading
    document.addEventListener("DOMContentLoaded", async function () {
       const hostdata = <?php echo json_encode($hostdata); ?>;
       const currency = "<?php echo $currencyCookie; ?>";
       let exchangeRate = null;
       try {
-         const res = await fetch("https://explorer.siagraph.info/api/exchange-rate/siacoin/"+currency);
+         const res = await fetch("https://explorer.siagraph.info/api/exchange-rate/siacoin/" + currency);
          const text = await res.text();
          exchangeRate = parseFloat(text);
       } catch (err) {
@@ -526,6 +635,8 @@ if (!$troubleshooterCacheResult) {
       }
       initMap();
       displayHostData(hostdata, exchangeRate, currency);
+
+      
    });
 
 </script>
