@@ -569,7 +569,7 @@ if (!$troubleshooterCacheResult) {
       const destinationInput = document.getElementById("destination");
       const statusDiv = document.getElementById("subscriptionStatus");
 
-      const publicKey = "ed25519:96bf3099f428f3affe45dcb30b904e5f4f3f33da368d9316d32b4fe0e4bec223";
+      const publicKey = "<?php echo $hostdata['public_key'];  ?>";
 
       submitBtn.addEventListener("click", async function () {
          const service = serviceInput.value.trim();

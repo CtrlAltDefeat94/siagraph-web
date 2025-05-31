@@ -37,6 +37,12 @@ if (!in_array($service, $valid_services)) {
     exit;
 }
 
+// If service is 'email', validate email format
+if ($service === 'email' && !filter_var($destination, FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
+    echo json_encode(["error" => "Invalid email address."]);
+    exit;
+}
 // Generate unsubscribe token
 $unsubscribe_token = generateToken();
 
