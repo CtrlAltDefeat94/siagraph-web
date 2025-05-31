@@ -562,65 +562,69 @@ if (!$troubleshooterCacheResult) {
       }, 2000);
    }
    document.addEventListener("DOMContentLoaded", function () {
-         const subscribeForm = document.getElementById("subscribeModal");
-         const submitBtn = document.getElementById("submitSubscriptionBtn");
+      const subscribeForm = document.getElementById("subscribeModal");
+      const submitBtn = document.getElementById("submitSubscriptionBtn");
 
-         const serviceInput = document.getElementById("service");
-         const destinationInput = document.getElementById("destination");
-         const statusDiv = document.getElementById("subscriptionStatus");
+      const serviceInput = document.getElementById("service");
+      const destinationInput = document.getElementById("destination");
+      const statusDiv = document.getElementById("subscriptionStatus");
 
-         const publicKey = "ed25519:96bf3099f428f3affe45dcb30b904e5f4f3f33da368d9316d32b4fe0e4bec223";
+      const publicKey = "ed25519:96bf3099f428f3affe45dcb30b904e5f4f3f33da368d9316d32b4fe0e4bec223";
 
-         submitBtn.addEventListener("click", async function () {
-            const service = serviceInput.value.trim();
-            const destination = destinationInput.value.trim();
+      submitBtn.addEventListener("click", async function () {
+         const service = serviceInput.value.trim();
+         const destination = destinationInput.value.trim();
 
-            // Basic validation
-            if (!service || !destination) {
-               statusDiv.textContent = "Please complete all fields.";
+         // Basic validation
+         if (!service || !destination) {
+            statusDiv.textContent = "Please complete all fields.";
+            statusDiv.classList.remove("text-success");
+            statusDiv.classList.add("text-danger");
+            return;
+         }
+
+         // Clear status
+         statusDiv.textContent = "Submitting...";
+         statusDiv.classList.remove("text-danger", "text-success");
+
+         try {
+            const response = await fetch("<?php echo $SETTINGS['siagraph_base_url'];?>/api/v1/alerts/subscribe", {
+               method: "POST",
+               headers: {
+                  "Content-Type": "application/json",
+               },
+               body: JSON.stringify({
+                  public_key: publicKey,
+                  service: service,
+                  destination: destination,
+               }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+               statusDiv.textContent = "Successfully subscribed!";
+               statusDiv.classList.remove("text-danger");
+               statusDiv.classList.add("text-success");
+               // Optionally clear the form
+               destinationInput.value = "";
+               setTimeout(() => {
+                  const modal = bootstrap.Modal.getInstance(document.getElementById('subscribeModal'));
+                  if (modal) modal.hide();
+               }, 1500);
+            } else {
+               statusDiv.textContent = data.error || "Subscription failed.";
                statusDiv.classList.remove("text-success");
                statusDiv.classList.add("text-danger");
-               return;
             }
-
-            // Clear status
-            statusDiv.textContent = "Submitting...";
-            statusDiv.classList.remove("text-danger", "text-success");
-
-            try {
-               const response = await fetch("https://alpha.siagraph.info/api/v1/alerts/subscribe", {
-                  method: "POST",
-                  headers: {
-                     "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                     public_key: publicKey,
-                     service: service,
-                     destination: destination,
-                  }),
-               });
-
-               const data = await response.json();
-
-               if (response.ok) {
-                  statusDiv.textContent = "Successfully subscribed!";
-                  statusDiv.classList.remove("text-danger");
-                  statusDiv.classList.add("text-success");
-                  // Optionally clear the form
-                  destinationInput.value = "";
-               } else {
-                  statusDiv.textContent = data.error || "Subscription failed.";
-                  statusDiv.classList.remove("text-success");
-                  statusDiv.classList.add("text-danger");
-               }
-            } catch (err) {
-               statusDiv.textContent = "An error occurred. Please try again.";
-               statusDiv.classList.remove("text-success");
-               statusDiv.classList.add("text-danger");
-               console.error("Subscription error:", err);
-            }
-         });
+         } catch (err) {
+            statusDiv.textContent = "An error occurred. Please try again.";
+            statusDiv.classList.remove("text-success");
+            statusDiv.classList.add("text-danger");
+            console.error("Subscription error:", err);
+         }
       });
+   });
    // Call the initMap function when the page has finished loading
    document.addEventListener("DOMContentLoaded", async function () {
       const hostdata = <?php echo json_encode($hostdata); ?>;
@@ -636,7 +640,7 @@ if (!$troubleshooterCacheResult) {
       initMap();
       displayHostData(hostdata, exchangeRate, currency);
 
-      
+
    });
 
 </script>
