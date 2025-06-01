@@ -116,6 +116,12 @@ if (!$troubleshooterCacheResult) {
                block height 526.000.
             </div>
          <?php endif; ?>
+         <?php if (!str_starts_with($hostdata['software_version'], 'hostd v2.2')): ?>
+            <div class="mb-4 p-4 bg-red-400 border-l-4 border-red-500 text-red-700 rounded">
+               ❌ Hostd V2.2.0 or higher is required for the hardfork. Make sure to run Hostd v2.2.0 or newer before block height 526.000.
+            </div>
+         <?php endif; ?>
+         
          <div class="grid grid-cols-1 md:grid-cols-2 flex justify-center gap-5">
             <!-- Added grid class here -->
             <!-- Left Section -->
@@ -372,9 +378,9 @@ if (!$troubleshooterCacheResult) {
                      </select>
                   </div>
                   <div class="mb-3">
-                     <label for="destination" class="form-label">Destination</label>
+                     <label for="destination" class="form-label">Recipient</label>
                      <input type="text" class="form-control" id="destination"
-                        placeholder="you@example.com or pushover user key" required>
+                        placeholder="you@example.com or user token" required>
                   </div>
                   <div id="subscriptionStatus" class="mt-2 text-center small"></div>
                </div>
