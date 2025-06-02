@@ -118,7 +118,8 @@ if (!$troubleshooterCacheResult) {
          <?php endif; ?>
          <?php if (!str_starts_with($hostdata['software_version'], 'hostd v2.2')): ?>
             <div class="mb-4 p-4 bg-red-400 border-l-4 border-red-500 text-red-700 rounded">
-               ❌ Hostd v2.2.0 or newer is required for the hardfork. Make sure to update to Hostd v2.2.0 or newer before block 
+               ❌ Hostd v2.2.0 or newer is required for the hardfork. Make sure to update to Hostd v2.2.0 or newer before
+               block
                height 526.000.
             </div>
          <?php endif; ?>
@@ -374,14 +375,24 @@ if (!$troubleshooterCacheResult) {
                   <div class="mb-3">
                      <label for="service" class="form-label">Delivery Method</label>
                      <select class="form-select" id="service" required>
-                        <option value="email">📧 Email</option>
-                        <option value="pushover">📲 Pushover</option>
-                     </select>
+   <option value="email">Email</option>
+   <option value="pushover">Pushover</option>
+   <option value="telegram">Telegram</option>
+</select>
                   </div>
+
+                  <!-- Recipient Input -->
                   <div class="mb-3">
                      <label for="recipient" class="form-label">Recipient</label>
-                     <input type="text" class="form-control" id="recipient"
-                        placeholder="you@example.com or user token" required>
+                     <input type="text" class="form-control" id="recipient" placeholder="you@example.com or user token"
+                        required>
+                     <!-- Telegram Instructions -->
+                     <div id="telegramInstructions" class="form-text text-muted mt-1 d-none">
+                        Start a chat with <a href="https://t.me/Siagraph_bot"
+                           target="_blank"><strong>@Siagraph_bot</strong></a> and type <code>/start</code> to get your
+                        chat ID.
+                     </div>
+
                   </div>
                   <div id="subscriptionStatus" class="mt-2 text-center small"></div>
                </div>
@@ -575,8 +586,29 @@ if (!$troubleshooterCacheResult) {
       const serviceInput = document.getElementById("service");
       const recipientInput = document.getElementById("recipient");
       const statusDiv = document.getElementById("subscriptionStatus");
+      const telegramInstructions = document.getElementById("telegramInstructions");
 
       const publicKey = "<?php echo $hostdata['public_key']; ?>";
+
+      function updateFormFields() {
+         const selectedService = serviceInput.value.trim();
+
+         // Toggle Telegram instructions
+         if (selectedService === "telegram") {
+            telegramInstructions.classList.remove("d-none");
+            recipientInput.placeholder = "Telegram Chat ID (e.g. 123456)";
+         } else if (selectedService === "pushover") {
+            telegramInstructions.classList.add("d-none");
+            recipientInput.placeholder = "Pushover user token";
+         } else {
+            telegramInstructions.classList.add("d-none");
+            recipientInput.placeholder = "you@example.com";
+         }
+      }
+
+      // Run on load and on service change
+      updateFormFields();
+      serviceInput.addEventListener("change", updateFormFields);
 
       submitBtn.addEventListener("click", async function () {
          const service = serviceInput.value.trim();
@@ -613,7 +645,6 @@ if (!$troubleshooterCacheResult) {
                statusDiv.textContent = "Successfully subscribed!";
                statusDiv.classList.remove("text-danger");
                statusDiv.classList.add("text-success");
-               // Optionally clear the form
                recipientInput.value = "";
                setTimeout(() => {
                   const modal = bootstrap.Modal.getInstance(document.getElementById('subscribeModal'));
@@ -646,7 +677,6 @@ if (!$troubleshooterCacheResult) {
       }
       initMap();
       displayHostData(hostdata, exchangeRate, currency);
-
 
    });
 

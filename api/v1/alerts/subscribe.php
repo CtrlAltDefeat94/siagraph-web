@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = json_decode(file_get_contents('php://input'), true);
 
 $public_key = $input['public_key'] ?? null;
-$service = $input['service'] ?? null; // 'email' or 'pushover'
+$service = $input['service'] ?? null; // 'email', 'pushover', 'telegram'
 $recipient = $input['recipient'] ?? null;
 
 // Validate required fields
@@ -30,19 +30,26 @@ if (!$public_key || !$service || !$recipient) {
 }
 
 // Validate service type
-$valid_services = ['email', 'pushover'];
+$valid_services = ['email', 'pushover', 'telegram'];
 if (!in_array($service, $valid_services)) {
     http_response_code(400);
     echo json_encode(["error" => "Invalid service type."]);
     exit;
 }
 
-// If service is 'email', validate email format
+// Validate recipient format per service
 if ($service === 'email' && !filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
     http_response_code(400);
     echo json_encode(["error" => "Invalid email address."]);
     exit;
 }
+
+if ($service === 'telegram' && !preg_match('/^\d{5,}$/', $recipient)) {
+    http_response_code(400);
+    echo json_encode(["error" => "Invalid Telegram ID."]);
+    exit;
+}
+
 // Generate unsubscribe token
 $unsubscribe_token = generateToken();
 
