@@ -324,7 +324,7 @@
 
   document.getElementById("netAddressForm").addEventListener("submit", function (e) {
     e.preventDefault();
-    const newAddress = document.getElementById("netAddressInput").value.trim();
+    const newAddress = document.getElementById("netAddressInput").value.trim().toLowerCase();
     if (newAddress) {
       const url = new URL(window.location.href);
       url.searchParams.set("net_address", newAddress);

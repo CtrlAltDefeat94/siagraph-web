@@ -596,7 +596,7 @@ if (!$troubleshooterCacheResult) {
          // Toggle Telegram instructions
          if (selectedService === "telegram") {
             telegramInstructions.classList.remove("d-none");
-            recipientInput.placeholder = "Telegram Chat ID (e.g. 123456)";
+            recipientInput.placeholder = "Telegram Chat ID (e.g. 12345678)";
          } else if (selectedService === "pushover") {
             telegramInstructions.classList.add("d-none");
             recipientInput.placeholder = "Pushover user token";
