@@ -3,16 +3,24 @@ header('Content-Type: application/json');
 include_once "../../../include/database.php";
 
 $token = $_GET['token'] ?? null;
+$public_key = $_GET['public_key'] ?? null;
 
 if (!$token) {
     http_response_code(400);
     echo json_encode(["error" => "Missing unsubscribe token."]);
     exit;
 }
+if (!$public_key) {
+    http_response_code(400);
+    echo json_encode(["error" => "Missing public_key token."]);
+    exit;
+}
+
 
 $stmt = $mysqli->prepare("
     DELETE FROM HostSubscribers
     WHERE unsubscribe_token = ?
+    AND public_key = ?
 ");
 
 if (!$stmt) {
@@ -21,7 +29,7 @@ if (!$stmt) {
     exit;
 }
 
-$stmt->bind_param("s", $token);
+$stmt->bind_param("ss", $token, $public_key);
 $stmt->execute();
 
 if ($stmt->affected_rows > 0) {

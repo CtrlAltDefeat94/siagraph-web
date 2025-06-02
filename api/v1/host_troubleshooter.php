@@ -11,7 +11,7 @@ if (isset($_GET['scan'])) {
 }
 
 $cacheKey = 'host_troubleshooter:' . $_GET['net_address'];
-$cacheresult = getCache($cacheKey);
+#$cacheresult = getCache($cacheKey);
 if (!$scan == true && !empty($cacheresult)) {
     echo $cacheresult;
     die;
@@ -338,5 +338,5 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
 //////////////////////////////
 // Output
 //////////////////////////////
-setCache(json_encode($response), $cacheKey, 'hour');
+#setCache(json_encode($response), $cacheKey, 'hour');
 echo json_encode($response);

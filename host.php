@@ -118,10 +118,11 @@ if (!$troubleshooterCacheResult) {
          <?php endif; ?>
          <?php if (!str_starts_with($hostdata['software_version'], 'hostd v2.2')): ?>
             <div class="mb-4 p-4 bg-red-400 border-l-4 border-red-500 text-red-700 rounded">
-               ❌ Hostd V2.2.0 or higher is required for the hardfork. Make sure to run Hostd v2.2.0 or newer before block height 526.000.
+               ❌ Hostd v2.2.0 or newer is required for the hardfork. Make sure to update to Hostd v2.2.0 or newer before block 
+               height 526.000.
             </div>
          <?php endif; ?>
-         
+
          <div class="grid grid-cols-1 md:grid-cols-2 flex justify-center gap-5">
             <!-- Added grid class here -->
             <!-- Left Section -->
@@ -575,7 +576,7 @@ if (!$troubleshooterCacheResult) {
       const destinationInput = document.getElementById("destination");
       const statusDiv = document.getElementById("subscriptionStatus");
 
-      const publicKey = "<?php echo $hostdata['public_key'];  ?>";
+      const publicKey = "<?php echo $hostdata['public_key']; ?>";
 
       submitBtn.addEventListener("click", async function () {
          const service = serviceInput.value.trim();
@@ -594,7 +595,7 @@ if (!$troubleshooterCacheResult) {
          statusDiv.classList.remove("text-danger", "text-success");
 
          try {
-            const response = await fetch("<?php echo $SETTINGS['siagraph_base_url'];?>/api/v1/alerts/subscribe", {
+            const response = await fetch("<?php echo $SETTINGS['siagraph_base_url']; ?>/api/v1/alerts/subscribe", {
                method: "POST",
                headers: {
                   "Content-Type": "application/json",
