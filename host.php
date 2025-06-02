@@ -379,8 +379,8 @@ if (!$troubleshooterCacheResult) {
                      </select>
                   </div>
                   <div class="mb-3">
-                     <label for="destination" class="form-label">Recipient</label>
-                     <input type="text" class="form-control" id="destination"
+                     <label for="recipient" class="form-label">Recipient</label>
+                     <input type="text" class="form-control" id="recipient"
                         placeholder="you@example.com or user token" required>
                   </div>
                   <div id="subscriptionStatus" class="mt-2 text-center small"></div>
@@ -573,17 +573,17 @@ if (!$troubleshooterCacheResult) {
       const submitBtn = document.getElementById("submitSubscriptionBtn");
 
       const serviceInput = document.getElementById("service");
-      const destinationInput = document.getElementById("destination");
+      const recipientInput = document.getElementById("recipient");
       const statusDiv = document.getElementById("subscriptionStatus");
 
       const publicKey = "<?php echo $hostdata['public_key']; ?>";
 
       submitBtn.addEventListener("click", async function () {
          const service = serviceInput.value.trim();
-         const destination = destinationInput.value.trim();
+         const recipient = recipientInput.value.trim();
 
          // Basic validation
-         if (!service || !destination) {
+         if (!service || !recipient) {
             statusDiv.textContent = "Please complete all fields.";
             statusDiv.classList.remove("text-success");
             statusDiv.classList.add("text-danger");
@@ -603,7 +603,7 @@ if (!$troubleshooterCacheResult) {
                body: JSON.stringify({
                   public_key: publicKey,
                   service: service,
-                  destination: destination,
+                  recipient: recipient,
                }),
             });
 
@@ -614,7 +614,7 @@ if (!$troubleshooterCacheResult) {
                statusDiv.classList.remove("text-danger");
                statusDiv.classList.add("text-success");
                // Optionally clear the form
-               destinationInput.value = "";
+               recipientInput.value = "";
                setTimeout(() => {
                   const modal = bootstrap.Modal.getInstance(document.getElementById('subscribeModal'));
                   if (modal) modal.hide();

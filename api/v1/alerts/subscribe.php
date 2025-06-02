@@ -20,10 +20,10 @@ $input = json_decode(file_get_contents('php://input'), true);
 
 $public_key = $input['public_key'] ?? null;
 $service = $input['service'] ?? null; // 'email' or 'pushover'
-$destination = $input['destination'] ?? null;
+$recipient = $input['recipient'] ?? null;
 
 // Validate required fields
-if (!$public_key || !$service || !$destination) {
+if (!$public_key || !$service || !$recipient) {
     http_response_code(400);
     echo json_encode(["error" => "Missing required fields."]);
     exit;
@@ -38,7 +38,7 @@ if (!in_array($service, $valid_services)) {
 }
 
 // If service is 'email', validate email format
-if ($service === 'email' && !filter_var($destination, FILTER_VALIDATE_EMAIL)) {
+if ($service === 'email' && !filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
     http_response_code(400);
     echo json_encode(["error" => "Invalid email address."]);
     exit;
@@ -48,7 +48,7 @@ $unsubscribe_token = generateToken();
 
 // Prepare insert statement
 $stmt = $mysqli->prepare("
-    INSERT INTO HostSubscribers (public_key, service, destination, unsubscribe_token)
+    INSERT INTO HostSubscribers (public_key, service, recipient, unsubscribe_token)
     VALUES (?, ?, ?, ?)
 ");
 
@@ -58,12 +58,12 @@ if (!$stmt) {
     exit;
 }
 
-$stmt->bind_param("ssss", $public_key, $service, $destination, $unsubscribe_token);
+$stmt->bind_param("ssss", $public_key, $service, $recipient, $unsubscribe_token);
 
 if ($stmt->execute()) {
     echo json_encode([
         "message" => "Subscribed successfully.",
-        "unsubscribe_url" => $SETTINGS['siagraph_base_url'] . "/api/v1/alerts/unsubscribe?token=$unsubscribe_token"
+        "unsubscribe_url" => $SETTINGS['siagraph_base_url'] . "/api/v1/alerts/public_key=$public_key&unsubscribe?token=$unsubscribe_token"
     ]);
 } else {
     http_response_code(500);
