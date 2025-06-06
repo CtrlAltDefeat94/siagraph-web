@@ -28,7 +28,7 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
     <link rel="icon" href="img/favicon.ico" type="image/png">
 </head>
 
-<body class="bg-white dark:bg-gray-900 text-black dark:text-white">
+<body>
     <!-- Header Section -->
     <?php include "include/header.html" ?>
 
