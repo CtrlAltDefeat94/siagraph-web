@@ -1,5 +1,6 @@
 <?php
 include_once "../../include/redis.php";
+include_once "../../include/config.php";
 header('Content-Type: application/json');
 // Function to fetch data using cURL
 
@@ -13,20 +14,21 @@ function fetchData($url)
 
     return json_decode($response, true);
 }
-function compareDates($date1,$date2){
+function compareDates($date1, $date2)
+{
     $diff = $date1->diff($date2);
     return ($diff->d * 86400) + ($diff->h * 3600) + ($diff->i * 60) + $diff->s;
 }
 
 // Fetch data from the consensus API
-$consensusData = fetchData('https://explorer.siagraph.info/api/consensus/state');
+$consensusData = fetchData($SETTINGS['explorer'] . '/api/consensus/state');
 $blockHeight = $consensusData['index']['height'];
 $data = [];
 
-$explorerKey = 'explorer-'.$blockHeight;
+$explorerKey = 'explorer-' . $blockHeight;
 $data = getCache($explorerKey);
 // Fetch unconfirmed transactions
-$txPoolData = fetchData('https://explorer.siagraph.info/api/txpool/transactions');
+$txPoolData = fetchData($SETTINGS['explorer'] . '/api/txpool/transactions');
 $count = 0;
 if ($txPoolData && isset($txPoolData['transactions'])) {
     foreach ($txPoolData['transactions'] as $item) {
@@ -42,7 +44,7 @@ if ($data) {
     die;
 }
 
-$data['blockHeight']=$blockHeight;
+$data['blockHeight'] = $blockHeight;
 
 // Convert timestamp to local time
 $blockFoundTime = new DateTime($consensusData['prevTimestamps'][0]);
@@ -53,13 +55,13 @@ $data['blockFoundTime'] = $blockFoundTime->format('Y-m-d\TH:i:s\Z');
 $data['averageFoundSeconds'] = round($totalSeconds / 10);
 
 
-$blockData = fetchData("https://explorer.siagraph.info/api/consensus/tip/" . ($data['blockHeight'] - 144));
-$blockData = fetchData('https://explorer.siagraph.info/api/blocks/' . $blockData['id']);
+$blockData = fetchData($SETTINGS['explorer'] . '/api/consensus/tip/' . ($data['blockHeight'] - 144));
+$blockData = fetchData($SETTINGS['explorer'] . '/api/blocks/' . $blockData['id']);
 
 $blockCompareTime = new DateTime($blockData['timestamp']);
 $totalSeconds = compareDates($blockFoundTime, $blockCompareTime);
 #echo $totalSeconds/144;
-$secondsuntilV2=round((526000 - $blockHeight) * ($totalSeconds/144));
+$secondsuntilV2 = round((530000 - $blockHeight) * ($totalSeconds / 144));
 $data['estimatedV2Time'] = $blockFoundTime->modify("+{$secondsuntilV2} seconds")->format('Y-m-d\TH:i:s\Z');
 
 
@@ -67,11 +69,11 @@ $data['estimatedV2Time'] = $blockFoundTime->modify("+{$secondsuntilV2} seconds")
 
 // Fetch connected peers
 $peersData = [];
-$peersData = fetchData('https://explorer.siagraph.info/api/syncer/peers');
+$peersData = fetchData($SETTINGS['explorer'] . '/api/syncer/peers');
 $data['connectedPeers'] = count($peersData);
 
 // Fetch previous block ID if a new block is detected
-$previousBlockData = fetchData("https://explorer.siagraph.info/api/consensus/tip/" . ($data['blockHeight'] - 1));
+$previousBlockData = fetchData($SETTINGS['explorer'] . '/api/consensus/tip/' . ($data['blockHeight'] - 1));
 if ($previousBlockData) {
     $previousBlockId = $previousBlockData['id'];
 }
@@ -79,8 +81,8 @@ if ($previousBlockData) {
 
 // Fetch block data for the previous block
 
-$blockData = fetchData('https://explorer.siagraph.info/api/metrics/block');
-$previousBlockData = fetchData('https://explorer.siagraph.info/api/metrics/block/' . $previousBlockId);
+$blockData = fetchData($SETTINGS['explorer'] . '/api/metrics/block');
+$previousBlockData = fetchData($SETTINGS['explorer'] . '/api/metrics/block/' . $previousBlockId);
 
 $newHosts = $blockData['totalHosts'] - $previousBlockData['totalHosts'];
 $data['newHosts'] = $newHosts;

@@ -181,7 +181,7 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
                         </div>
                     </div>
                     <div class="flex justify-center items-center mt-2 space-x-2">
-                        <span class="text-gray-600 font-bold text-sm">Estimated hardfork activation date:</span>
+                        <span class="text-gray-600 font-bold text-sm">Estimated hardfork completion date:</span>
                         <span id="estimated-v2-time" class="text-gray-600 font-bold text-sm">00:00:00</span>
                     </div>
                 </section>
