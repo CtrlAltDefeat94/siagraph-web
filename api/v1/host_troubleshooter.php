@@ -140,7 +140,7 @@ $host = $matches[1];
 $main_port = (int) $matches[2];
 
 // Fetch host info from explorer API
-$public_key_url = $SETTINGS['explorer'] . "/api/hosts";
+$public_key_url = $SETTINGS['explorer'] . "/hosts";
 $postData = ["netAddresses" => [$net_address]];
 
 $hostsdata = fetchJsonPost($public_key_url, $postData);

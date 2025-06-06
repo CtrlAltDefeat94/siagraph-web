@@ -21,14 +21,14 @@ function compareDates($date1, $date2)
 }
 
 // Fetch data from the consensus API
-$consensusData = fetchData($SETTINGS['explorer'] . '/api/consensus/state');
+$consensusData = fetchData($SETTINGS['explorer'] . '/consensus/state');
 $blockHeight = $consensusData['index']['height'];
 $data = [];
 
 $explorerKey = 'explorer-' . $blockHeight;
 $data = getCache($explorerKey);
 // Fetch unconfirmed transactions
-$txPoolData = fetchData($SETTINGS['explorer'] . '/api/txpool/transactions');
+$txPoolData = fetchData($SETTINGS['explorer'] . '/txpool/transactions');
 $count = 0;
 if ($txPoolData && isset($txPoolData['transactions'])) {
     foreach ($txPoolData['transactions'] as $item) {
@@ -55,8 +55,8 @@ $data['blockFoundTime'] = $blockFoundTime->format('Y-m-d\TH:i:s\Z');
 $data['averageFoundSeconds'] = round($totalSeconds / 10);
 
 
-$blockData = fetchData($SETTINGS['explorer'] . '/api/consensus/tip/' . ($data['blockHeight'] - 144));
-$blockData = fetchData($SETTINGS['explorer'] . '/api/blocks/' . $blockData['id']);
+$blockData = fetchData($SETTINGS['explorer'] . '/consensus/tip/' . ($data['blockHeight'] - 144));
+$blockData = fetchData($SETTINGS['explorer'] . '/blocks/' . $blockData['id']);
 
 $blockCompareTime = new DateTime($blockData['timestamp']);
 $totalSeconds = compareDates($blockFoundTime, $blockCompareTime);
@@ -69,11 +69,11 @@ $data['estimatedV2Time'] = $blockFoundTime->modify("+{$secondsuntilV2} seconds")
 
 // Fetch connected peers
 $peersData = [];
-$peersData = fetchData($SETTINGS['explorer'] . '/api/syncer/peers');
+$peersData = fetchData($SETTINGS['explorer'] . '/syncer/peers');
 $data['connectedPeers'] = count($peersData);
 
 // Fetch previous block ID if a new block is detected
-$previousBlockData = fetchData($SETTINGS['explorer'] . '/api/consensus/tip/' . ($data['blockHeight'] - 1));
+$previousBlockData = fetchData($SETTINGS['explorer'] . '/consensus/tip/' . ($data['blockHeight'] - 1));
 if ($previousBlockData) {
     $previousBlockId = $previousBlockData['id'];
 }
@@ -81,8 +81,8 @@ if ($previousBlockData) {
 
 // Fetch block data for the previous block
 
-$blockData = fetchData($SETTINGS['explorer'] . '/api/metrics/block');
-$previousBlockData = fetchData($SETTINGS['explorer'] . '/api/metrics/block/' . $previousBlockId);
+$blockData = fetchData($SETTINGS['explorer'] . '/metrics/block');
+$previousBlockData = fetchData($SETTINGS['explorer'] . '/metrics/block/' . $previousBlockId);
 
 $newHosts = $blockData['totalHosts'] - $previousBlockData['totalHosts'];
 $data['newHosts'] = $newHosts;

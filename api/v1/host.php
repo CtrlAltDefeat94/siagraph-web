@@ -30,7 +30,7 @@ if ($cacheresult) {
 }
 
 // Build the URL
-$url = $SETTINGS['explorer'] . '/api/hosts/' . $public_key;
+$url = $SETTINGS['explorer'] . '/hosts/' . $public_key;
 // Fetch data
 $json_data = null;
 try {
