@@ -13,20 +13,21 @@ function displayStorageMetric(id, actualValue, changeValue) {
 
 
 
-    function switchLightDarkMode() {
-        // Check if the 'mode' cookie exists
-        var modeCookie = getCookie('mode');
+function switchLightDarkMode() {
+    var mode = getCookie('mode');
+    var newMode = (mode === 'dark') ? 'light' : 'dark';
+    document.cookie = "mode=" + newMode + "; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/";
+    applyModeFromCookie();
+}
 
-        // If the 'mode' cookie doesn't exist, set it to 'dark'
-        // Otherwise, toggle between 'light' and 'dark'
-        var newMode = (modeCookie === 'light') ? 'dark' : 'light';
-
-        // Set the 'mode' cookie with the new value
-        document.cookie = "mode=" + newMode + "; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/";
-
-        // Refresh the page
-        location.reload();
+function applyModeFromCookie() {
+    const mode = getCookie('mode');
+    if (mode === 'dark') {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
     }
+}
 
 function switchEuroDollar() {
     // Check if the 'currency' cookie exists
@@ -43,30 +44,6 @@ function switchEuroDollar() {
     location.reload();
 }
 
-    // Helper function to get the value of a cookie by name
-    function getCookie(name) {
-        var cookieArr = document.cookie.split('; ');
-        for (var i = 0; i < cookieArr.length; i++) {
-            var cookiePair = cookieArr[i].split('=');
-            if (cookiePair[0] === name) {
-                return cookiePair[1];
-            }
-        }
-        return null;
-    }
-
-
-// Function to apply light mode
-function applyLightMode() {
-    document.getElementById("theme-style").href = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css";
-    document.getElementById("header").classList.remove("bg-dark");
-}
-
-// Function to apply dark mode
-function applyDarkMode() {
-    document.getElementById("theme-style").href = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.dark.min.css"; // Bootstrap dark theme
-    document.getElementById("header").classList.add("bg-dark");
-}
 
 // Function to get the value of a cookie
 function getCookie(name) {
@@ -78,7 +55,7 @@ function getLocalizedTime(timestamp) {
     // Create a new Date object from the provided UTC timestamp
     const date = new Date(timestamp);
     // Format the date using the local time zone (no need for manual adjustment)
-    const localizedTime = date.toLocaleString( {
+    const localizedTime = date.toLocaleString({
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Get the local timezone dynamically
         year: 'numeric',
         month: '2-digit',
