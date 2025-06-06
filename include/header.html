@@ -2,7 +2,10 @@
     <div id="header-content " class="container py-1 max-w-screen-xl">
         <nav class="navbar navbar-expand-lg navbar-light bg-primary  ">
             <div class="container-fluid">
-                <a class="navbar-brand text-white font-bold" href="/">SiaGraph</a>
+                <!--<a class="navbar-brand text-white font-bold" href="/">SiaGraph</a>-->
+                <a class="navbar-brand text-white font-bold" href="/">
+                    <img src="img/siagraph_banner_white.png" alt="SiaGraph" style="height: 40px;">
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                     data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
                     aria-expanded="false" aria-label="Toggle navigation">
@@ -19,10 +22,10 @@
                                 Network
                             </a>
                             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item text-black font-medium"
-                                    href="network_growth">Growth</a>
-                                <div class="dropdown-divider"></div><a class="opacity-50 dropdown-item text-black font-medium"
-                                    href="#">Tokenomics (TBA)</a>
+                                <a class="dropdown-item text-black font-medium" href="network_growth">Growth</a>
+                                <div class="dropdown-divider"></div><a
+                                    class="opacity-50 dropdown-item text-black font-medium" href="#">Tokenomics
+                                    (TBA)</a>
                                 <div class="dropdown-divider"></div><a class="dropdown-item text-black font-medium"
                                     href="peers">Peers</a>
 
@@ -37,38 +40,40 @@
                             </a>
                             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                                 <a class="dropdown-item text-black font-medium" href="host_overview">Overview</a>
-                                <div class="dropdown-divider"></div><a class="dropdown-item text-black font-medium" href="host_troubleshooter">Troubleshooter</a>
+                                <div class="dropdown-divider"></div><a class="dropdown-item text-black font-medium"
+                                    href="host_troubleshooter">Troubleshooter</a>
                                 <div class="dropdown-divider"></div><a class="dropdown-item text-black font-medium"
                                     href="host_explorer">Host explorer</a>
 
                             </div>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navbarDropdown"
-                                    role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    API
-                                </a>
-                                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                    <a class="dropdown-item text-black font-medium" href="/swagger">SiaGraph</a>
-                                    <div class="dropdown-divider"></div>
-                                    <a class="dropdown-item text-black font-medium" href="https://api.sia.tech/explored">Explorer</a>
-                                </div>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navbarDropdown"
-                                    role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    Settings
-                                </a>
-                                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                    <a class="dropdown-item text-black opacity-50 font-medium" href="#"
-                                        onclick="switchLightDarkMode()">Switch
-                                        Light/Dark Mode (TBA)</a>
-                                    <div class="dropdown-divider"></div>
-                                    <a class="dropdown-item text-black font-medium" href="#"
-                                        onclick="switchEuroDollar()">Switch
-                                        Euro/Dollar</a>
-                                </div>
-                            </li>
-        
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navbarDropdown"
+                                role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                API
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <a class="dropdown-item text-black font-medium" href="/swagger">SiaGraph</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-black font-medium"
+                                    href="https://api.sia.tech/explored">Explorer</a>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navbarDropdown"
+                                role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Settings
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <a class="dropdown-item text-black opacity-50 font-medium" href="#"
+                                    onclick="switchLightDarkMode()">Switch
+                                    Light/Dark Mode (TBA)</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-black font-medium" href="#"
+                                    onclick="switchEuroDollar()">Switch
+                                    Euro/Dollar</a>
+                            </div>
+                        </li>
+
                     </ul>
                 </div>
             </div>

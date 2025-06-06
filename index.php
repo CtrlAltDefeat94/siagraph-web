@@ -26,6 +26,7 @@ $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
     <title>SiaGraph</title>
     <meta property="og:title" content="SiaGraph" />
     <meta property="og:description" content="A statistics website for the Sia Network." />
+    <link rel="icon" href="img/favicon.ico" type="image/png">
 </head>
 
 <body>
