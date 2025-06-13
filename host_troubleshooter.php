@@ -24,7 +24,7 @@
           <!-- Net Address Search -->
           <form id="netAddressForm" class="row g-2 mb-3">
             <div class="col-sm-9">
-              <input type="text" id="netAddressInput" class="form-control" placeholder="example.com:9982" />
+              <input type="text" id="netAddressInput" class="form-control" placeholder="example.com:9984" />
             </div>
             <div class="col-sm-3">
               <button type="submit" class="btn btn-primary w-100">Lookup</button>
@@ -70,7 +70,10 @@
       <div class="bg-white shadow rounded-lg p-4 mb-6">
         <h3 class="text-lg font-bold mb-3">Storage Usage</h3>
         <div id="storageUsage" class="w-full bg-gray-200 rounded h-6">
-          <div class="bg-blue-500 h-6 rounded text-xs text-white text-center" id="storageBar">0%</div>
+          <div class="bg-blue-500 h-6 rounded text-xs text-white text-center flex items-center justify-center"
+            id="storageBar">
+            0%
+          </div>
         </div>
         <div id="storageStats" class="text-sm text-gray-600 mt-2 text-center"></div>
       </div>
@@ -171,7 +174,7 @@
 
     connectionStatus.innerHTML =
       `<div class="mb-4">
-    ${renderSection('General', ['Online','Accepting Contracts'], 2)}
+    ${renderSection('General', ['Online', 'Accepting Contracts'], 2)}
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>${renderSection('IPv4 Status', ipv4Checks, 1)}</div>
@@ -300,7 +303,7 @@
       }
 
       if (v != null && config.type === 'number' && config.unit) {
-        display = `${v} ${config.unit}`; 
+        display = `${v} ${config.unit}`;
         if (config.showMonths) {
           const months = Math.round(v / 4320);
           extraHtml = `<span class="text-xs text-gray-400 block">${months} months</span>`;
@@ -417,12 +420,12 @@
     }
   }
   function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            alert("Copied to clipboard!");
-        }).catch(err => {
-            console.error("Error copying text: ", err);
-        });
-    }
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Copied to clipboard!");
+    }).catch(err => {
+      console.error("Error copying text: ", err);
+    });
+  }
   loadHostData();
 </script>
 </body>
