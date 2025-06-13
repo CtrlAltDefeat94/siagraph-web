@@ -177,6 +177,7 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+    <link rel="icon" href="img/favicon.ico" type="image/png">
 
 </head>
 

@@ -11,6 +11,7 @@
    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="icon" href="img/favicon.ico" type="image/png">
    <style>
       .copy-notification {
          position: absolute;

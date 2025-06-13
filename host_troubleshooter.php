@@ -10,6 +10,7 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
   <script src="script.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link rel="icon" href="img/favicon.ico" type="image/png">
 </head>
 
 <body>

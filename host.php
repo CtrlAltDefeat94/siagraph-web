@@ -94,6 +94,7 @@ if (!$troubleshooterCacheResult) {
    <script src="https://cdn.jsdelivr.net/npm/chart.js@3"></script>
    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1"></script>
    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.0.2"></script>
+    <link rel="icon" href="img/favicon.ico" type="image/png">
 
 </head>
 
