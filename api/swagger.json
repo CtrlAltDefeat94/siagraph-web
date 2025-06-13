@@ -1,0 +1,1212 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "SiaGraph API",
+    "version": "1.0.0",
+    "description": "API documentation for the SiaGraph API.<br>This API version is still actively being extended, but changes to existing endpoints and their response layout should be minimal.",
+    "contact": {
+      "Discord": "_ctrlaltdefeat"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://siagraph.info/api/v1",
+      "description": "SiaGraph API v1"
+    }
+  ],
+  "paths": {
+    "/daily/compare_metrics": {
+      "get": {
+        "summary": "Compare Metrics",
+        "description": "Fetch and compare metrics such as storage, hosts, revenue, and coin prices over a specified time period.",
+        "parameters": [
+          {
+            "name": "actual_date",
+            "in": "query",
+            "description": "Date to compare from in YYYY-MM-DD format.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "compare_date",
+            "in": "query",
+            "description": "Date to compare to in YYYY-MM-DD format.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "actual": {
+                      "type": "object",
+                      "properties": {
+                        "utilized_storage": {
+                          "type": "integer",
+                          "description": "Current utilized storage."
+                        },
+                        "total_storage": {
+                          "type": "integer",
+                          "description": "Current total storage."
+                        },
+                        "online_hosts": {
+                          "type": "integer",
+                          "description": "Number of online hosts."
+                        },
+                        "30_day_revenue": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "number"
+                          },
+                          "description": "30-day revenue data by currency."
+                        },
+                        "active_contracts": {
+                          "type": "integer",
+                          "description": "Number of active contracts."
+                        },
+                        "coin_price": {
+                          "type": "object",
+                          "properties": {
+                            "eur": {
+                              "type": "number",
+                              "description": "Current coin price in EUR."
+                            },
+                            "usd": {
+                              "type": "number",
+                              "description": "Current coin price in USD."
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "change": {
+                      "type": "object",
+                      "properties": {
+                        "utilized_storage": {
+                          "type": "integer",
+                          "description": "Change in utilized storage."
+                        },
+                        "total_storage": {
+                          "type": "integer",
+                          "description": "Change in total storage."
+                        },
+                        "online_hosts": {
+                          "type": "integer",
+                          "description": "Change in online hosts."
+                        },
+                        "30_day_revenue": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "number"
+                          },
+                          "description": "Difference in 30-day revenue by currency."
+                        },
+                        "active_contracts": {
+                          "type": "integer",
+                          "description": "Change in active contracts."
+                        },
+                        "coin_price": {
+                          "type": "object",
+                          "properties": {
+                            "eur": {
+                              "type": "number",
+                              "description": "Change in coin price in EUR."
+                            },
+                            "usd": {
+                              "type": "number",
+                              "description": "Change in coin price in USD."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "summary": "Example response",
+                    "value": {
+                      "actual_date": "2025-01-14T12:00:00Z",
+                      "compare_date": "2024-12-15T12:00:00Z",
+                      "actual": {
+                        "utilized_storage": 1854304461783040,
+                        "total_storage": 8076470131884032,
+                        "online_hosts": 469,
+                        "30_day_revenue": {
+                          "sc": 3.313044290068622e+30,
+                          "usd": 18491.08,
+                          "eur": 17789.6,
+                          "btc": 0.18
+                        },
+                        "active_contracts": 37573,
+                        "coin_price": {
+                          "eur": 0.00566,
+                          "usd": 0.00583
+                        }
+                      },
+                      "change": {
+                        "utilized_storage": 4890441023488,
+                        "total_storage": 5654827761664,
+                        "online_hosts": 1,
+                        "30_day_revenue": {
+                          "sc": -2.081499236408141e+25,
+                          "usd": -0.22,
+                          "eur": -0.2,
+                          "btc": 0
+                        },
+                        "active_contracts": 101,
+                        "coin_price": {
+                          "eur": -0.00074,
+                          "usd": -0.00089
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request. Possibly due to invalid date format."
+          },
+          "500": {
+            "description": "Server error."
+          }
+        }
+      }
+    },
+    "/daily/growth": {
+      "get": {
+        "summary": "Retrieve daily growth metrics",
+        "description": "Fetches metrics such as total storage, utilized storage, and active/total hosts.",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "description": "Start date for filtering metrics in ISO 8601 format.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The date and time of the metrics"
+                      },
+                      "total_storage": {
+                        "type": "string",
+                        "description": "Total available storage across all hosts"
+                      },
+                      "utilized_storage": {
+                        "type": "string",
+                        "description": "Total storage currently being used"
+                      },
+                      "active_hosts": {
+                        "type": "string",
+                        "description": "Number of currently active hosts"
+                      },
+                      "total_hosts": {
+                        "type": "string",
+                        "description": "Total number of hosts ever registered"
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "summary": "Example response",
+                    "value": [
+                      {
+                        "date": "2025-01-14T00:00:00Z",
+                        "total_storage": "8088435612975104",
+                        "utilized_storage": "1837307518779392",
+                        "active_hosts": "470",
+                        "total_hosts": "86005"
+                      },
+                      {
+                        "date": "2025-01-15T00:00:00Z",
+                        "total_storage": "8082185361817600",
+                        "utilized_storage": "1859323349172224",
+                        "active_hosts": "467",
+                        "total_hosts": "86005"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/monthly/metrics": {
+      "get": {
+        "summary": "Get Monthly Max Used Storage",
+        "description": "Fetches the maximum used storage for each month grouped by the month.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response with the grouped monthly max used storage data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "date": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "The first day of the month for which data is grouped."
+                      },
+                      "max_used_storage": {
+                        "type": "string",
+                        "description": "The maximum used storage value for the month in bytes."
+                      }
+                    },
+                    "required": [
+                      "date",
+                      "max_used_storage"
+                    ]
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "summary": "Example response showing three months of storage metrics",
+                    "value": [
+                      {
+                        "date": "2024-11-01",
+                        "max_used_storage": "43179336269824"
+                      },
+                      {
+                        "date": "2024-12-01",
+                        "max_used_storage": "44199386808320"
+                      },
+                      {
+                        "date": "2025-01-01",
+                        "max_used_storage": "45437591486464"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error. Query execution failed or another error occurred.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message describing the failure."
+                    }
+                  }
+                },
+                "examples": {
+                  "queryError": {
+                    "summary": "Query execution error",
+                    "value": {
+                      "error": "Error executing query: <details>"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monthly/revenue": {
+      "get": {
+        "summary": "Retrieve Monthly Revenue Data",
+        "description": "Fetches monthly revenue data from the external API, processes it to compute revenue differences, and returns the results.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response with monthly revenue data and differences.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "description": "Monthly revenue data with different currency representations",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "date": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Year and month in YYYY-MM format"
+                      },
+                      "sc": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Revenue in SiaCoin"
+                      },
+                      "usd": {
+                        "type": "string",
+                        "description": "Revenue in US Dollars"
+                      },
+                      "eur": {
+                        "type": "string",
+                        "description": "Revenue in Euros"
+                      },
+                      "btc": {
+                        "type": "string",
+                        "description": "Revenue in Bitcoin"
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "summary": "Example response showing three months of revenue data",
+                    "value": [
+                      {
+                        "sc": -5.800636320053199e-6,
+                        "usd": "14651.52",
+                        "eur": "13846.94",
+                        "btc": "0.15458122",
+                        "date": "2024-11"
+                      },
+                      {
+                        "sc": 7.133701809754866e-6,
+                        "usd": "14673.44",
+                        "eur": "14094.98",
+                        "btc": "0.14200507",
+                        "date": "2024-12"
+                      },
+                      {
+                        "sc": 3.062447746611937e-6,
+                        "usd": "4103.27",
+                        "eur": "3966.22",
+                        "btc": "0.04303025",
+                        "date": "2025-01"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error fetching or processing the data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Description of the error."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/explorer_metrics": {
+      "get": {
+        "summary": "Get Explorer Metrics",
+        "description": "Fetches metrics related to consensus, block data, unconfirmed transactions, connected peers, and contracts from the Siacoin explorer.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response with explorer metrics data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "blockHeight": {
+                      "type": "integer",
+                      "description": "The current block height in the Siacoin blockchain."
+                    },
+                    "blockFoundTime": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "The timestamp when the block was found."
+                    },
+                    "averageFoundSeconds": {
+                      "type": "number",
+                      "format": "float",
+                      "description": "The average time in seconds taken to find a block."
+                    },
+                    "estimatedV2Time": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Estimated time when version 2 will be reached based on block height."
+                    },
+                    "connectedPeers": {
+                      "type": "integer",
+                      "description": "The number of peers connected to the network."
+                    },
+                    "newHosts": {
+                      "type": "integer",
+                      "description": "The number of new hosts detected in the last block."
+                    },
+                    "completedContracts": {
+                      "type": "integer",
+                      "description": "The number of completed contracts in the last block."
+                    },
+                    "newContracts": {
+                      "type": "integer",
+                      "description": "The number of new contracts detected in the last block."
+                    },
+                    "unconfirmedTransactions": {
+                      "type": "integer",
+                      "description": "The number of unconfirmed transactions in the transaction pool."
+                    }
+                  },
+                  "required": [
+                    "blockHeight",
+                    "blockFoundTime",
+                    "averageFoundSeconds",
+                    "estimatedV2Time",
+                    "connectedPeers",
+                    "newHosts",
+                    "completedContracts",
+                    "newContracts",
+                    "unconfirmedTransactions"
+                  ]
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response",
+                    "value": {
+                      "blockHeight": 505586,
+                      "blockFoundTime": "2025-01-15T13:44:26Z",
+                      "averageFoundSeconds": 529,
+                      "estimatedV2Time": "2025-03-13T21:40:37Z",
+                      "connectedPeers": 24,
+                      "newHosts": 0,
+                      "completedContracts": 0,
+                      "newContracts": 5,
+                      "unconfirmedTransactions": 60
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error, failed to fetch data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message describing the failure."
+                    }
+                  },
+                  "examples": {
+                    "queryError": {
+                      "summary": "Data fetch error",
+                      "value": {
+                        "error": "Error fetching data from Siacoin explorer."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/host": {
+      "get": {
+        "summary": "Get Host Details",
+        "description": "Fetch host details, including settings, benchmark data, daily statistics, and scores.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "The unique ID of the host.",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "public_key",
+            "in": "query",
+            "description": "The public key of the host.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with host details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "settings": {
+                      "type": "object",
+                      "description": "Host settings data.",
+                      "properties": {
+                        "host_id": {
+                          "type": "string",
+                          "description": "Unique identifier for the host"
+                        },
+                        "public_key": {
+                          "type": "string",
+                          "description": "Host's public key"
+                        },
+                        "net_address": {
+                          "type": "string",
+                          "description": "Network address of the host"
+                        },
+                        "online": {
+                          "type": "string",
+                          "description": "Host online status (0 or 1)"
+                        },
+                        "first_seen": {
+                          "type": "string",
+                          "description": "Timestamp when host was first seen"
+                        },
+                        "accepting_contracts": {
+                          "type": "string",
+                          "description": "Whether host is accepting contracts (0 or 1)"
+                        },
+                        "country": {
+                          "type": "string",
+                          "description": "Country code where host is located"
+                        },
+                        "location": {
+                          "type": "string",
+                          "description": "Geographic coordinates of the host"
+                        },
+                        "version": {
+                          "type": "string",
+                          "description": "Host software version"
+                        },
+                        "used_storage": {
+                          "type": "string",
+                          "description": "Amount of storage currently in use"
+                        },
+                        "total_storage": {
+                          "type": "string",
+                          "description": "Total available storage"
+                        },
+                        "storage_price": {
+                          "type": "string",
+                          "description": "Price per unit of storage"
+                        },
+                        "download_price": {
+                          "type": "string",
+                          "description": "Price for downloads"
+                        },
+                        "upload_price": {
+                          "type": "string",
+                          "description": "Price for uploads"
+                        },
+                        "collateral": {
+                          "type": "string",
+                          "description": "Collateral per unit of storage"
+                        },
+                        "max_collateral": {
+                          "type": "string",
+                          "description": "Maximum collateral per contract"
+                        },
+                        "contract_price": {
+                          "type": "string",
+                          "description": "Base price for forming a contract"
+                        },
+                        "base_rpc_price": {
+                          "type": "string",
+                          "description": "Base price for RPC calls"
+                        },
+                        "sector_access_price": {
+                          "type": "string",
+                          "description": "Price for accessing a sector"
+                        },
+                        "ephemeral_account_expiry": {
+                          "type": "string",
+                          "description": "Expiry time for ephemeral accounts"
+                        },
+                        "max_duration": {
+                          "type": "string",
+                          "description": "Maximum contract duration"
+                        },
+                        "max_ephemeral_account_balance": {
+                          "type": "string",
+                          "description": "Maximum balance for ephemeral accounts"
+                        },
+                        "sector_size": {
+                          "type": "string",
+                          "description": "Size of storage sectors"
+                        },
+                        "sia_mux_port": {
+                          "type": "string",
+                          "description": "Port used for Sia multiplexer"
+                        },
+                        "window_size": {
+                          "type": "string",
+                          "description": "Size of proof window"
+                        },
+                        "last_updated": {
+                          "type": "string",
+                          "description": "Timestamp of last update"
+                        }
+                      }
+                    },
+                    "benchmark": {
+                      "type": "object",
+                      "properties": {
+                        "download_speed": {
+                          "type": "string",
+                          "description": "Average download speed in bytes per second"
+                        },
+                        "upload_speed": {
+                          "type": "string",
+                          "description": "Average upload speed in bytes per second"
+                        },
+                        "ttfb": {
+                          "type": "string",
+                          "description": "Time to first byte in microseconds"
+                        }
+                      }
+                    },
+                    "dailydata": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": {
+                            "type": "string",
+                            "description": "Date of the statistics"
+                          },
+                          "used_storage": {
+                            "type": "string",
+                            "description": "Storage in use on this date"
+                          },
+                          "total_storage": {
+                            "type": "string",
+                            "description": "Total storage available on this date"
+                          },
+                          "storage_price": {
+                            "type": "string",
+                            "description": "Storage price on this date"
+                          },
+                          "upload_price": {
+                            "type": "string",
+                            "description": "Upload price on this date"
+                          },
+                          "download_price": {
+                            "type": "string",
+                            "description": "Download price on this date"
+                          },
+                          "accepting_contracts": {
+                            "type": "string",
+                            "description": "Contract acceptance status on this date"
+                          }
+                        }
+                      }
+                    },
+                    "node_scores": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "date": {
+                              "type": "string",
+                              "description": "Date of the score"
+                            },
+                            "download_score": {
+                              "type": "integer",
+                              "description": "Download performance score"
+                            },
+                            "upload_score": {
+                              "type": "integer",
+                              "description": "Upload performance score"
+                            },
+                            "ttfb_score": {
+                              "type": "integer",
+                              "description": "Time to first byte score"
+                            },
+                            "total_score": {
+                              "type": "integer",
+                              "description": "Overall performance score"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "segment_averages": {
+                      "type": "object",
+                      "properties": {
+                        "contract_price": {
+                          "type": "string",
+                          "description": "Average contract price in the segment"
+                        },
+                        "storage_price": {
+                          "type": "string",
+                          "description": "Average storage price in the segment"
+                        },
+                        "upload_price": {
+                          "type": "string",
+                          "description": "Average upload price in the segment"
+                        },
+                        "download_price": {
+                          "type": "string",
+                          "description": "Average download price in the segment"
+                        },
+                        "collateral": {
+                          "type": "string",
+                          "description": "Average collateral in the segment"
+                        },
+                        "used_storage": {
+                          "type": "string",
+                          "description": "Average used storage in the segment"
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "summary": "Example host details response",
+                    "value": {
+                      "settings": {
+                        "host_id": "241",
+                        "public_key": "ed25519:d2d24b4bf3958fc484d8b0fec9792a401a178f56d527dfd0a94afa4a6777f399",
+                        "net_address": "sia666.ddns.net:9982",
+                        "online": "0",
+                        "first_seen": "2023-10-16 20:29:15",
+                        "accepting_contracts": "1",
+                        "country": "CA",
+                        "location": "45.5059,-73.631",
+                        "version": "1.6.0",
+                        "used_storage": "42643979501568",
+                        "total_storage": "65000001503232",
+                        "storage_price": "62268518519",
+                        "download_price": "969000000000000",
+                        "upload_price": "69000000000000",
+                        "collateral": "186805555557",
+                        "max_collateral": "50000000000000000000000000000",
+                        "contract_price": "100000000000000000000000",
+                        "base_rpc_price": "100000000000000000",
+                        "sector_access_price": "100000000000000000",
+                        "ephemeral_account_expiry": "2592000000000000",
+                        "max_duration": "12960",
+                        "max_ephemeral_account_balance": "10000000000000000000000000",
+                        "sector_size": "4194304",
+                        "sia_mux_port": "9983",
+                        "window_size": "144",
+                        "last_updated": "2025-01-15 18:30:03"
+                      },
+                      "benchmark": {
+                        "download_speed": "8156819.1220",
+                        "upload_speed": "8440451.7317",
+                        "ttfb": "911658536.5854"
+                      },
+                      "dailydata": [
+                        {
+                          "date": "2025-01-15",
+                          "used_storage": "42522344685568",
+                          "total_storage": "65000001503232",
+                          "storage_price": "62268518519",
+                          "upload_price": "69000000000000",
+                          "download_price": "969000000000000",
+                          "accepting_contracts": "1"
+                        }
+                      ],
+                      "node_scores": {
+                        "global": [
+                          {
+                            "date": "2025-01-15",
+                            "download_score": 6,
+                            "upload_score": 8,
+                            "ttfb_score": 5,
+                            "total_score": 7
+                          }
+                        ],
+                        "asia": [
+                          {
+                            "date": "2025-01-15",
+                            "download_score": 4,
+                            "upload_score": 8,
+                            "ttfb_score": 3,
+                            "total_score": 5
+                          }
+                        ],
+                        "east-us": [
+                          {
+                            "date": "2025-01-15",
+                            "download_score": 4,
+                            "upload_score": 5,
+                            "ttfb_score": 3,
+                            "total_score": 4
+                          }
+                        ]
+                      },
+                      "segment_averages": {
+                        "contract_price": "2692030340007453620771052.6316",
+                        "storage_price": "269722328859.6316",
+                        "upload_price": "116314247828305.9211",
+                        "download_price": "2979069222926633.2368",
+                        "collateral": "140978591673.3421",
+                        "used_storage": "1932195487312.8421"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request. Either host ID or public key must be provided."
+          },
+          "404": {
+            "description": "No host found for the given parameters."
+          }
+        }
+      }
+    },
+    "/hosts": {
+      "get": {
+        "summary": "Get Hosts List",
+        "description": "Fetch a list of hosts with sorting, filtering, and pagination options.",
+        "parameters": [
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sorting criteria for the hosts list. Possible values are: `rank`, `used_storage`, `total_storage`, `storage_price`, `net_address`, `age`, `growth`.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "rank",
+              "enum": [
+                "rank",
+                "used_storage",
+                "total_storage",
+                "storage_price",
+                "net_address",
+                "age",
+                "growth"
+              ]
+            }
+          },
+          {
+            "name": "showinactive",
+            "in": "query",
+            "description": "Include inactive hosts if set to `true`.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "description": "Filter hosts by their net address. Case-insensitive partial match.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of hosts to return per page. Defaults to 15. Set to 0 for no limit.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 15
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number to retrieve.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with the hosts list and pagination details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hosts": {
+                      "type": "array",
+                      "description": "List of hosts.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "host_id": {
+                            "type": "string",
+                            "description": "Unique identifier for the host."
+                          },
+                          "public_key": {
+                            "type": "string",
+                            "description": "Public key of the host (ed25519 format)."
+                          },
+                          "net_address": {
+                            "type": "string",
+                            "description": "Network address of the host."
+                          },
+                          "used_storage": {
+                            "type": "string",
+                            "description": "Used storage in bytes."
+                          },
+                          "storage_price": {
+                            "type": "string",
+                            "description": "Price for storage in Siacoins per byte per block."
+                          },
+                          "upload_price": {
+                            "type": "string",
+                            "description": "Price for uploads in Siacoins per byte."
+                          },
+                          "download_price": {
+                            "type": "string",
+                            "description": "Price for downloads in Siacoins per byte."
+                          },
+                          "total_storage": {
+                            "type": "string",
+                            "description": "Total storage in bytes."
+                          },
+                          "version": {
+                            "type": "string",
+                            "description": "Host software version."
+                          },
+                          "country": {
+                            "type": "string",
+                            "description": "Two-letter country code where the host is located."
+                          },
+                          "total_score": {
+                            "type": "string",
+                            "description": "Total benchmark score of the host."
+                          },
+                          "used_storage_diff": {
+                            "type": "string",
+                            "description": "Change in used storage compared to previous day in bytes."
+                          },
+                          "rank": {
+                            "type": "integer",
+                            "description": "Rank of the host in the sorted list."
+                          }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "description": "Pagination details.",
+                      "properties": {
+                        "total_pages": {
+                          "type": "integer",
+                          "description": "Total number of pages."
+                        },
+                        "current_page": {
+                          "type": "integer",
+                          "description": "Current page number."
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response",
+                    "value": {
+                      "hosts": [
+                        {
+                          "host_id": "9",
+                          "public_key": "ed25519:e209c594656bf395956f5c9c3fb5cf2e6de5d6342f5805ea61495da9e1808061",
+                          "net_address": "sial1.fdh.bz:9082",
+                          "used_storage": "3959422976",
+                          "storage_price": "91969593996",
+                          "upload_price": "11000000000000",
+                          "download_price": "1024000000000000",
+                          "total_storage": "939998052352",
+                          "version": "1.6.0",
+                          "country": "DE",
+                          "total_score": "10",
+                          "used_storage_diff": "-1342177280",
+                          "rank": 1
+                        }
+                      ],
+                      "pagination": {
+                        "total_pages": 485,
+                        "current_page": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Description of the error."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/peers": {
+      "get": {
+        "summary": "Get Peers List",
+        "description": "Retrieve a list of peers grouped by network type.",
+        "responses": {
+          "200": {
+            "description": "Successful response with the list of peers grouped by network.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mainnet": {
+                      "type": "array",
+                      "description": "List of peers on the main Sia network.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "address": {
+                            "type": "string",
+                            "description": "Peer's IP address and port."
+                          },
+                          "version": {
+                            "type": "string",
+                            "description": "Peer's software version."
+                          },
+                          "last_scanned": {
+                            "type": "string",
+                            "format": "date",
+                            "description": "Date when the peer was last scanned (YYYY-MM-DD format)."
+                          }
+                        }
+                      }
+                    },
+                    "zen": {
+                      "type": "array",
+                      "description": "List of peers on the Zen network.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "address": {
+                            "type": "string",
+                            "description": "Peer's IP address and port."
+                          },
+                          "version": {
+                            "type": "string",
+                            "description": "Peer's software version."
+                          },
+                          "last_scanned": {
+                            "type": "string",
+                            "format": "date",
+                            "description": "Date when the peer was last scanned (YYYY-MM-DD format)."
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response",
+                    "value": {
+                      "mainnet": [
+                        {
+                          "address": "184.155.174.29:9981",
+                          "version": "1.5.4",
+                          "last_scanned": "2025-01-15"
+                        }
+                      ],
+                      "zen": [
+                        {
+                          "address": "23.26.250.110:9971",
+                          "version": "2.0.0",
+                          "last_scanned": "2025-01-15"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or no data available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Description of the error."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
