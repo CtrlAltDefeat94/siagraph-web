@@ -30,10 +30,22 @@ $data = getCache($explorerKey);
 // Fetch unconfirmed transactions
 $txPoolData = fetchData($SETTINGS['explorer'] . '/txpool/transactions');
 $count = 0;
-if ($txPoolData && isset($txPoolData['transactions'])) {
-    foreach ($txPoolData['transactions'] as $item) {
-        if (isset($item['minerFees'])) {
-            $count++;
+if ($txPoolData) {
+    // Count from 'transactions'
+    if (isset($txPoolData['transactions'])) {
+        foreach ($txPoolData['transactions'] as $item) {
+            if (isset($item['minerFees'])) {
+                $count++;
+            }
+        }
+    }
+
+    // Count from 'v2transactions'
+    if (isset($txPoolData['v2transactions'])) {
+        foreach ($txPoolData['v2transactions'] as $item) {
+            if (isset($item['minerFees'])) {
+                $count++;
+            }
         }
     }
 }
