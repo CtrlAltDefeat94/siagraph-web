@@ -43,7 +43,7 @@ if ($txPoolData) {
     // Count from 'v2transactions'
     if (isset($txPoolData['v2transactions'])) {
         foreach ($txPoolData['v2transactions'] as $item) {
-            if (isset($item['minerFees'])) {
+            if (isset($item['minerFee'])) {
                 $count++;
             }
         }
