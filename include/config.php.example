@@ -6,6 +6,8 @@ $SETTINGS = array(
         "password" => "",
         "database" => ""
     ),
+    // Optional: Redis host for caching (Predis)
+    "redis_ip" => "127.0.0.1",
     "explorer" => "https://explorer.siagraph.info",
     "network" => "mainnet",
     "last_scan_host_online" => "12 HOUR",

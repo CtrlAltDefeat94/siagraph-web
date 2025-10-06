@@ -80,7 +80,6 @@ $data = json_decode($tokenomics, true);
                     {
                         label: 'Block Height',
                         data: blockheight,
-                        data: [5, 15, 25, 35, 45],
                         backgroundColor: 'rgba(0, 0, 0, 0)', // Fully transparent
                         borderColor: 'rgba(0, 0, 0, 0)', // Fully transparent
                         borderWidth: 0, // No border
@@ -274,7 +273,7 @@ $data = json_decode($tokenomics, true);
     });
 </script>
 <body>
-<section id="graph-section" class="bg-light p-3 rounded-3 mt-4">
+<section id="graph-section" class="bg-secondary p-3 rounded-3 mt-4">
         
             <section class="graph-container">
 

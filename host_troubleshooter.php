@@ -1,95 +1,110 @@
-<!DOCTYPE html>
-<html lang="en">
+<?php require_once 'bootstrap.php'; ?>
+<?php require_once 'include/layout.php'; ?>
+<?php render_header('SiaGraph - Host Troubleshooter'); ?>
+<section id="main-content" class="sg-container">
+    <h1 class="sg-container__heading text-center mb-2"><i class="bi bi-wrench me-2"></i>Host Troubleshooter</h1>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SiaGraph Host Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
-  <script src="script.js"></script>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <link rel="icon" href="img/favicon.ico" type="image/png">
-</head>
-
-<body>
-  <?php include "include/header.html" ?>
-  <section id="main-content" class="container-sm mt-4 pb-5">
-
-    <!-- Search Section -->
-    <div class="row mb-4">
-      <div class="col-lg-4 d-none d-lg-block"></div>
-      <div class="col-lg-8">
-        <div class="max-w-2xl" style="width: 100%;">
-          <!-- Net Address Search -->
-          <form id="netAddressForm" class="row g-2 mb-3">
-            <div class="col-sm-9">
-              <input type="text" id="netAddressInput" class="form-control" placeholder="example.com:9984" />
+    <!-- Search -->
+    <div class="sg-container__row mb-4">
+        <div class="sg-container__row-content sg-container__row-content--center">
+            <div class="sg-container__column" style="max-width: 800px;">
+                <section class="card">
+                    <h2 class="card__heading">Lookup a Host</h2>
+                    <div class="card__content">
+                        <form id="netAddressForm" class="row g-2">
+                            <div class="col-sm-9">
+                                <input type="text" id="netAddressInput" class="form-control" placeholder="example.com:9984">
+                            </div>
+                            <div class="col-sm-3">
+                                <button type="submit" class="button w-100">Lookup</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+                <section id="recentHosts" class="card mt-3" style="display: none;">
+                    <h2 class="card__heading">Recently Searched Hosts</h2>
+                    <div class="card__content">
+                        <ul id="recentHostList" class="mb-0"></ul>
+                    </div>
+                </section>
             </div>
-            <div class="col-sm-3">
-              <button type="submit" class="btn btn-primary w-100">Lookup</button>
-            </div>
-          </form>
-
-          <!-- Recently Searched Hosts -->
-          <div id="recentHosts" class="mb-5 hidden">
-            <div class="bg-white shadow rounded-lg p-4">
-              <h5 class="text-md font-semibold mb-2">Recently Searched Hosts</h5>
-              <ul id="recentHostList" class="list-disc pl-5 text-sm text-gray-700"></ul>
-            </div>
-          </div>
         </div>
-      </div>
     </div>
 
-    <!-- Results Section -->
+    <!-- Results -->
     <div id="resultsSection" style="display: none;">
+        <div id="warningsErrors" class="mb-4"></div>
 
-      <!-- Issues Panel -->
-      <div id="warningsErrors" class="mb-6"></div>
-
-      <div class="row mb-6">
-        <!-- Connection Status Panel -->
-        <div class="col-lg-5 mb-4 mb-lg-0">
-          <div class="bg-white shadow rounded-lg p-4 h-100">
-            <h3 class="text-lg font-bold mb-3">Connection Status</h3>
-            <div id="connectionStatus"></div>
-          </div>
+        <div class="sg-container__row mb-4">
+            <div class="sg-container__row-content">
+                <div class="sg-container__column" style="flex:0 0 360px;max-width:360px">
+                    <section class="card">
+                        <h2 class="card__heading">Connection Status</h2>
+                        <div class="card__content" id="connectionStatus"></div>
+                    </section>
+                </div>
+                <div class="sg-container__column" style="flex:1 1 0%;min-width:0">
+                    <section class="card">
+                        <h2 class="card__heading">Host Information</h2>
+                        <div class="card__content">
+                            <table class="table table-dark table-clean" style="table-layout:fixed" id="hostInfo"></table>
+                        </div>
+                    </section>
+                </div>
+            </div>
         </div>
 
-        <!-- Host Info Panel -->
-        <div class="col-lg-7">
-          <div class="bg-white shadow rounded-lg p-4 h-100">
-            <h3 class="text-lg font-bold mb-3">Host Information</h3>
-            <table class="table-auto w-full text-sm" id="hostInfo"></table>
-          </div>
+        <div class="sg-container__row mb-4">
+            <div class="sg-container__row-content">
+                <div class="sg-container__column">
+                    <section class="card">
+                        <h2 class="card__heading">Storage Usage</h2>
+                        <div class="card__content">
+                            <div class="progress" style="height: 24px;">
+                                <div id="storageBar" class="progress-bar" role="progressbar" style="width: 0%;">0%</div>
+                            </div>
+                            <div id="storageStats" class="text-center text-muted mt-2"></div>
+                        </div>
+                    </section>
+                </div>
+            </div>
         </div>
-      </div>
 
-      <!-- Storage Usage Panel -->
-      <div class="bg-white shadow rounded-lg p-4 mb-6">
-        <h3 class="text-lg font-bold mb-3">Storage Usage</h3>
-        <div id="storageUsage" class="w-full bg-gray-200 rounded h-6">
-          <div class="bg-blue-500 h-6 rounded text-xs text-white text-center flex items-center justify-center"
-            id="storageBar">
-            0%
-          </div>
+        <div class="sg-container__row">
+            <div class="sg-container__row-content">
+                <div class="sg-container__column">
+                    <section class="card">
+                        <h2 class="card__heading">Settings &amp; Pricing</h2>
+                        <div class="card__content">
+                            <div id="settingsGrid" class="row g-3 settings-grid"></div>
+                        </div>
+                    </section>
+                </div>
+            </div>
         </div>
-        <div id="storageStats" class="text-sm text-gray-600 mt-2 text-center"></div>
-      </div>
-
-      <!-- Settings & Pricing Grid -->
-      <div class="bg-white shadow rounded-lg p-4">
-        <h3 class="text-lg font-bold mb-3">Settings & Pricing</h3>
-        <div id="settingsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
-      </div>
-    </div> <!-- end #resultsSection -->
-
-  </section>
-  <?php include "include/footer.php" ?>
-</body>
+    </div>
+</section>
 <script>
+  // Fallbacks when global helpers (from script.js) haven't executed yet
+  async function fetchCachedOrDirect(url, options = {}, ttl = 3600000, parseAs = 'json') {
+    try {
+      if (typeof fetchWithCache === 'function') {
+        return await fetchWithCache(url, options, ttl, parseAs);
+      }
+    } catch (_) { /* ignore and use direct fetch */ }
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error(`Unexpected HTTP code: ${res.status}`);
+    return parseAs === 'text' ? res.text() : res.json();
+  }
+  function getCookieSafe(name) {
+    if (typeof getCookie === 'function') return getCookie(name);
+    const cookieArr = document.cookie.split('; ');
+    for (let i = 0; i < cookieArr.length; i++) {
+      const cookiePair = cookieArr[i].split('=');
+      if (cookiePair[0] === name) return cookiePair[1];
+    }
+    return null;
+  }
   function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(param);
@@ -111,47 +126,73 @@
       resultsSection.style.display = "block";
     }
 
+    // Basic validation (API expects host:port; IPv6 not yet supported here)
+    const basicFormat = /^([\w\.-]+):(\d+)$/;
+    if (!basicFormat.test(netAddress)) {
+      const warningsErrors = document.getElementById('warningsErrors');
+      resultsSection.style.display = 'block';
+      warningsErrors.innerHTML = '<div class="alert alert-danger" role="alert">Invalid address. Use host:port (e.g. example.com:9984).</div>';
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/v1/host_troubleshooter?net_address=${encodeURIComponent(netAddress)}`);
-      const data = await response.json();
-      renderHostData(data);
+      const data = await fetchCachedOrDirect(`/api/v1/host_troubleshooter?net_address=${encodeURIComponent(netAddress)}`);
+      if (data && data.error) {
+        const warningsErrors = document.getElementById('warningsErrors');
+        warningsErrors.innerHTML = `<div class=\"alert alert-danger\" role=\"alert\">${data.error}</div>`;
+        return;
+      }
+      renderHostData(data || {});
       addToRecentHistory(netAddress);
     } catch (error) {
       console.error("Failed to load host data", error);
+      const warningsErrors = document.getElementById('warningsErrors');
+      resultsSection.style.display = 'block';
+      warningsErrors.innerHTML = '<div class="alert alert-danger" role="alert">Failed to load host data. Please try again.</div>';
     }
   }
   function renderHostData(data) {
-    const isV2 = data.v2;
-    const settings = data.settings;
+    const isV2 = !!data.v2;
+    const settings = data.settings || {};
 
     const warningsErrors = document.getElementById('warningsErrors');
     warningsErrors.innerHTML = '';
-    if (data.warnings?.length || data.errors?.length) {
-      let html = '<div class="bg-red-100 border border-red-300 text-red-700 rounded p-3">';
-      html += '<h4 class="font-bold mb-2">Issues</h4><ul class="list-disc pl-5">';
-      data.warnings.forEach(w => html += `<li class='text-yellow-600'>⚠️ ${w}</li>`);
-      data.errors.forEach(e => html += `<li class='text-red-600'>❌ ${e}</li>`);
-      html += '</ul></div>';
+    const warnList = Array.isArray(data.warnings) ? data.warnings : [];
+    const errList = Array.isArray(data.errors) ? data.errors : [];
+    if (warnList.length || errList.length) {
+      let html = '';
+      if (warnList.length) {
+        html += '<div class="alert alert-warning" role="alert">';
+        html += '<div class="fw-semibold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>Warnings</div><ul class="mb-0 ps-3">';
+        warnList.forEach(w => html += `<li>${w}</li>`);
+        html += '</ul></div>';
+      }
+      if (errList.length) {
+        html += '<div class="alert alert-danger" role="alert">';
+        html += '<div class="fw-semibold mb-1"><i class="bi bi-x-circle-fill me-1"></i>Errors</div><ul class="mb-0 ps-3">';
+        errList.forEach(e => html += `<li>${e}</li>`);
+        html += '</ul></div>';
+      }
       warningsErrors.innerHTML = html;
     }
 
     const connectionStatus = document.getElementById('connectionStatus');
 
     const connectionChecks = {
-      'Online': data.online,
-      'Accepting Contracts': settings.acceptingcontracts || settings.acceptingContracts,
-      'IPv4 Enabled': data.ipv4_enabled,
-      'IPv4 RHP2': data.port_status?.ipv4_rhp2,
-      'IPv4 RHP3': data.port_status?.ipv4_rhp3,
-      'IPv4 RHP4': data.port_status?.ipv4_rhp4,
-      'IPv6 Enabled': data.ipv6_enabled,
-      'IPv6 RHP2': data.port_status?.ipv6_rhp2,
-      'IPv6 RHP3': data.port_status?.ipv6_rhp3,
-      'IPv6 RHP4': data.port_status?.ipv6_rhp4
+      'Online': !!data.online,
+      'Accepting Contracts': !!(settings.acceptingcontracts || settings.acceptingContracts),
+      'IPv4': !!data.ipv4_enabled,
+      'IPv4 RHP2': data.port_status?.ipv4_rhp2 ?? false,
+      'IPv4 RHP3': data.port_status?.ipv4_rhp3 ?? false,
+      'IPv4 RHP4': data.port_status?.ipv4_rhp4 ?? false,
+      'IPv6': !!data.ipv6_enabled,
+      'IPv6 RHP2': data.port_status?.ipv6_rhp2 ?? false,
+      'IPv6 RHP3': data.port_status?.ipv6_rhp3 ?? false,
+      'IPv6 RHP4': data.port_status?.ipv6_rhp4 ?? false
     };
 
-    const ipv4Checks = ['IPv4 Enabled'];
-    const ipv6Checks = ['IPv6 Enabled'];
+    const ipv4Checks = ['IPv4'];
+    const ipv6Checks = ['IPv6'];
 
     if (!isV2) {
       ipv4Checks.push('IPv4 RHP2', 'IPv4 RHP3');
@@ -162,56 +203,60 @@
     ipv6Checks.push('IPv6 RHP4');
 
 
-    const renderSection = (title, keys, gridCols = 1) => {
-      const gridClass = gridCols > 1 ? `grid grid-cols-${gridCols} gap-2` : '';
+    const renderSection = (title, keys) => {
       return `<div class="mb-3">
-    <h5 class='font-semibold mb-2'>${title}</h5>
-    <div class="${gridClass}">` +
+        <h5 class='mb-2'>${title}</h5>
+        <div class="row row-cols-2 g-2 status-grid">` +
         keys.map(k => {
           const v = connectionChecks[k];
-          return `<div class='p-2 rounded ${v ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}'>${v ? "✅" : "❌"} ${k}</div>`;
-        }).join('') + '</div></div>';
+          const cls = v ? 'border-success text-success' : 'border-danger text-danger';
+          const icon = v ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+          return `<div class='col'><div class='status-tile rounded border ${cls}'><i class="bi ${icon} me-1"></i><span class='status-label'>${k}</span></div></div>`;
+        }).join('') +
+        '</div></div>';
     };
 
     connectionStatus.innerHTML =
-      `<div class="mb-4">
-    ${renderSection('General', ['Online', 'Accepting Contracts'], 2)}
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>${renderSection('IPv4 Status', ipv4Checks, 1)}</div>
-      <div>${renderSection('IPv6 Status', ipv6Checks, 1)}</div>
-   </div>`;
+      `<div class="mb-2">${renderSection('General', ['Online', 'Accepting Contracts'])}</div>
+       <div class="row g-3">
+         <div class="col-12 col-lg-6">${renderSection('IPv4 Status', ipv4Checks)}</div>
+         <div class="col-12 col-lg-6">${renderSection('IPv6 Status', ipv6Checks)}</div>
+       </div>`;
 
     const hostInfo = document.getElementById('hostInfo');
     const infoFields = {
       'Public Key': data.public_key,
       'Net Address': data.net_address,
-      'V2': data.v2,
-      'Uptime': (data.uptime * 100).toFixed(2) + "%",
-      'Last scan': new Date(data.last_scan).toLocaleString(),
-      'Next scan': new Date(data.next_scan).toLocaleString(),
+      'V2': isV2,
+      'Uptime': (Number(data.uptime || 0) * 100).toFixed(2) + "%",
+      'Last scan': data.last_scan ? new Date(data.last_scan).toLocaleString(window.APP_LOCALE || undefined) : '—',
+      'Next scan': data.next_scan ? new Date(data.next_scan).toLocaleString(window.APP_LOCALE || undefined) : '—',
       'Software Version': data.software_version,
       'Protocol Version': data.protocol_version
     };
-    hostInfo.innerHTML = Object.entries(infoFields).map(([k, v]) =>
-      `<tr><td class='py-1 pr-2 font-semibold text-gray-600'>${k}</td><td class='py-1'>${v || '—'}</td></tr>`
-    ).join('');
+    const rows = Object.entries(infoFields).map(([k, v]) => {
+      const value = (v ?? '—');
+      const extraClass = k === 'Public Key' ? 'font-monospace text-break' : '';
+      const extraStyle = k === 'Public Key' ? " style='word-break:break-all'" : '';
+      return `<tr><th class='fw-semibold'>${k}</th><td class='text-start ${extraClass}'${extraStyle}>${value}</td></tr>`;
+    }).join('');
+    hostInfo.innerHTML = `<colgroup><col style='width:30%'><col style='width:70%'></colgroup>` + rows;
 
 
-    const usedBytes = parseInt(data.used_storage);
-    const totalBytes = parseInt(data.total_storage);
+    const usedBytes = parseInt(data.used_storage || 0);
+    const totalBytes = parseInt(data.total_storage || 0);
 
     const remainingBytes = totalBytes - usedBytes;
 
-    // Calculate % bar
-    const percentage = totalBytes > 0 ? Math.floor((remainingBytes / totalBytes) * 100) : 0;
-    document.getElementById('storageBar').style.width = 100 - percentage + '%';
-    document.getElementById('storageBar').innerText = 100 - percentage + '%';
+    // Calculate % used for progress bar
+    const percentage = totalBytes > 0 ? Math.floor(((usedBytes) / totalBytes) * 100) : 0;
+    const bar = document.getElementById('storageBar');
+    bar.style.width = percentage + '%';
+    bar.textContent = percentage + '%';
 
 
 
-    document.getElementById('storageStats').innerText =
-      `${formatDecimalBytes(usedBytes)} / ${formatDecimalBytes(totalBytes)} used`;
+    document.getElementById('storageStats').innerText = `${formatDecimalBytes(usedBytes)} / ${formatDecimalBytes(totalBytes)} used`;
     const settingsGrid = document.getElementById('settingsGrid');
     const fieldConfig = {
       'Collateral': {
@@ -262,12 +307,12 @@
       },
       'Ephemeral Account Expiry': {
         value: settings.ephemeralaccountexpiry,
-        type: 'sc',
+        type: 'number',
         unit: 'blocks'
       },
       'Max Download Batch Size': {
         value: settings.maxdownloadbatchsize,
-        type: 'sc',
+        type: 'number',
         unit: 'bytes'
       },
       'Max Revise Batch Size': {
@@ -312,15 +357,16 @@
       }
 
       return `
-  <div class='p-3 bg-gray-50 rounded shadow-sm border'>
-    <div class='text-xs text-gray-500 mb-1'>${key}</div>
-    <div class='font-mono break-all text-sm'>
-      ${display}
-      ${extraHtml || ''}
-      ${fiatHtml}
-    </div>
-  </div>
-`;
+        <div class='col-12 col-md-6 col-lg-4'>
+          <div class='p-3 rounded border'>
+            <div class='settings-label mb-1'>${key}</div>
+            <div class='settings-value font-monospace'>
+              ${display}
+              ${extraHtml || ''}
+              ${fiatHtml}
+            </div>
+          </div>
+        </div>`;
     }).join('');
 
     applyFiatValues();
@@ -353,33 +399,35 @@
     if (history.length === 0) return;
 
     list.innerHTML = history.map(addr =>
-      `<li><a href="?net_address=${encodeURIComponent(addr)}" class="text-blue-600 hover:underline">${addr}</a></li>`
+      `<li><a href="?net_address=${encodeURIComponent(addr)}">${addr}</a></li>`
     ).join("");
-
-    container.classList.remove("hidden");
+    container.style.display = '';
   }
 
   async function applyFiatValues() {
-    const currency = getCookie("currency") || "eur";
-    try {
-      const response = await fetch(`https://explorer.siagraph.info/api/exchange-rate/siacoin/${currency}`);
-      const rateText = await response.text();
-      const rate = parseFloat(rateText);
+    const currency = getCookieSafe("currency") || "eur";
+    let rate = 1;
+    if (currency !== 'sc') {
+      try {
+        const rateText = await fetchCachedOrDirect(`https://explorer.siagraph.info/api/exchange-rate/siacoin/${currency}`, {}, 86400000, 'text');
+        rate = parseFloat(rateText);
 
-      if (isNaN(rate)) {
+        if (isNaN(rate)) {
+          return;
+        }
+      } catch (err) {
+        console.error("Failed to fetch exchange rate", err);
         return;
       }
-      document.querySelectorAll('.fiat-value').forEach(el => {
-        const scRaw = parseFloat(el.getAttribute('data-sc') || "0");
-        if (!isNaN(scRaw)) {
-          const fiat = scRaw * rate;
-          el.textContent = `${currency.toUpperCase()} ${fiat >= 0.01 ? fiat.toFixed(2) : fiat.toFixed(5)}`;
-
-        }
-      });
-    } catch (err) {
-      console.error("Failed to fetch exchange rate", err);
     }
+    document.querySelectorAll('.fiat-value').forEach(el => {
+      const scRaw = parseFloat(el.getAttribute('data-sc') || "0");
+      if (!isNaN(scRaw)) {
+        const fiat = scRaw * rate;
+        el.textContent = `${currency.toUpperCase()} ${fiat >= 0.01 ? fiat.toFixed(2) : fiat.toFixed(5)}`;
+
+      }
+    });
   }
   // Convert to decimal GB / TB
   function formatDecimalBytes(bytes) {
@@ -427,8 +475,12 @@
       console.error("Error copying text: ", err);
     });
   }
-  loadHostData();
+  // Ensure this runs after deferred global scripts (script.js) execute
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadHostData);
+  } else {
+    loadHostData();
+  }
 </script>
-</body>
 
-</html>
+<?php render_footer(); ?>

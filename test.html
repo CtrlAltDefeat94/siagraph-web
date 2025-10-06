@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tailwind CDN Dark Mode Fix</title>
+
+    <!-- ✅ Correct Tailwind CDN Config: version + darkMode -->
+    <script>
+      tailwind = {
+        config: {
+          darkMode: 'class',
+          theme: {
+            extend: {},
+          },
+        },
+      };
+    </script>
+    <link href="css/tailwind.css" rel="stylesheet">
+
+  </head>
+  <body class="bg-white dark:bg-gray-900 text-black dark:text-white min-h-screen flex items-center justify-center">
+    <div class="p-6 rounded-lg shadow-lg bg-white dark:bg-gray-800 text-black dark:text-white">
+      <h1 class="text-2xl font-bold">✅ Dark Mode Test Block</h1>
+      <p>If this background is dark, dark mode is working!</p>
+    </div>
+  </body>
+</html>

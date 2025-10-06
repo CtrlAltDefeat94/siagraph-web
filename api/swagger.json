@@ -64,13 +64,13 @@
                           "type": "integer",
                           "description": "Number of online hosts."
                         },
-                        "30_day_revenue": {
-                          "type": "object",
-                          "additionalProperties": {
-                            "type": "number"
+                          "30_day_revenue": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string"
+                            },
+                            "description": "30-day revenue data by currency. Values are returned as strings to preserve precision."
                           },
-                          "description": "30-day revenue data by currency."
-                        },
                         "active_contracts": {
                           "type": "integer",
                           "description": "Number of active contracts."
@@ -85,6 +85,10 @@
                             "usd": {
                               "type": "number",
                               "description": "Current coin price in USD."
+                            },
+                            "sc": {
+                              "type": "number",
+                              "description": "Current coin price in SC."
                             }
                           }
                         }
@@ -105,13 +109,13 @@
                           "type": "integer",
                           "description": "Change in online hosts."
                         },
-                        "30_day_revenue": {
-                          "type": "object",
-                          "additionalProperties": {
-                            "type": "number"
+                          "30_day_revenue": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string"
+                            },
+                            "description": "Difference in 30-day revenue by currency. Values are returned as strings to preserve precision."
                           },
-                          "description": "Difference in 30-day revenue by currency."
-                        },
                         "active_contracts": {
                           "type": "integer",
                           "description": "Change in active contracts."
@@ -126,6 +130,10 @@
                             "usd": {
                               "type": "number",
                               "description": "Change in coin price in USD."
+                            },
+                            "sc": {
+                              "type": "number",
+                              "description": "Change in coin price in SC."
                             }
                           }
                         }
@@ -152,7 +160,8 @@
                         "active_contracts": 37573,
                         "coin_price": {
                           "eur": 0.00566,
-                          "usd": 0.00583
+                          "usd": 0.00583,
+                          "sc": 1
                         }
                       },
                       "change": {
@@ -168,7 +177,8 @@
                         "active_contracts": 101,
                         "coin_price": {
                           "eur": -0.00074,
-                          "usd": -0.00089
+                          "usd": -0.00089,
+                          "sc": 0
                         }
                       }
                     }
@@ -263,9 +273,85 @@
           "400": {
             "description": "Bad request"
           },
-          "500": {
+        "500": {
             "description": "Server error"
           }
+        }
+      }
+    },
+    "/daily/aggregates": {
+      "get": {
+        "summary": "Retrieve daily network aggregates",
+        "description": "Fetches daily aggregated network metrics such as blocks mined, contracts formed, and burned funds.",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "description": "Start date for filtering aggregates in ISO 8601 format.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "date": {"type": "string", "format": "date-time", "description": "Date of the aggregates"},
+                      "blocks_mined": {"type": "string", "description": "Number of blocks mined"},
+                      "contracts_formed": {"type": "string", "description": "Number of contracts formed"},
+                      "renewed_contracts": {"type": "string", "description": "Number of renewed contracts"},
+                      "failed_contracts": {"type": "string", "description": "Number of failed contracts"},
+                      "successful_contracts": {"type": "string", "description": "Number of successful contracts"},
+                      "unique_contract_renters": {"type": "string", "description": "Unique renters forming contracts"},
+                      "contract_revenue": {
+                        "type": "object",
+                        "description": "Contract revenue",
+                        "properties": {
+                          "sc": {"type": "string", "description": "Contract revenue in hastings"},
+                          "usd": {"type": "number", "description": "Contract revenue in USD"},
+                          "eur": {"type": "number", "description": "Contract revenue in EUR"}
+                        }
+                      },
+                      "siafund_tax_revenue": {
+                        "type": "object",
+                        "description": "Siafund tax revenue",
+                        "properties": {
+                          "sc": {"type": "string", "description": "Siafund tax revenue in hastings"},
+                          "usd": {"type": "number", "description": "Siafund tax revenue in USD"},
+                          "eur": {"type": "number", "description": "Siafund tax revenue in EUR"}
+                        }
+                      },
+                      "siacoin_volume": {"type": "string", "description": "Total Siacoin volume"},
+                      "siafund_volume": {"type": "string", "description": "Total Siafund volume"},
+                      "total_fees": {"type": "string", "description": "Total transaction fees"},
+                      "unique_transaction_addresses": {"type": "string", "description": "Unique transaction addresses"},
+                      "burned_funds": {"type": "string", "description": "Total burned funds"},
+                      "avg_difficulty": {"type": "string", "description": "Average block difficulty"}
+                    }
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "summary": "Example response",
+                    "value": [
+                      {"date": "2025-01-14T00:00:00Z", "blocks_mined": "144", "contracts_formed": "100", "burned_funds": "123456789"}
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {"description": "Bad request"},
+          "500": {"description": "Server error"}
         }
       }
     },
@@ -371,9 +457,8 @@
                         "description": "Year and month in YYYY-MM format"
                       },
                       "sc": {
-                        "type": "number",
-                        "format": "float",
-                        "description": "Revenue in SiaCoin"
+                        "type": "string",
+                        "description": "Revenue in SiaCoin returned as a string to preserve precision"
                       },
                       "usd": {
                         "type": "string",
@@ -943,6 +1028,15 @@
             }
           },
           {
+            "name": "acceptingContracts",
+            "in": "query",
+            "description": "Only include hosts that are currently accepting contracts if set to `true`.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "query",
             "in": "query",
             "description": "Filter hosts by their net address. Case-insensitive partial match.",
@@ -969,6 +1063,46 @@
             "schema": {
               "type": "integer",
               "default": 1
+            }
+          },
+          {
+            "name": "maxContractPrice",
+            "in": "query",
+            "description": "Return hosts with a contract price less than or equal to this value (hastings).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 1000000000000000000000
+            }
+          },
+          {
+            "name": "maxStoragePrice",
+            "in": "query",
+            "description": "Return hosts with a storage price less than or equal to this value (hastings per byte per block).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 5000000000000
+            }
+          },
+          {
+            "name": "maxUploadPrice",
+            "in": "query",
+            "description": "Return hosts with an upload price below this value (hastings per byte).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 1000000000000
+            }
+          },
+          {
+            "name": "maxDownloadPrice",
+            "in": "query",
+            "description": "Return hosts with a download price below this value (hastings per byte).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 2000000000000
             }
           }
         ],
@@ -1026,6 +1160,10 @@
                             "type": "string",
                             "description": "Two-letter country code where the host is located."
                           },
+                          "accepting_contracts": {
+                            "type": "string",
+                            "description": "Whether the host is currently accepting contracts (0 or 1)."
+                          },
                           "total_score": {
                             "type": "string",
                             "description": "Total benchmark score of the host."
@@ -1073,6 +1211,7 @@
                           "total_storage": "939998052352",
                           "version": "1.6.0",
                           "country": "DE",
+                          "accepting_contracts": "1",
                           "total_score": "10",
                           "used_storage_diff": "-1342177280",
                           "rank": 1

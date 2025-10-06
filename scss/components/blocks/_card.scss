@@ -1,0 +1,69 @@
+@layer components{
+  .card{
+    @apply
+    flex
+    flex-col
+    gap-4
+    p-6
+    bg-background
+    border-white
+    border-opacity-10
+    rounded-3xl;
+
+    &:hover{
+      .card__view{
+        @apply
+        translate-x-1;
+      }
+    }
+
+    &__icon{
+      @apply
+      text-3xl
+      text-primary-400;
+
+      +.card__heading{
+        @apply
+        text-xl
+        text-white;
+      }
+    }
+
+    &__heading{
+      @apply
+      text-2xl
+      font-bold
+      text-primary-400;
+    }
+
+    &__content{}
+
+    &__footer{
+      @apply
+      flex
+      justify-end
+      mt-auto;
+    }
+
+    &__view{
+      @apply
+      flex
+      items-center
+      justify-center
+      bg-primary-400
+      size-10
+      rounded-full
+      duration-200;
+
+      &:after{
+        @apply
+        bg-[url('/img/arrow-right-white.svg')]
+        bg-no-repeat
+        bg-contain
+        bg-center
+        content-[""]
+        size-5;
+      }
+    }
+  }
+}

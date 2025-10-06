@@ -1,17 +1,24 @@
 <?php
-include_once "../../include/redis.php";
-include_once "../../include/database.php";
+include_once "../../bootstrap.php";
+
+use Siagraph\Utils\Cache;
 
 header('Content-Type: application/json');
 $url = "http://localhost:8484/benchmark";
 // Fetch host ID from URL
 if (isset($_GET['public_key'])) {
     $public_key = $_GET['public_key'];
-    $query = "SELECT * FROM Hosts WHERE public_key = '$public_key'";
+    $stmt = $mysqli->prepare("SELECT * FROM Hosts WHERE public_key = ?");
+    if (!$stmt) {
+        echo json_encode(["error" => "Prepare failed: " . $mysqli->error]);
+        die;
+    }
+    $stmt->bind_param('s', $public_key);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stmt->close();
 }
-if (isset($query)) {
-    // Perform the query
-    $result = mysqli_query($mysqli, $query);
+if (isset($result)) {
 
 
     $settings = mysqli_fetch_assoc($result);
@@ -61,7 +68,7 @@ if ($response === false) {
     );
 } else {
     // Try to decode the JSON response
-    $decodedResponse = json_decode($response, true);
+    $decodedResponse = json_decode($response, true, 512, JSON_BIGINT_AS_STRING);
 
     // Check if decoding was successful and the response is an array
     if (json_last_error() !== JSON_ERROR_NONE || !is_array($decodedResponse)) {

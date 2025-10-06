@@ -1,8 +1,7 @@
 <?php
 header('Content-Type: application/json');
 
-include_once "../../../include/config.php";
-include_once "../../../include/database.php";
+include_once "../../../bootstrap.php";
 
 function generateToken($length = 32)
 {
@@ -18,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 
 // Decode JSON body
-$input = json_decode(file_get_contents('php://input'), true);
+$input = json_decode(file_get_contents('php://input'), true, 512, JSON_BIGINT_AS_STRING);
 
 $public_key = $input['public_key'] ?? null;
 $service = $input['service'] ?? null; // 'email', 'pushover', 'telegram'

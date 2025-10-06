@@ -1,0 +1,72 @@
+@layer components{
+  .sg-container{
+    @apply
+    flex
+    flex-col
+    gap-16
+    max-w-screen-xl
+    mx-auto
+    py-16
+    px-6;
+
+    &__row{
+      @apply
+      flex
+      flex-col
+      gap-8;
+
+      &-content{
+        @apply
+        flex
+        flex-wrap
+        gap-8
+        items-stretch;
+      }
+    }
+
+    &__column{
+      @apply
+      w-full;
+
+      &.sg-container__column--half{
+        @screen lg{
+          @apply
+          w-[calc(50%-1rem)];
+        }
+      }
+
+      &.sg-container__column--one-fourth{
+        @screen md{
+          @apply
+          w-[calc(50%-1rem)];
+        }
+        @screen xl{
+          @apply
+          w-[calc(25%-1.5rem)];
+        }
+      }
+
+      &.sg-container__column--one-fifth{
+        @screen md{
+          @apply
+          w-[calc(33.333333%-1rem)];
+        }
+        @screen xl{
+          @apply
+          w-[calc(20%-2rem)];
+        }
+      }
+
+      > .card:only-child{
+        @apply
+        h-full;
+      }
+    }
+
+    &__heading{
+      @apply
+      text-3xl
+      font-bold;
+    }
+  }
+}

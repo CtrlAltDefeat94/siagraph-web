@@ -1,82 +1,66 @@
-<header class="bg-primary text-white">
-    <div id="header-content " class="container py-1 max-w-screen-xl">
-        <nav class="navbar navbar-expand-lg navbar-light bg-primary  ">
-            <div class="container-fluid">
-                <!--<a class="navbar-brand text-white font-bold" href="/">SiaGraph</a>-->
-                <a class="navbar-brand text-white font-bold" href="/">
-                    <img src="img/siagraph_banner_white.png" alt="SiaGraph" style="height: 40px;">
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+<header class="text-white" style="background:rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.1);">
+    <nav class="navbar navbar-expand-lg navbar-dark container py-2">
+        <a class="navbar-brand" href="/">
+            <img src="img/siagraph_banner_white.png" alt="SiaGraph" style="height: 32px;">
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                         <li class="nav-item">
                             <a class="nav-link text-white font-medium" href="/">Home</a>
                         </li>
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navhostDropdown"
+                            <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navNetworkDropdown"
                                 role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Network
                             </a>
-                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item text-black font-medium" href="network_growth">Growth</a>
-                                <div class="dropdown-divider"></div><a
-                                    class="opacity-50 dropdown-item text-black font-medium" href="#">Tokenomics
-                                    (TBA)</a>
-                                <div class="dropdown-divider"></div><a class="dropdown-item text-black font-medium"
-                                    href="peers">Peers</a>
-
+                            <div class="dropdown-menu" aria-labelledby="navNetworkDropdown">
+                                <!--<a class="dropdown-item text-white font-medium" href="network_overview">Overview</a>-->
+                                <a class="dropdown-item text-white font-medium" href="network_storage">Storage</a>
+                                <a class="dropdown-item text-white font-medium" href="peers">Peer Explorer</a>
                             </div>
-                        <li class="nav-item">
-                            <a class="nav-link text-white opacity-50 font-medium" href="#">Renting (TBA)</a>
                         </li>
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navhostDropdown"
+                            <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navFinancialsDropdown"
+                                role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Financials
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navFinancialsDropdown">
+                                <a class="dropdown-item text-white font-medium" href="revenue">Revenue</a>
+                                <a class="dropdown-item text-white font-medium" href="token_volume">Token Trade Volume</a>
+                                <!--<a class="dropdown-item text-white font-medium" href="tokenomics">Tokenomics</a>-->
+                                <a class="dropdown-item text-white font-medium" href="contracts_funds">Contracts &amp; Funds</a>
+                                <a class="dropdown-item text-white font-medium" href="contract_activity">Contract Activity</a>
+                                <a class="dropdown-item text-white font-medium" href="siafunds">Siafunds</a>
+                                <a class="dropdown-item text-white font-medium" href="foundation_subsidy_tracker">Foundation Subsidy Tracker</a>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navMiningDropdown"
+                                role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Mining
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navMiningDropdown">
+                                <a class="dropdown-item text-white font-medium" href="mining_stats">Statistics</a>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navHostingDropdown"
                                 role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Hosting
                             </a>
-                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item text-black font-medium" href="host_overview">Overview</a>
-                                <div class="dropdown-divider"></div><a class="dropdown-item text-black font-medium"
-                                    href="host_troubleshooter">Troubleshooter</a>
-                                <div class="dropdown-divider"></div><a class="dropdown-item text-black font-medium"
-                                    href="host_explorer">Host explorer</a>
-
-                            </div>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navbarDropdown"
-                                role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                API
-                            </a>
-                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item text-black font-medium" href="/swagger">SiaGraph</a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-black font-medium"
-                                    href="https://api.sia.tech/explored">Explorer</a>
+                            <div class="dropdown-menu" aria-labelledby="navHostingDropdown">
+                                <!--<a class="dropdown-item text-white font-medium" href="hosting">Overview</a>
+                                <a class="dropdown-item text-white font-medium" href="host_overview">Overview</a>-->
+                                <a class="dropdown-item text-white font-medium" href="host_pricing">Pricing</a>
+                                <a class="dropdown-item text-white font-medium" href="host_explorer">Host Explorer</a>
+                                <a class="dropdown-item text-white font-medium" href="host_troubleshooter">Host Troubleshooter</a>
                             </div>
                         </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navbarDropdown"
-                                role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Settings
-                            </a>
-                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item text-black opacity-50 font-medium" href="#"
-                                    onclick="switchLightDarkMode()">Switch
-                                    Light/Dark Mode (TBA)</a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-black font-medium" href="#"
-                                    onclick="switchEuroDollar()">Switch
-                                    Euro/Dollar</a>
-                            </div>
-                        </li>
-
                     </ul>
                 </div>
-            </div>
-        </nav>
-    </div>
-</header>
+        </nav></header>

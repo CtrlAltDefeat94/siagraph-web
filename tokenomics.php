@@ -4,99 +4,118 @@
 - 
 
 */
+require_once 'bootstrap.php';
 include_once 'include/graph.php';
-include_once "include/redis.php";
-include_once "include/utils.php";
+require_once 'include/layout.php';
+$graphConfigs = require 'include/graph_configs.php';
+
+use Siagraph\Utils\Cache;
+use Siagraph\Utils\Formatter;
+use Siagraph\Utils\ApiClient;
+
 $currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
+$recentstats = Cache::getCache(Cache::RECENT_STATS_KEY);
+if ($recentstats) {
+    $recentstats = json_decode($recentstats, true);
+}
+
+// Fetch monthly metrics to calculate yearly inflation
+$metricsData = ApiClient::fetchJson('/api/v1/monthly/metrics');
+$dataError = !is_array($metricsData);
+if ($dataError) {
+    $metricsData = [];
+}
+$yearData = [];
+foreach ($metricsData as $row) {
+    $year = substr($row['date'], 0, 4);
+    if (!isset($yearData[$year])) {
+        $yearData[$year] = ['start' => $row['circulating_supply'], 'end' => $row['circulating_supply']];
+    } else {
+        $yearData[$year]['end'] = $row['circulating_supply'];
+    }
+}
+$inflationRates = [];
+foreach ($yearData as $y => $vals) {
+    $start = $vals['start'];
+    $end = $vals['end'];
+    $inflationRates[$y] = $start > 0 ? (($end - $start) / $start) * 100 : 0;
+}
 ?>
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SiaGraph</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-</head>
-
-<body>
-    <!-- Header Section -->
-    <?php include "include/header.html" ?>
+<?php render_header("SiaGraph - Tokenomics"); ?>
+    <?php if ($dataError): ?>
+        <p class="text-center text-muted">Tokenomics data unavailable.</p>
+    <?php endif; ?>
     <!-- Main Content Section -->
-    <section id="main-content" class="container mt-4 pb-5">
+    <section id="main-content" class="sg-container">
+        <h1 class="sg-container__heading text-center mb-2"><i class="bi bi-currency-bitcoin me-2"></i>Tokenomics</h1>
 
-        <section id="graph-section" class="bg-light p-3 rounded-3 mt-4">
-            <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">
-                Coin growth</span>
-            </h2>
+        <section id="graph-section" class="card mt-4">
+            <h2 class="card__heading">Tokenomics: Inflation</h2>
+            <div class="card__content">
+            <div class="text-center text-light my-2">
+                <i class="bi bi-currency-bitcoin me-1"></i>
+                <span>Price:</span>
+                <span class="fw-bold">
+                    <?php echo strtoupper($currencyCookie) . ' ' . (!empty($recentstats) ? $recentstats['actual']['coin_price'][$currencyCookie] : 0); ?>
+                </span>
+            </div>
             <section class="graph-container">
                 <!-- Include the Chart.js graph using an iframe -->
                 <?php include $_SERVER['DOCUMENT_ROOT'] . "/graphs/CoinGrowthGraph.php"; ?>
                 <!-- Add any additional content related to the Network graph -->
             </section>
+            </div>
         </section>
-        <div class="col-md-6">
-            <section id="graph2-section" class="bg-light p-3 rounded-3">
-                <!-- Graph Section for Network -->
-                <section class="graph-container">
-                    <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">
-                        Monthly Revenue
-                    </h2>
-                    <?php
-                    // Call the function with specific parameters
-                    renderGraph(
-                        $canvasid = "monthlyrevenue",
-                        $datasets = [
-                            [
-                                'label' => 'Monthly revenue',
-                                'key' => 'total_storage', // Modify based on your data
-                                'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
-                                'borderColor' => 'rgba(75, 192, 192, 1)',
-                                'transform' => "return entry['" . $currencyCookie . "'];",
-                                'startAtZero' => true
-                            ]
-                        ],
-                        $dateKey = "date",
-                        $jsonUrl = '/api/v1/revenue_monthly', // JSON URL
-                        $jsonData = null,#getCache($revenueMonthlyKey),
-                        $charttype = 'bar',
 
-                        $interval = 'month',
-                        $rangeslider = true,
-                        $displaylegend = false,
-                        $defaultrangeinmonths = 12,
-                        $displayYAxis = "false",
-                        $unitType = $currencyCookie,
-                        $jsonKey = null
-                    );
-                    ?>
-                </section>
+        <section id="marketcap-section" class="card mt-4">
+            <h2 class="card__heading">Tokenomics: Coin Market Cap</h2>
+            <div class="card__content">
+            <section class="graph-container">
+                <?php
+                renderGraph(
+                    $canvasid = "marketcap",
+                    [
+                        array_merge(
+                            $graphConfigs['market_cap'],
+                            ['unit' => strtoupper($currencyCookie)]
+                        )
+                    ],
+                    $dateKey = 'date',
+                    $jsonUrl = '/api/v1/daily/metrics',
+                    $jsonData = null,
+                    $charttype = 'line',
+                    $interval = 'week',
+                    $rangeslider = true,
+                    $displaylegend = 'true',
+                    $defaultrangeinmonths = 12,
+                    $displayYAxis = 'false',
+                    $unitType = $currencyCookie
+                );
+                ?>
             </section>
-        </div>
+            </div>
+        </section>
+
+        <section id="inflation-table" class="card mt-4">
+            <h2 class="card__heading">Tokenomics: Yearly Inflation Rate</h2>
+            <div class="card__content">
+            <div class="table-responsive">
+                <table class="table table-dark table-clean text-white w-full border-collapse border border-gray-300">
+                    <thead class="bg-gray-800">
+                        <tr><th class="px-4 py-2 border border-gray-300">Year</th><th class="px-4 py-2 border border-gray-300">Inflation</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($inflationRates as $year => $rate){ ?>
+                        <tr>
+                            <td class="px-4 py-2 border border-gray-300 text-center"><?php echo $year; ?></td>
+                            <td class="px-4 py-2 border border-gray-300 text-right"><?php echo round($rate,2); ?>%</td>
+                        </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
+            </div>
+            </div>
+        </section>
+
         <!-- Footer Section -->
-        <?php include "include/footer.php" ?>
-</body>
-<!-- Import Moment.js library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-<!-- Import Chart.js 3 library with Moment adapter -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1"></script>
-<!-- Include noUiSlider library -->
-<link href="https://cdn.jsdelivr.net/npm/nouislider@14.7.0/distribute/nouislider.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/nouislider@14.7.0/distribute/nouislider.min.js"></script>
-<script>
-    // Get the span elements by their IDs
-    let startDateElement = document.getElementById('startDate');
-    let endDateElement = document.getElementById('endDate');
-
-    // Set the text content of the span elements to the dates
-    startDateElement.textContent = startDate;
-    endDateElement.textContent = endDate;
-</script>
-
-</html>
+        <?php render_footer(); ?>

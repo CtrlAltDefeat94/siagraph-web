@@ -1,6 +1,7 @@
 <?php
-include_once "../../../include/database.php";
-include_once "../../../include/redis.php";
+include_once "../../../bootstrap.php";
+
+use Siagraph\Utils\Cache;
 
 
 header('Content-Type: application/json');
@@ -12,7 +13,7 @@ $queryString = http_build_query($_GET);
 $combinedString = basename(__FILE__) . $queryString;
 // Generate the MD5 hash
 $revenueMonthlyKey = empty(http_build_query(data: $_GET)) ? $revenueMonthlyKey : md5($combinedString);
-$cacheresult = getCache($revenueMonthlyKey);
+$cacheresult = Cache::getCache(Cache::REVENUE_MONTHLY_KEY);
 if ($cacheresult) {
     echo $cacheresult;
     die;
@@ -39,7 +40,7 @@ try {
     if ($http_code != 200) {
         throw new Exception("Unexpected HTTP code: $http_code");
     }
-    $json_data = json_decode($response, true);
+    $json_data = json_decode($response, true, 512, JSON_BIGINT_AS_STRING);
     curl_close($ch);
 } catch (Exception $err) {
     echo "Error fetching data: " . $err->getMessage() . "\n";
@@ -65,7 +66,7 @@ if ($json_data) {
                     if (in_array($currency, ['usd', 'eur'])) {
                         $difference[$currency] = number_format(floatval($current_revenue[$currency]) - floatval($prev_revenue_value), 2, '.', '');
                     } elseif ($currency === 'sc') {
-                        $difference[$currency] = intval(floatval($current_revenue[$currency]) - floatval($prev_revenue_value)) / (10 ** 24);
+                        $difference[$currency] = (floatval($current_revenue[$currency]) - floatval($prev_revenue_value)) / (10 ** 24);
                     } else {
                         $difference[$currency] = number_format(floatval($current_revenue[$currency]) - floatval($prev_revenue_value), 8, '.', '');
                     }
@@ -84,7 +85,7 @@ if ($json_data) {
         $prev_data = $entry;
     }
     $jsonResult = json_encode($result, JSON_PRETTY_PRINT);
-    setCache($jsonResult, $revenueMonthlyKey, 'day');
+    Cache::setCache($jsonResult, Cache::REVENUE_MONTHLY_KEY, 'day');
     // Print result
 
     echo $jsonResult;

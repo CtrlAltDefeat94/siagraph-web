@@ -1,57 +1,32 @@
 <?php
 
+require_once 'bootstrap.php';
 include_once 'include/graph.php';
-include_once "include/redis.php";
-include_once "include/utils.php";
-include_once "include/config.php";
+$graphConfigs = require 'include/graph_configs.php';
+require_once 'include/layout.php';
+use Siagraph\Services\HostOverviewService;
+use Siagraph\Utils\Formatter;
+use Siagraph\Utils\ApiClient;
+$currencyCookie = isset($_COOKIE['currency']) ? strtolower($_COOKIE['currency']) : 'eur';
 
 // Assuming hostdata.json is in the same directory as this PHP file
-#$json_data = file_get_contents('../rawdata/hostdata.json');
-$data = null;
-$json_data = getCache(md5("hosts?limit=0"));
-if (empty($json_data)) {
-    // Retrieve JSON data from the API
-    $apiUrl = $SETTINGS['siagraph_base_url'] . "/api/v1/hosts?limit=0";
-
-    // Use file_get_contents to fetch the data
-    $json_data = file_get_contents($apiUrl);
+//$json_data = file_get_contents('../rawdata/hostdata.json');
+# Fetch hosts
+$json_data = ApiClient::fetchJson('/api/v1/hosts?limit=0');
+$dataError = !is_array($json_data) || !isset($json_data['hosts']) || !is_array($json_data['hosts']);
+if ($dataError) {
+    $json_data = ['hosts' => []];
 }
-$json_data = json_decode($json_data, true);
-$versions = [];
-$countries = [];
-$storage_prices = [];
-$upload_prices = [];
-$download_prices = [];
-$fullHosts = 0;
-foreach ($json_data['hosts'] as $host) {
-    if (!isset($versions[$host['software_version']])) {
-        $versions[$host['software_version']] = 1;
-    } else {
-        $versions[$host['software_version']]++;
-    }
 
-    // Initialize country data if not already set
-    if (!isset($countries[$host['country_name']])) {
-        $countries[$host['country_name']] = [
-            'host_count' => 0,
-            'used_storage' => 0,
-            'total_storage' => 0
-        ];
-    }
-    if ($host['total_storage'] - $host['used_storage'] == 0) {
-        $fullHosts++;
-    }
-    // Update stats for the country
-    $countries[$host['country_name']]['host_count']++;
-    $countries[$host['country_name']]['used_storage'] += (int) $host['used_storage'];
-    $countries[$host['country_name']]['total_storage'] += (int) $host['total_storage'];
-    if ($host['country_name'] > 0) {
-        $storage_prices[] = $host['storage_price'] / pow(10, 12) * 4320;
-        $upload_prices[] = $host['upload_price'] / pow(10, 12);
-        $download_prices[] = $host['download_price'] / pow(10, 12);
-    }
-
-}
+// Summaries
+$summary = HostOverviewService::summarize($json_data['hosts']);
+$locations = $summary['locations'];
+$versions = $summary['versions'];
+$countries = $summary['countries'];
+$storage_prices = $summary['storage_prices'];
+$upload_prices = $summary['upload_prices'];
+$download_prices = $summary['download_prices'];
+$fullHosts = $summary['stats']['full_hosts'];
 #$versions = json_encode($versions, true);
 // Check if data was successfully loaded from JSON
 
@@ -76,78 +51,68 @@ $stats6a_value = $data['error_count'];
 $stats6b_value = 0;
 */
 
-$stats1a_value = round(calculate_average_excluding_outliers($storage_prices), 1);
+$stats1a_value = $summary['stats']['avg_storage_price'];
 $stats1b_value = 0;
-$stats2a_value = round(calculate_average_excluding_outliers($upload_prices), 1);
+$stats2a_value = $summary['stats']['avg_upload_price'];
 $stats2b_value = 0;
-$stats3a_value = round(calculate_average_excluding_outliers($download_prices), 1);
+$stats3a_value = $summary['stats']['avg_download_price'];
 $stats3b_value = 0;
-$stats4a_value = count($json_data['hosts']);
+$stats4a_value = $summary['stats']['host_count'];
 $stats4b_value = 0;
-$stats5a_value = $fullHosts;
+$stats5a_value = $summary['stats']['full_hosts'];
 $stats5b_value = 0;
 $stats6a_value = "N/A";
 $stats6b_value = 0;
 
 ?>
-<!DOCTYPE html>
-<html lang="en">
+<?php render_header('SiaGraph - Host Overview', 'SiaGraph - Host Overview', [
+    '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />'
+]); ?>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SiaGraph</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="script.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <link rel="icon" href="img/favicon.ico" type="image/png">
-
-
-</head>
-
-<body>
-
-    <!-- Header Section -->
-    <?php include_once "include/header.html" ?>
-
+    <?php if ($dataError): ?>
+        <p class="text-center text-muted">Host data unavailable.</p>
+    <?php endif; ?>
     <!-- Main Content Section -->
-    <section id="main-content" class="container mt-4 pb-5 masonry-container">
+    <section id="main-content" class="sg-container sg-container--narrow">
+        <h1 class="sg-container__heading text-center mb-2"><i class="bi bi-diagram-3 me-2"></i>Host Overview</h1>
+        
 
-        <!-- Updated Additional Information Section -->
-        <div class="w-full break-inside-avoid">
-            <section id="additional-info" class="bg-light p-3 rounded-3">
-                <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">Today's Stats</h2>
+        <!-- Today's Stats -->
+        <div class="sg-container__row">
+            <div class="sg-container__row-content">
+                <div class="sg-container__column">
+                    <section id="additional-info" class="card">
+                        <h2 class="card__heading">Today's Stats</h2>
+                        <div class="card__content">
                 <!-- Used Storage -->
                 <div class="row mt-4">
                     <!-- Statistics Section -->
                     <div class="col-md-12">
                         <div class="row">
                             <!-- Average Storage Price -->
-                            <div class="col-md-4">
+                            <div class="col-md-4 mb-3">
                                 <div class="p-2">
-                                    <span class="fs-6">Average Storage Price</span>
+                                    <span class="fs-6"><i class="bi bi-hdd-fill me-1"></i>Average Storage Price</span>
                                     <br><span id="stats1a"
-                                        class="glanceNumber fs-4"><?php echo $stats1a_value . ' SC'; ?></span>
+                                        class="glanceNumber fs-4"><?php echo \Siagraph\Utils\Formatter::formatSiacoins($stats1a_value); ?></span>
                                     <span id="stats1b" class="fs-6"> (<?php echo $stats1b_value; ?>)</span>
                                 </div>
                             </div>
                             <!-- Average Upload Price -->
-                            <div class="col-md-4">
+                            <div class="col-md-4 mb-3">
                                 <div class="p-2">
-                                    <span class="fs-6">Average Upload Price</span>
+                                    <span class="fs-6"><i class="bi bi-upload me-1"></i>Average Upload Price</span>
                                     <br><span id="stats2a"
-                                        class="glanceNumber fs-4"><?php echo $stats2a_value . ' SC'; ?></span>
+                                        class="glanceNumber fs-4"><?php echo \Siagraph\Utils\Formatter::formatSiacoins($stats2a_value); ?></span>
                                     <span id="stats2b" class="fs-6">(<?php echo $stats2b_value; ?>)</span>
                                 </div>
                             </div>
                             <!-- Average Download Price -->
-                            <div class="col-md-4">
+                            <div class="col-md-4 mb-3">
                                 <div class="p-2">
-                                    <span class="fs-6">Average Download Price</span>
+                                    <span class="fs-6"><i class="bi bi-download me-1"></i>Average Download Price</span>
                                     <br><span id="stats3a"
-                                        class="glanceNumber fs-4"><?php echo $stats3a_value . ' SC'; ?></span>
+                                        class="glanceNumber fs-4"><?php echo \Siagraph\Utils\Formatter::formatSiacoins($stats3a_value); ?></span>
                                     <span id="stats3b" class="fs-6">(<?php echo $stats3b_value; ?>)</span>
                                 </div>
                             </div>
@@ -156,283 +121,109 @@ $stats6b_value = 0;
                     <div class="col-md-12 mt-4">
                         <div class="row">
                             <!-- Average Max Collateral -->
-                            <div class="col-md-4">
+                            <div class="col-md-4 mb-3">
                                 <div class="p-2">
-                                    <span class="fs-6">Active Hosts</span>
+                                    <span class="fs-6"><i class="bi bi-server me-1"></i>Active Hosts</span>
                                     <br><span id="stats4a"
                                         class="glanceNumber fs-4"><?php echo $stats4a_value . ''; ?></span>
                                 </div>
                             </div>
                             <!-- Active hosts -->
-                            <div class="col-md-4">
+                            <div class="col-md-4 mb-3">
                                 <div class="p-2">
-                                    <span class="fs-6">Hosts Fully Utilized</span>
+                                    <span class="fs-6"><i class="bi bi-check-circle me-1"></i>Hosts Fully Utilized</span>
                                     <br><span id="stats5a"
                                         class="glanceNumber fs-4"><?php echo $stats5a_value; ?></span>
                                 </div>
                             </div>
                             <!-- Hosts With Issues -->
-                            <div class="col-md-4">
+                            <div class="col-md-4 mb-3">
                                 <div class="p-2">
-                                    <span class="fs-6">Hosts with Issues</span>
+                                    <span class="fs-6"><i class="bi bi-exclamation-triangle me-1"></i>Hosts with Issues</span>
                                     <br><span id="stats6a"
                                         class="glanceNumber fs-4"><?php echo $stats6a_value; ?></span>
                                 </div>
                             </div>
                         </div>
                     </div>
+                        </div>
+                    </section>
                 </div>
-            </section>
+            </div>
         </div>
 
-        <!-- Graph Section 2 
+        <!-- Graph Section 2
         <div class="w-full break-inside-avoid">
-            <section id="graph2-section" class="bg-light p-3 rounded-3 mt-4">
-                <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">Host Issues</h2>
-                <section class="graph-container">
-                    <?php //include $_SERVER['DOCUMENT_ROOT'] . "/graphs/HostErrors.php"; ?>
-                </section>
+            <section id="graph2-section" class="card">
+                <h2 class="card__heading">Host Issues</h2>
+                <div class="card__content">
+                    <section class="graph-container">
+                        <?php //include $_SERVER['DOCUMENT_ROOT'] . "/graphs/HostErrors.php"; ?>
+                    </section>
+                </div>
             </section>
         </div>-->
 
-        <!-- Graph Section 1 -->
-        <div class="w-full break-inside-avoid">
-            <section id="graph3-section" class="bg-light p-3 rounded-3 mt-4">
-                <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">Network Size per Country
-                </h2>
+        <!-- Country table -->
+        <div class="sg-container__row">
+            <div class="sg-container__row-content">
+                <div class="sg-container__column">
+                    <section id="graph3-section" class="card">
+                <h2 class="card__heading">Network Size per Country</h2>
+                <div class="card__content">
                 <section class="graph-container">
-                    <div class="container mx-auto">
+                    <div class="table-scroll">
                         <?php
                         // Example data
                         
 
-                        // Sort by used_storage descending
-                        uasort($countries, function ($a, $b) {
-                            return $b['used_storage'] <=> $a['used_storage'];
-                        });
-
-                        // Generate the table
-                        echo '<table class="table-auto w-full border-collapse border border-gray-300">';
-                        echo '<thead class="bg-gray-200">';
-                        echo '<tr>';
-                        echo '<th class="px-4 py-2 border border-gray-300">Country</th>';
-                        echo '<th class="px-4 py-2 border border-gray-300">Hosts</th>';
-                        echo '<th class="px-4 py-2 border border-gray-300">Used Storage</th>';
-                        echo '<th class="px-4 py-2 border border-gray-300">Total Storage</th>';
-                        echo '</tr>';
-                        echo '</thead>';
-                        echo '<tbody>';
-
-                        // Alternate row colors
-                        $index = 0;
-                        foreach ($countries as $country => $data) {
-                            $rowClass = $index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200';
-                            echo "<tr class=\"$rowClass\">";
-                            echo "<td class=\"px-4 py-2 border border-gray-300 text-center\">$country</td>";
-                            echo "<td class=\"px-4 py-2 border border-gray-300 text-right\">{$data['host_count']}</td>";
-                            echo "<td class=\"px-4 py-2 border border-gray-300 text-right\">" . formatBytes($data['used_storage']) . "</td>";
-                            echo "<td class=\"px-4 py-2 border border-gray-300 text-right\">" . formatBytes($data['total_storage']) . "</td>";
-                            echo '</tr>';
-                            $index++;
-                        }
-
-                        echo '</tbody>';
-                        echo '</table>';
+                        include_once __DIR__ . '/include/components/country_table.php';
+                        render_country_table($countries, 30);
                         ?>
                     </div>
                 </section>
-            </section>
+                </div>
+                    </section>
+                </div>
+            </div>
         </div>
-        <!-- Graph Section 1 -->
-        <div class="w-full break-inside-avoid">
-            <section id="graph4-section" class="bg-light p-3 rounded-3 mt-4">
-                <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-top">Largest host
-                </h2>
-                <section class="graph4-container">
-                    <?php
-
-
-                    renderGraph(
-                        $canvasid = "maxhoststorage",
-                        $datasets = [
-                            [
-                               'label' => 'Used Storage',
-                                'key' => 'max_used_storage',
-                                'backgroundColor' => 'rgba(255, 99, 132, 0.2)',
-                                'borderColor' => 'rgba(255, 99, 132, 1)',
-                                'transform' => "return entry['max_used_storage'];",
-                                'unit' => 'TB',
-                                'unitDivisor' => 1e12,
-                                'decimalPlaces' => 2,
-                                'startAtZero' => false
-                            ]
-                        ],
-                        $dateKey = "date",
-                        $jsonUrl = "/api/v1/monthly/metrics", // JSON URL
-                        $jsonData = null,
-                        $charttype = 'bar',
-
-                        $interval = 'month',
-                        $rangeslider = false,
-                        $displaylegend = false,
-                        $defaultrangeinmonths = 30,
-                        $displayYAxis = "false",
-                        $unitType = 'bytes'
-                    );
-                    ?>
-                </section>
-            </section>
-        </div>
-        <div class="w-full flex flex-wrap justify-between">
-            <!-- Graph Section 1 -->
-            <section id="graph-section-1" class="w-[24%] bg-light p-3 rounded-md mt-4">
-                <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-t-md">Host Versions</h2>
-                <section class="graph-container">
-                    <?php
-                    // todo fix
-                    renderGraph(
-                        $canvasid = "hostversions-1",
-                        $datasets = [
-                            [
-                                'label' => 'Versions', // only used in legend/tooltip setup
-                                'backgroundColor' => null,
-                                'borderColor' => '#fff',
-                                'unit' => null,
-                                'unitDivisor' => 1,
-                                'decimalPlaces' => 0,
-                                'startAtZero' => false,
-                                'hidden' => false
-                            ]
-                        ],
-                        $dateKey = "date",
-                        $jsonUrl = "",
-                        $jsonData = $versions,
-                        $charttype = 'pie',
-                        $interval = 'month',
-                        $rangeslider = false,
-                        $displaylegend = "true",
-                        $defaultrangeinmonths = 6,
-                        $displayYAxis = "false",
-                        $unitType = null,
-                        $jsonKey = null,
-                        $height = 170
-                    );
-                    ?>
-                </section>
-            </section>
-
-            <!-- Graph Section 2 -->
-            <section id="graph-section-2" class="w-[24%] bg-light p-3 rounded-md mt-4">
-                <h2 class="text-center fs-5 fw-bold py-2 bg-primary text-white rounded-t-md">Host Errors</h2>
-                <section class="graph-container">
-                    <?php
-                    // todo fix
-                    echo "N/A";
-                    renderGraph(
-                        $canvasid = "hosterrors",
-                        $datasets = [
-                            [
-                                'label' => '1.6.0',
-                                'key' => '1.6.0',
-                                'backgroundColor' => 'rgba(255, 99, 132, 0.2)',
-                                'borderColor' => 'rgba(255, 99, 132, 1)',
-                                'transform' => "return entry['1.6.0'];",
-                            ]
-                        ],
-                        $dateKey = "date",
-                        $jsonUrl = "",
-                        $jsonData = $versions,
-                        $charttype = null,
-                        $interval = 'month',
-                        $rangeslider = false,
-                        $displaylegend = "true",
-                        $defaultrangeinmonths = 6,
-                        $displayYAxis = "false",
-                        $unitType = null,
-                        $jsonKey = null,
-                        $height = 170
-                    );
-                    ?>
-                </section>
-            </section>
+        <div class="sg-container__row">
+            <div class="sg-container__row-content">
+                <div class="sg-container__column">
+                    <section id="graph-section-1" class="card">
+                        <h2 class="card__heading">Host Versions</h2>
+                        <div class="card__content">
+                            <section class="graph-container">
+                                <?php
+                                renderGraph(
+                                    $canvasid = "hostversions-1",
+                                    $datasets = [
+                                        $graphConfigs['versions']
+                                    ],
+                                    $dateKey = "date",
+                                    $jsonUrl = "",
+                                    $jsonData = $versions,
+                                    $charttype = 'pie',
+                                    $interval = 'month',
+                                    $rangeslider = false,
+                                    $displaylegend = "true",
+                                    $defaultrangeinmonths = 6,
+                                    $displayYAxis = "false",
+                                    $unitType = null,
+                                    $jsonKey = null,
+                                    $height = 170
+                                );
+                                ?>
+                            </section>
+                        </div>
+                    </section>
+                </div>
+            </div>
         </div>
     </section>
 
 
-    <!-- Footer Section -->
-    <?php include "include/footer.html" ?>
-
-
-    <style>
-        /* Custom CSS */
-        .masonry-container {
-            column-count: 1;
-            /* Default to 1 column on small screens */
-        }
-
-        /* Apply column-count: 2 for md screens and above */
-        @media (min-width: 768px) {
-            .masonry-container {
-                column-count: 2;
-            }
-        }
-
-        .w-full {
-            break-inside: avoid;
-        }
-    </style>
-</body>
-
-<script>
-
-    async function fetchAndProcessHosts() {
-        try {
-            // Fetch data from the API
-            const response = await fetch('/api/v1/hosts');
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            // Check if hosts exist in the response
-            if (!data.hosts || !Array.isArray(data.hosts)) {
-                console.error("No hosts data found in response");
-                return {};
-            }
-
-            // Create a dictionary to store sums of amounts by version
-            const versionSums = {};
-
-            // Iterate through the hosts array
-            data.hosts.forEach(host => {
-                const version = host.version; // Replace with the correct field for version
-
-
-                // Add the amount to the sum for this version
-                if (!versionSums[version]) {
-                    versionSums[version] = 0;
-                }
-                versionSums[version] += 1;
-            });
-
-            console.log(versionSums);
-            return versionSums;
-
-        } catch (error) {
-            console.error("Error fetching or processing hosts:", error);
-            return {};
-        }
-    }
-
-
-
-
-</script>
-
-</html>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1"></script>
-<link href="https://cdn.jsdelivr.net/npm/nouislider@14.7.0/distribute/nouislider.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/nouislider@14.7.0/distribute/nouislider.min.js"></script>
+    <div id="host-overview-data"
+         data-hosts='<?= htmlspecialchars(json_encode($json_data['hosts']), ENT_QUOTES, "UTF-8") ?>'
+         data-locations='<?= htmlspecialchars(json_encode($locations), ENT_QUOTES, "UTF-8") ?>'></div>
+<?php render_footer(['https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', 'js/host-overview.js']); ?>

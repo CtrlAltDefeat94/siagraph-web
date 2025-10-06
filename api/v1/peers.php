@@ -1,6 +1,7 @@
 <?php
-include_once "../../include/database.php";
-include_once "../../include/redis.php";
+include_once "../../bootstrap.php";
+
+use Siagraph\Utils\Cache;
 
 header('Content-Type: application/json');
 
@@ -10,10 +11,10 @@ $query = "SELECT address, version, network, last_scanned FROM Peers WHERE last_s
 $groupedData = [];
 
 // Generate the MD5 hash
-$cacheresult = getCache($peerListKey);
+$cacheresult = Cache::getCache(Cache::PEER_LIST_KEY);
 if ($cacheresult) {
     // Convert the JSON string back to an associative array
-    $rows = json_decode($cacheresult, true);
+    $rows = json_decode($cacheresult, true, 512, JSON_BIGINT_AS_STRING);
 
 } else {
     // Execute the query
@@ -27,7 +28,7 @@ if ($cacheresult) {
 
     // Convert the rows array into a JSON string
     $jsonResult = json_encode($rows);
-    setCache($jsonResult, $peerListKey, 'hour');
+    Cache::setCache($jsonResult, Cache::PEER_LIST_KEY, 'hour');
 }
 shuffle($rows);
 // Fetch the result rows and group them by the 'network' column

@@ -1,29 +1,49 @@
 <?php
 
 header('Content-Type: application/json');
-include_once "../../include/database.php";
-include_once "../../include/utils.php";
-include_once "../../include/redis.php";
-include_once "../../include/config.php";
+include_once "../../bootstrap.php";
 
-$query = "SELECT * FROM Hosts WHERE ";
+use Siagraph\Utils\Cache;
+use Siagraph\Utils\Formatter;
+
+function priceDict($value, $usdRate = null, $eurRate = null): array {
+    return [
+        'sc'  => $value,
+        'usd' => $usdRate ? round(($value / 1e24) * $usdRate, 2) : null,
+        'eur' => $eurRate ? round(($value / 1e24) * $eurRate, 2) : null,
+    ];
+}
+
+$stmt = null;
 // Fetch host ID from URL
 if (isset($_GET['id'])) {
     $host_id = $_GET['id'];
-    $query = $query . " host_id = $host_id";
+    $stmt = $mysqli->prepare("SELECT * FROM Hosts WHERE host_id = ?");
+    if ($stmt) {
+        $stmt->bind_param('i', $host_id);
+    }
 } else if (isset($_GET['public_key'])) {
     $public_key = $_GET['public_key'];
-    $query = "SELECT * FROM Hosts WHERE public_key = '$public_key'";
+    $stmt = $mysqli->prepare("SELECT * FROM Hosts WHERE public_key = ?");
+    if ($stmt) {
+        $stmt->bind_param('s', $public_key);
+    }
 } else {
     $response['error'] = "Host ID or public key not provided in the URL.";
 }
 
-$result = mysqli_query($mysqli, $query);
-$settings = mysqli_fetch_assoc($result);
+if (isset($stmt)) {
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $settings = mysqli_fetch_assoc($result);
+    $stmt->close();
+} else {
+    $settings = null;
+}
 $public_key = $settings['public_key'];
 
 $cacheKey = 'host' . http_build_query($_GET);
-$cacheresult = getCache($cacheKey);
+$cacheresult = Cache::getCache($cacheKey);
 if ($cacheresult) {
     echo $cacheresult;
     die;
@@ -44,7 +64,7 @@ try {
     if ($http_code != 200) {
         throw new Exception("Unexpected HTTP code: $http_code");
     }
-    $json_data = json_decode($response, true);
+    $json_data = json_decode($response, true, 512, JSON_BIGINT_AS_STRING);
     curl_close($ch);
 } catch (Exception $err) {
     $response['error'] = "Error fetching data.";
@@ -74,9 +94,7 @@ $response = [
 
 
 ];
-// Perform the query
-$result = mysqli_query($mysqli, $query);
-$settings = mysqli_fetch_assoc($result);
+
 
 if ($settings) {
     $public_key = $settings['public_key'];
@@ -128,9 +146,14 @@ if ($settings) {
         "dailydata" => []
     ];
     $subnet = implode('.', array_slice(explode('.', $settings['resolved_ipv4']), 0, 3));
-    $hostsinsubnetquery = "SELECT net_address, resolved_ipv4 FROM Hosts WHERE resolved_ipv4 LIKE '" . $subnet . ".%'";# and not resolved_ipv4='".$settings['resolved_ipv4']."'";
-    $hostsinsubnetesult = mysqli_query($mysqli, $hostsinsubnetquery);
-    while ($host = mysqli_fetch_assoc($hostsinsubnetesult)) {
+    $pattern = $subnet . '.%';
+    $hostsinsubnetstmt = $mysqli->prepare("SELECT net_address, resolved_ipv4 FROM Hosts WHERE resolved_ipv4 LIKE ?");
+    if ($hostsinsubnetstmt) {
+        $hostsinsubnetstmt->bind_param('s', $pattern);
+        $hostsinsubnetstmt->execute();
+        $hostsinsubnetesult = $hostsinsubnetstmt->get_result();
+    }
+    while (isset($hostsinsubnetesult) && ($host = mysqli_fetch_assoc($hostsinsubnetesult))) {
         $response['hosts_in_subnetv4'][] = [
             'net_address' => $host['net_address'],
             'resolved_ipv4' => $host['resolved_ipv4']
@@ -143,10 +166,14 @@ if ($settings) {
     $subnet_prefix = implode(':', array_slice($ipv6_parts, 0, 4));
 
     // Create a LIKE clause using the subnet prefix
-    $hostsinsubnetquery = "SELECT net_address, resolved_ipv6 FROM Hosts WHERE resolved_ipv6 LIKE '" . $subnet_prefix . ":%'"; // and not resolved_ipv6='".$settings['resolved_ipv6']."'";
-
-    $hostsinsubnetesult = mysqli_query($mysqli, $hostsinsubnetquery);
-    while ($host = mysqli_fetch_assoc($hostsinsubnetesult)) {
+    $ipv6pattern = $subnet_prefix . ':%';
+    $hostsinsubnetstmt = $mysqli->prepare("SELECT net_address, resolved_ipv6 FROM Hosts WHERE resolved_ipv6 LIKE ?");
+    if ($hostsinsubnetstmt) {
+        $hostsinsubnetstmt->bind_param('s', $ipv6pattern);
+        $hostsinsubnetstmt->execute();
+        $hostsinsubnetesult = $hostsinsubnetstmt->get_result();
+    }
+    while (isset($hostsinsubnetesult) && ($host = mysqli_fetch_assoc($hostsinsubnetesult))) {
         $response['hosts_in_subnetv6'][] = [
             'net_address' => $host['net_address'],
             'resolved_ipv6' => $host['resolved_ipv6']
@@ -186,27 +213,58 @@ if ($settings) {
 
     }
 
-    $benchmarkquery = "SELECT
-            avg(download_speed) AS download_speed,
-            avg(upload_speed) AS upload_speed,
-            avg(ttfb) AS ttfb
-            FROM Benchmarks WHERE public_key= '$public_key' AND timestamp >= UTC_TIMESTAMP() - INTERVAL 7 DAY";
-    $benchmarkresult = mysqli_query($mysqli, $benchmarkquery);
-    $response['benchmark'] = mysqli_fetch_assoc($benchmarkresult);
+    $benchmarkstmt = $mysqli->prepare(
+        "SELECT avg(download_speed) AS download_speed,"
+        . " avg(upload_speed) AS upload_speed,"
+        . " avg(ttfb) AS ttfb"
+        . " FROM Benchmarks WHERE public_key = ?"
+        . " AND timestamp >= UTC_TIMESTAMP() - INTERVAL 7 DAY"
+    );
+    if ($benchmarkstmt) {
+        $benchmarkstmt->bind_param('s', $public_key);
+        $benchmarkstmt->execute();
+        $benchmarkresult = $benchmarkstmt->get_result();
+        $response['benchmark'] = mysqli_fetch_assoc($benchmarkresult);
+    }
 
     // Fetch daily data
-    $dailydataquery = "SELECT date, used_storage, total_storage, storage_price, upload_price, download_price, accepting_contracts FROM HostsDailyStats WHERE public_key= '$public_key' ORDER BY date";
-    $dailydataresult = mysqli_query($mysqli, $dailydataquery);
-    $response['dailydata'] = array();
-    while ($row = mysqli_fetch_assoc($dailydataresult)) {
-        $response['dailydata'][] = $row;
+    $dailydatastmt = $mysqli->prepare(
+        "SELECT h.date, h.used_storage, h.total_storage, h.storage_price, h.upload_price, h.download_price, h.accepting_contracts, er.usd, er.eur "
+        . "FROM HostsDailyStats h "
+        . "LEFT JOIN (SELECT DATE(timestamp) AS date, AVG(usd) AS usd, AVG(eur) AS eur FROM ExchangeRates WHERE currency_code = 'sc' GROUP BY DATE(timestamp)) er "
+        . "ON DATE(h.date) = er.date WHERE h.public_key = ? ORDER BY h.date"
+    );
+    if ($dailydatastmt) {
+        $dailydatastmt->bind_param('s', $public_key);
+        $dailydatastmt->execute();
+        $dailydataresult = $dailydatastmt->get_result();
+        $response['dailydata'] = array();
+        while ($row = mysqli_fetch_assoc($dailydataresult)) {
+            $usdRate = isset($row['usd']) ? (float)$row['usd'] : null;
+            $eurRate = isset($row['eur']) ? (float)$row['eur'] : null;
+            $response['dailydata'][] = [
+                'date' => $row['date'],
+                'used_storage' => $row['used_storage'],
+                'total_storage' => $row['total_storage'],
+                'storage_price' => priceDict($row['storage_price'], $usdRate, $eurRate),
+                'upload_price' => priceDict($row['upload_price'], $usdRate, $eurRate),
+                'download_price' => priceDict($row['download_price'], $usdRate, $eurRate),
+                'accepting_contracts' => $row['accepting_contracts'],
+            ];
+        }
     }
 
     // Fetch benchmark scores
-    $benchmarkscorequery = "SELECT * FROM BenchmarkScores WHERE public_key= '$public_key' ORDER BY date ASC";
-    $benchmarkscoreresult = mysqli_query($mysqli, $benchmarkscorequery);
+    $benchmarkscorestmt = $mysqli->prepare(
+        "SELECT * FROM BenchmarkScores WHERE public_key = ? ORDER BY date ASC"
+    );
+    if ($benchmarkscorestmt) {
+        $benchmarkscorestmt->bind_param('s', $public_key);
+        $benchmarkscorestmt->execute();
+        $benchmarkscoreresult = $benchmarkscorestmt->get_result();
+    }
     $response['node_scores']['global'] = array();
-    while ($benchmarkscore = mysqli_fetch_assoc($benchmarkscoreresult)) {
+    while (isset($benchmarkscoreresult) && ($benchmarkscore = mysqli_fetch_assoc($benchmarkscoreresult))) {
         $date = $benchmarkscore['date'];
         $node = $benchmarkscore['node'];
         $download_score = $benchmarkscore['download_score'];
@@ -226,30 +284,68 @@ if ($settings) {
         $response['node_scores'][$node][] = $stats;
 
     }
-
     // Calculate global total score
-    $globaltotalscore = ($response['node_scores']['Global']['total_score'] ?? 0);
-    $sectioncomparequery = "SELECT
-            AVG(contract_price) AS contractprice,
-            AVG(storage_price) AS storageprice,
-            AVG(upload_price) AS uploadprice,
-            AVG(download_price) AS downloadprice,
-            AVG(collateral) AS collateral,
-            AVG(used_storage) AS used_storage
-        FROM Hosts
-        WHERE public_key IN (
-            SELECT public_key
-            FROM BenchmarkScores
-            WHERE node = 'Global' AND total_score = $globaltotalscore);";
-    $sectioncompareresult = mysqli_query($mysqli, $sectioncomparequery);
-    $response['segment_averages'] = mysqli_fetch_assoc($sectioncompareresult);
+    $globaltotalscore = isset($response['node_scores']['global']) 
+    ? ($response['node_scores']['global'][array_key_last($response['node_scores']['global'])]['total_score'] ?? 0) 
+    : 0;
+    $sectioncomparestmt = $mysqli->prepare(
+        "SELECT
+                    ROUND(AVG(contract_price)) AS contractprice,
+                    ROUND(AVG(storage_price)) AS storageprice,
+                    ROUND(AVG(upload_price)) AS uploadprice,
+                    ROUND(AVG(download_price)) AS downloadprice,
+                    ROUND(AVG(collateral)) AS collateral,
+                    ROUND(AVG(used_storage)) AS used_storage
+                FROM Hosts
+                WHERE public_key IN (
+                    SELECT public_key
+                    FROM BenchmarkScores
+                    WHERE node = 'Global'
+                    AND CEIL(total_score) = ?
+                    AND date = CURDATE()
+                );"
+    );
+    if ($sectioncomparestmt) {
+        $sectioncomparestmt->bind_param('d', $globaltotalscore);
+        $sectioncomparestmt->execute();
+        $sectioncompareresult = $sectioncomparestmt->get_result();
+        $response['segment_averages'] = mysqli_fetch_assoc($sectioncompareresult);
+    }
 } else {
     $response['error'] = "No settings found for the given host ID or public key.";
 }
 
+// Add fiat conversions using current coin price
+$coinPrice = Cache::getCache(Cache::COIN_PRICE_KEY);
+$coinRate = $coinPrice ? json_decode($coinPrice, true, 512, JSON_BIGINT_AS_STRING) : [];
+$usdRateNow = $coinRate['usd'] ?? null;
+$eurRateNow = $coinRate['eur'] ?? null;
+
+foreach ([
+    'baserpcprice',
+    'collateral',
+    'contractprice',
+    'egressprice',
+    'ingressprice',
+    'maxcollateral',
+    'freesectorprice',
+    'storageprice'
+] as $field) {
+    if (isset($response['settings'][$field])) {
+        $response['settings'][$field] = priceDict($response['settings'][$field], $usdRateNow, $eurRateNow);
+    }
+}
+
+if (!empty($response['segment_averages'])) {
+    foreach (['contractprice','storageprice','uploadprice','downloadprice','collateral'] as $f) {
+        if (isset($response['segment_averages'][$f])) {
+            $response['segment_averages'][$f] = priceDict($response['segment_averages'][$f], $usdRateNow, $eurRateNow);
+        }
+    }
+}
 
 // update cache
-setCache(json_encode($response), $cacheKey, 'hour');
+Cache::setCache(json_encode($response), $cacheKey, 'hour');
 
 
 echo json_encode($response);

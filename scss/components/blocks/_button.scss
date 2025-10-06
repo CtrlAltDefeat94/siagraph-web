@@ -1,0 +1,41 @@
+@layer components{
+  .button{
+    @apply
+    font-bold
+    py-2
+    px-4
+    self-start
+    inline-flex
+    flex-row
+    gap-3
+    items-center
+    justify-center
+    text-left
+    rounded-full
+    bg-primary-400
+    text-white
+    cursor-pointer
+    border-solid
+    border
+    border-primary-400
+    duration-200;
+
+    &:after{
+      @apply
+      bg-[url('/img/arrow-right-white.svg')]
+      bg-no-repeat
+      bg-contain
+      bg-center
+      size-4
+      duration-200
+      content-[""];
+    }
+
+    &:hover{
+      &:after{
+        @apply
+        translate-x-1;
+      }
+    }
+  }
+}

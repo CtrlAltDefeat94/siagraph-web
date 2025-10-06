@@ -1,6 +1,7 @@
 <?php
-include_once "../../include/redis.php";
-include_once "../../include/config.php";
+include_once "../../bootstrap.php";
+
+use Siagraph\Utils\Cache;
 header('Content-Type: application/json');
 // Function to fetch data using cURL
 
@@ -12,7 +13,7 @@ function fetchData($url)
     $response = curl_exec($ch);
     curl_close($ch);
 
-    return json_decode($response, true);
+    return json_decode($response, true, 512, JSON_BIGINT_AS_STRING);
 }
 function compareDates($date1, $date2)
 {
@@ -26,7 +27,7 @@ $blockHeight = $consensusData['index']['height'];
 $data = [];
 
 $explorerKey = 'explorer-' . $blockHeight;
-$data = getCache($explorerKey);
+$data = Cache::getCache($explorerKey);
 // Fetch unconfirmed transactions
 $txPoolData = fetchData($SETTINGS['explorer'] . '/txpool/transactions');
 $count = 0;
@@ -50,7 +51,7 @@ if ($txPoolData) {
     }
 }
 if ($data) {
-    $data = json_decode($data, true);
+    $data = json_decode($data, true, 512, JSON_BIGINT_AS_STRING);
     $data['unconfirmedTransactions'] = $count;
     echo json_encode($data);
     die;
@@ -112,6 +113,7 @@ $data['unconfirmedTransactions'] = $count;
 
 // Output the data
 $jsonResult = json_encode($data, JSON_PRETTY_PRINT);
-setCache($jsonResult, $explorerKey, 'hour');
+Cache::setCache($jsonResult, $explorerKey, 'hour');
+Cache::setCache($jsonResult, Cache::EXPLORER_METRICS_KEY, 'hour');
 // Echo the data as a JSON object
 echo $jsonResult;

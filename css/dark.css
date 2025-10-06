@@ -1,0 +1,54 @@
+@import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css');
+
+:root {
+  --bs-body-bg: #121212;
+  --bs-body-color: #f8f9fa;
+  --bs-primary: #1e90ff;
+  --bs-secondary: #343a40;
+  --bs-dark: #000;
+  --bs-light: #212529;
+  --chart-border: #ffffff;
+}
+
+body {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+.table-dark, .bg-dark {
+  color: var(--bs-body-color);
+}
+
+.table-clean {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-clean th,
+.table-clean td {
+  padding: 0.5rem;
+  border: 1px solid #444;
+}
+
+/* Zebra striping for readability */
+.table-clean tbody tr:nth-child(odd) {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+.table-clean tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Align left column as label */
+.table-clean tbody th {
+  font-weight: 600;
+  color: #d1d5db; /* gray-300 */
+  width: 50%;
+}
+.table-clean tbody td {
+  text-align: right;
+}
+
+.score {
+  font-weight: 600;
+  font-size: 0.875rem;
+}

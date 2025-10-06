@@ -1,0 +1,17 @@
+{
+  "require": {
+    "predis/predis": "^2.3",
+    "symfony/deprecation-contracts": "^3.5",
+    "symfony/finder": "^7.2",
+    "symfony/polyfill-ctype": "^1.31",
+    "symfony/yaml": "^7.2",
+    "psr/log": "^3.0",
+    "zircote/swagger-php": "^5.0",
+    "nikic/php-parser": "^5.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "Siagraph\\": "src/"
+    }
+  }
+}

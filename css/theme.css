@@ -1,0 +1,113 @@
+:root{
+  --brand: #c0392b;
+  --brand-contrast: #ffffff;
+  --brand-bg-muted: rgba(192,57,43,0.08);
+  --brand-border: rgba(192,57,43,0.6);
+}
+
+/* Brand accents override (loaded after style.css) */
+.button{
+  background-color: var(--brand) !important;
+  border-color: var(--brand) !important;
+  color: var(--brand-contrast) !important;
+}
+.button:after{ filter: none; }
+
+.card__icon{ color: var(--brand) !important; }
+.card__heading{ color: var(--brand) !important; }
+.card__view{ background-color: var(--brand) !important; }
+
+/* Dropdown look consistency: use opaque background for readability */
+.dropdown-menu{
+  background-color: #121212; /* opaque dark */
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  backdrop-filter: none;
+}
+.dropdown-item{ color: #fff; }
+.dropdown-item:hover{ background-color: var(--brand-bg-muted); }
+
+/* Active nav */
+.nav-link.active{ color: var(--brand-contrast) !important; border-bottom: 2px solid var(--brand); }
+
+/* Active item in dropdowns: align with brand style, not bs primary */
+.dropdown-item.active,
+.dropdown-item:active{
+  background-color: var(--brand-bg-muted) !important;
+  color: var(--brand-contrast) !important;
+}
+
+/* Subtle left accent to mirror top-level underline style */
+.dropdown-item.active{
+  box-shadow: inset 3px 0 0 0 var(--brand);
+}
+
+/* Tables: brand-consistent dark theme */
+.table-clean{
+  border-color: var(--brand-border);
+  border-collapse: collapse;
+}
+.table-clean th,
+.table-clean td{
+  border-color: var(--brand-border);
+  padding: 0.5rem 0.75rem;
+}
+.table-clean thead tr{
+  background-color: var(--brand-bg-muted) !important;
+}
+.table-clean thead th{
+  color: var(--brand-contrast);
+  font-weight: 700;
+  border-bottom: 1px solid var(--brand-border);
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  font-size: 0.85rem;
+}
+/* Neutralize row utility bg classes and apply brand-tinted zebra/hover */
+.table-clean tbody tr{ background-color: transparent !important; }
+.table-clean tbody tr:nth-child(odd){ background-color: rgba(192,57,43,0.06) !important; }
+.table-clean tbody tr:nth-child(even){ background-color: rgba(192,57,43,0.10) !important; }
+.table-clean tbody tr:hover{ background-color: rgba(192,57,43,0.16) !important; box-shadow: inset 3px 0 0 var(--brand); }
+.table-clean a:hover{ text-decoration: underline; }
+/* Table host links: subtle brand hover */
+.table-clean .host-link{ color: #ffffff; transition: color .15s ease-in-out; }
+.table-clean .host-link:hover{ color: var(--brand) !important; }
+
+/* Numeric cells: align right with tabular figures */
+.num{ text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Pills for event types and subtle link affordance */
+.pill{
+  display: inline-block;
+  padding: .15rem .5rem;
+  border: 1px solid var(--brand-border);
+  border-radius: .375rem;
+  background-color: var(--brand-bg-muted);
+  color: var(--brand-contrast);
+  font-size: .85rem;
+}
+.tx-link:hover .tx-pill{ text-decoration: underline; }
+
+/* Pagination buttons styled to brand */
+.pagination-button{
+  background-color: #1e1e1e;
+  color: #d1d5db;
+  border: 1px solid var(--brand-border);
+}
+.pagination-button:hover{ background-color: rgba(192,57,43,0.12); color: #fff; }
+.pagination-button--active{ background-color: var(--brand); color: #fff; border-color: var(--brand); }
+
+/* Skeleton loader */
+.skeleton-line{
+  display: inline-block;
+  height: 0.8rem;
+  width: 100%;
+  background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.14), rgba(255,255,255,0.05));
+  background-size: 200% 100%;
+  animation: skel 1.2s ease-in-out infinite;
+  border-radius: 4px;
+}
+@keyframes skel {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

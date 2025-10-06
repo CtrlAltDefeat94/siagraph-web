@@ -1,0 +1,36 @@
+/* Local overrides and helpers */
+
+/* Center children inside sg row-content when the row isn't full */
+.sg-container__row-content--center {
+  justify-content: center;
+}
+
+/* Troubleshooter: equal-sized status tiles */
+.status-grid .status-tile {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  min-height: 42px;
+  padding: .5rem .75rem;
+}
+.status-grid .status-label {
+  white-space: nowrap;
+}
+
+/* Troubleshooter: settings readability */
+.settings-label {
+  color: #fff; /* stronger contrast than text-muted */
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.settings-value {
+  color: #f0f0f0;
+}
+.settings-value .fiat-value {
+  opacity: .8;
+}
+
+/* Consistent vertical spacing for stacked cards on host page right column */
+.sg-stack > .card + .card {
+  margin-top: 2rem;
+}

@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-include_once "../../../include/database.php";
+include_once "../../../bootstrap.php";
 
 $token = $_GET['token'] ?? null;
 $public_key = $_GET['public_key'] ?? null;

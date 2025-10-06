@@ -1,7 +1,8 @@
 <?php
 // Include configuration
-include_once "../../include/config.php";
-include_once "../../include/redis.php";
+include_once "../../bootstrap.php";
+
+use Siagraph\Utils\Cache;
 
 header('Content-Type: application/json');
 
@@ -11,7 +12,7 @@ if (isset($_GET['scan'])) {
 }
 
 $cacheKey = 'host_troubleshooter:' . $_GET['net_address'];
-#$cacheresult = getCache($cacheKey);
+#$cacheresult = Cache::getCache($cacheKey);
 if (!$scan == true && !empty($cacheresult)) {
     echo $cacheresult;
     die;
@@ -81,7 +82,7 @@ function fetchJsonPost($url, $postData = [])
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    return ($httpCode >= 200 && $httpCode < 300) ? json_decode($response, true) : null;
+    return ($httpCode >= 200 && $httpCode < 300) ? json_decode($response, true, 512, JSON_BIGINT_AS_STRING) : null;
 }
 
 // Check if a given port is open
@@ -99,7 +100,7 @@ function isPortOpen($host, $port, $timeout = 2)
 function fetchJson($url)
 {
     $response = @file_get_contents($url);
-    return $response === FALSE ? null : json_decode($response, true);
+    return $response === FALSE ? null : json_decode($response, true, 512, JSON_BIGINT_AS_STRING);
 }
 
 // Determine if the host has IPv4/IPv6 capability
@@ -306,13 +307,19 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
             }
         }
         if ($response['online'] && !$response['v2'] && $response['port_status']['ipv4_rhp4'] !== null) {
-
-            if ($block_height < 526000 && !$response['port_status']['ipv4_rhp4']) {
-                $response['warnings'][] = "RHP4 port not open.";
-            } elseif ($block_height >= 526000 && $block_height <= 530000 && !$response['port_status']['ipv4_rhp4']) {
-                $response['errors'][] = "RHP4 port not open. Host function may be limited";
-            } elseif ($block_height >= 530000 && !$response['port_status']['ipv4_rhp4']) {
-                $response['errors'][] = "RHP4 port not open. Host is unusable.";
+            // Guard against undefined $block_height; when unknown, provide a generic message
+            if (!isset($block_height)) {
+                if (!$response['port_status']['ipv4_rhp4']) {
+                    $response['warnings'][] = "RHP4 port not open.";
+                }
+            } else {
+                if ($block_height < 526000 && !$response['port_status']['ipv4_rhp4']) {
+                    $response['warnings'][] = "RHP4 port not open.";
+                } elseif ($block_height >= 526000 && $block_height <= 530000 && !$response['port_status']['ipv4_rhp4']) {
+                    $response['errors'][] = "RHP4 port not open. Host function may be limited";
+                } elseif ($block_height >= 530000 && !$response['port_status']['ipv4_rhp4']) {
+                    $response['errors'][] = "RHP4 port not open. Host is unusable.";
+                }
             }
         }
         if (new DateTime($response['last_announcement']) < (new DateTime())->sub(new DateInterval('P6M'))) {
@@ -338,5 +345,5 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
 //////////////////////////////
 // Output
 //////////////////////////////
-#setCache(json_encode($response), $cacheKey, 'hour');
+#Cache::setCache(json_encode($response), $cacheKey, 'hour');
 echo json_encode($response);
