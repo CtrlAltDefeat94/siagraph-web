@@ -34,3 +34,16 @@
 .sg-stack > .card + .card {
   margin-top: 2rem;
 }
+
+/* Improve contrast for helper text inside cards */
+.card .form-text {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.status-indicator {
+  min-height: 1.25rem;
+}
+
+.status-indicator.text-secondary {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
