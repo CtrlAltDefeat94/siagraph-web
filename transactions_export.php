@@ -34,6 +34,19 @@ render_header(
                         </div>
 
                         <div>
+                            <label for="tx-currency" class="form-label">Currency</label>
+                            <select id="tx-currency" class="form-select" name="currency">
+                                <option value="usd">US Dollar (USD)</option>
+                                <option value="eur">Euro (EUR)</option>
+                                <option value="cad">Canadian Dollar (CAD)</option>
+                                <option value="cny">Chinese Yuan (CNY)</option>
+                                <option value="gbp">British Pound (GBP)</option>
+                                <option value="jpy">Japanese Yen (JPY)</option>
+                                <option value="rub">Russian Ruble (RUB)</option>
+                            </select>
+                        </div>
+
+                        <div>
                             <label for="tx-date" class="form-label">Include transactions from</label>
                             <input
                                 type="date"

@@ -2,8 +2,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('tx-export-form');
     if (!form) return;
 
+    const readCookie = (name) => {
+        const cookieString = document.cookie || '';
+        const pairs = cookieString.split(';');
+        for (const pair of pairs) {
+            const trimmed = pair.trim();
+            if (!trimmed) continue;
+            if (trimmed.toLowerCase().startsWith(name.toLowerCase() + '=')) {
+                return trimmed.substring(name.length + 1);
+            }
+        }
+        return null;
+    };
+
     const addressInput = document.getElementById('tx-address');
     const dateInput = document.getElementById('tx-date');
+    const currencySelect = document.getElementById('tx-currency');
     const downloadBtn = document.getElementById('tx-download-btn');
     const viewRawBtn = document.getElementById('tx-view-raw-btn');
     const statusEl = document.getElementById('tx-status');
@@ -39,11 +53,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dateInput && dateInput.value) {
             params.set('date', dateInput.value);
         }
+        if (currencySelect && currencySelect.value) {
+            params.set('currency', currencySelect.value);
+        }
         if (format) {
             params.set('format', format);
         }
         return params;
     };
+
+    if (currencySelect) {
+        const cookieCurrency = readCookie('currency');
+        const defaultCurrency = (cookieCurrency || 'usd').toLowerCase();
+        const supportedValues = Array.from(currencySelect.options).map(opt => opt.value.toLowerCase());
+        if (supportedValues.includes(defaultCurrency)) {
+            currencySelect.value = defaultCurrency;
+        }
+        currencySelect.addEventListener('change', () => {
+            try {
+                document.cookie =
+                    `currency=${currencySelect.value}; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/`;
+            } catch (err) {
+                // ignore cookie write errors
+            }
+        });
+    }
 
     const validate = () => {
         if (!form.reportValidity) {
