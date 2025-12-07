@@ -218,7 +218,7 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
             $response['used_storage'] = $response['total_storage'] - ($host_info_data['v2Settings']['remainingStorage'] * 4096 * 1024);
 
             $response['software_version'] = $host_info_data['v2Settings']['release'];
-            $response['protocol_version'] = implode('.', $host_info_data['v2Settings']['protocolVersion']);
+            $response['protocol_version'] = $host_info_data['v2Settings']['protocolVersion'];
 
             $response['settings']["acceptingcontracts"] = $host_info_data['v2Settings']['acceptingContracts'];
             $response['settings']["collateral"] = $host_info_data['v2Settings']['prices']['collateral'];
