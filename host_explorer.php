@@ -307,7 +307,7 @@ render_header('SiaGraph - Host Explorer');
         }
 
         function renderScore(score) {
-            const rounded = Math.max(0, Math.min(10, Math.round(score)));
+            const rounded = Math.max(0, Math.min(10, Math.ceil(score)));
             const hue = (rounded / 10) * 120;
             return `<span class="score" style="color: hsl(${hue}, 70%, 50%);">${rounded}</span>`;
         }

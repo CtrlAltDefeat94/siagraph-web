@@ -270,16 +270,17 @@ if ($settings) {
         $download_score = $benchmarkscore['download_score'];
         $upload_score = $benchmarkscore['upload_score'];
         $ttfb_score = $benchmarkscore['ttfb_score'];
-        $total_score = round($benchmarkscore['total_score']);
+        $total_score = ceil(COALESCE($benchmarkscore['total_score'], 0));
+        
 
         if (!isset($response['node_scores'][$node])) {
             $response['node_scores'][$node] = array();
         }
         $stats = array();
         $stats['date'] = $date;
-        $stats['download_score'] = (int) $download_score;
-        $stats['upload_score'] = (int) $upload_score;
-        $stats['ttfb_score'] = (int) $ttfb_score;
+        $stats['download_score'] = (int) ceil($download_score);
+        $stats['upload_score'] = (int) ceil($upload_score);
+        $stats['ttfb_score'] = (int) ceil($ttfb_score);
         $stats['total_score'] = (int) $total_score;
         $response['node_scores'][$node][] = $stats;
 

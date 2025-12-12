@@ -6,7 +6,7 @@ include_once 'include/config.php';
 require_once 'include/layout.php';
 
 function render_score($score) {
-    $score = max(0, min(10, round($score)));
+    $score = max(0, min(10, ceil($score)));
     $hue = ($score / 10) * 120; // 0 = red, 120 = green
     return '<span class="score" style="color: hsl(' . $hue . ', 70%, 50%);">' . $score . '</span>';
 }
