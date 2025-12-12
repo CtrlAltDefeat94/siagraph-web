@@ -51,6 +51,30 @@ $prev = [];
                 ]);
                 ?>
             </div>
+            <div class="sg-container__column sg-container__column--one-fourth" id="athBadgeContainer" style="display:none;">
+                <div class="card">
+                    <div class="card__content">
+                        <div class="mb-1 text-gray-400 text-sm">
+                            <i class="bi bi-flag me-1"></i>Days since ATH
+                        </div>
+                        <div class="flex items-center justify-start">
+                            <span id="athBadgeValue" class="glanceNumber text-2xl font-semibold">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="sg-container__column sg-container__column--one-fourth" id="athSizeContainer" style="display:none;">
+                <div class="card">
+                    <div class="card__content">
+                        <div class="mb-1 text-gray-400 text-sm">
+                            <i class="bi bi-trophy me-1"></i>ATH Utilized Storage
+                        </div>
+                        <div class="flex items-center justify-start">
+                            <span id="athSizeValue" class="glanceNumber text-2xl font-semibold">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
         </div>
     </div>
@@ -279,6 +303,38 @@ $prev = [];
                 });
             } catch (e) {
                 console.error('Failed to render storage forecast', e);
+            }
+        });
+        document.addEventListener('DOMContentLoaded', async function () {
+            const container = document.getElementById('athBadgeContainer');
+            const valueEl = document.getElementById('athBadgeValue');
+            const sizeContainer = document.getElementById('athSizeContainer');
+            const sizeValueEl = document.getElementById('athSizeValue');
+            if (!container || !valueEl) {
+                return;
+            }
+            try {
+                const response = await fetchWithCache('/api/v1/storage/ath');
+                const payload = response && response.utilized_storage ? response.utilized_storage : null;
+                if (!payload) {
+                    return;
+                }
+                if (payload.days_since_ath !== null && payload.days_since_ath !== undefined) {
+                    valueEl.textContent = payload.days_since_ath;
+                    container.style.display = 'block';
+                    if (payload.ath_date) {
+                        container.title = `ATH set on ${payload.ath_date}`;
+                    }
+                }
+                if (sizeContainer && sizeValueEl && payload.ath_bytes !== null && payload.ath_bytes !== undefined) {
+                    sizeValueEl.textContent = formatPB(payload.ath_bytes);
+                    sizeContainer.style.display = 'block';
+                    if (payload.ath_date) {
+                        sizeContainer.title = `ATH set on ${payload.ath_date}`;
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to load ATH badge', e);
             }
         });
     </script>
