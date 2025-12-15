@@ -270,7 +270,7 @@ if ($settings) {
         $download_score = $benchmarkscore['download_score'];
         $upload_score = $benchmarkscore['upload_score'];
         $ttfb_score = $benchmarkscore['ttfb_score'];
-        $total_score = ceil(COALESCE($benchmarkscore['total_score'], 0));
+        $total_score = ceil(($benchmarkscore['total_score']));
         
 
         if (!isset($response['node_scores'][$node])) {

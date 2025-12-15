@@ -25,7 +25,6 @@ $public_key = $_GET["public_key"] ?? '';
 // Host main data cache key
 $hostCacheKey = 'host' . http_build_query($_GET);
 $hostCacheResult = json_decode(Cache::getCache($hostCacheKey), true);
-
 // Try to get host data from cache, else fetch it
 if (!$hostCacheResult) {
    if ($public_key) {
@@ -67,7 +66,8 @@ $troubleshooterCacheKey = 'host_troubleshooter:' . $hostdata['net_address'];
 $troubleshooterCacheResult = json_decode(Cache::getCache($troubleshooterCacheKey), true);
 
 // Try to get troubleshooter data from cache, else fetch it
-if (!$troubleshooterCacheResult) {
+if (!$troubleshooterCacheResult && 1==2) {
+   echo "hoi";
    $tsUrl = $SETTINGS['siagraph_base_url'] . '/api/v1/host_troubleshooter?net_address=' . urlencode($hostdata['net_address']);
    try {
       $ch = curl_init($tsUrl);
