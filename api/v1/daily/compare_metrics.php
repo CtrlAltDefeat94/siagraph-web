@@ -1,6 +1,6 @@
 <?php
-include_once "../../../bootstrap.php";
-include_once "../../../config.php";
+include_once __DIR__ . '/../../../bootstrap.php';
+include_once __DIR__ . '/../../../config.php';
 
 use Siagraph\Utils\Cache;
 
@@ -87,8 +87,14 @@ function sumRevenue(mysqli $mysqli, string $start, string $end): array {
     $usd = 0.0;
     $eur = 0.0;
     while ($row = $result->fetch_assoc()) {
-        $sc = bcadd($sc, $row['contract_revenue'], 0);
-        $scCoins = bcdiv($row['contract_revenue'], '1000000000000000000000000', 24);
+        $revenue = $row['contract_revenue'];
+        if ($revenue === null) {
+            $revenue = '0';
+        }
+
+        $revenue = (string) $revenue;
+        $sc = bcadd($sc, $revenue, 0);
+        $scCoins = bcdiv($revenue, '1000000000000000000000000', 24);
         if (!is_null($row['usd'])) {
             $usd += (float) bcmul($scCoins, $row['usd'], 8);
         }
