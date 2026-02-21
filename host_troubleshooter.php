@@ -11,9 +11,9 @@
                 <section class="card">
                     <h2 class="card__heading">Lookup a Host</h2>
                     <div class="card__content">
-                        <form id="netAddressForm" class="row g-2">
+                        <form id="hostLookupForm" class="row g-2">
                             <div class="col-sm-9">
-                                <input type="text" id="netAddressInput" class="form-control" placeholder="example.com:9984">
+                                <input type="text" id="hostLookupInput" class="form-control" placeholder="example.com:9984 or ed25519:...">
                             </div>
                             <div class="col-sm-3">
                                 <button type="submit" class="button w-100">Lookup</button>
@@ -112,13 +112,16 @@
 
   async function loadHostData() {
     const netAddress = getQueryParam("net_address");
+    const publicKey = getQueryParam("public_key");
+    const lookupValue = publicKey || netAddress || '';
+    const lookupType = publicKey ? 'public_key' : 'net_address';
 
     // Set value into search input
-    document.getElementById("netAddressInput").value = netAddress || '';
+    document.getElementById("hostLookupInput").value = lookupValue;
 
     // Hide results if no net address
     const resultsSection = document.getElementById("resultsSection");
-    if (!netAddress) {
+    if (!lookupValue) {
       resultsSection.style.display = "none";
       loadRecentHistory();
       return;
@@ -126,9 +129,9 @@
       resultsSection.style.display = "block";
     }
 
-    // Basic validation (API expects host:port; IPv6 not yet supported here)
+    // Basic validation for net_address lookups (API expects host:port)
     const basicFormat = /^([\w\.-]+):(\d+)$/;
-    if (!basicFormat.test(netAddress)) {
+    if (lookupType === 'net_address' && !basicFormat.test(netAddress)) {
       const warningsErrors = document.getElementById('warningsErrors');
       resultsSection.style.display = 'block';
       warningsErrors.innerHTML = '<div class="alert alert-danger" role="alert">Invalid address. Use host:port (e.g. example.com:9984).</div>';
@@ -136,14 +139,17 @@
     }
 
     try {
-      const data = await fetchCachedOrDirect(`/api/v1/host_troubleshooter?net_address=${encodeURIComponent(netAddress)}`);
+      const query = lookupType === 'public_key'
+        ? `public_key=${encodeURIComponent(publicKey)}`
+        : `net_address=${encodeURIComponent(netAddress)}`;
+      const data = await fetchCachedOrDirect(`/api/v1/host_troubleshooter?${query}`);
       if (data && data.error) {
         const warningsErrors = document.getElementById('warningsErrors');
         warningsErrors.innerHTML = `<div class=\"alert alert-danger\" role=\"alert\">${data.error}</div>`;
         return;
       }
       renderHostData(data || {});
-      addToRecentHistory(netAddress);
+      addToRecentHistory(lookupType, lookupValue);
     } catch (error) {
       console.error("Failed to load host data", error);
       const warningsErrors = document.getElementById('warningsErrors');
@@ -372,34 +378,55 @@
     applyFiatValues();
   }
 
-  document.getElementById("netAddressForm").addEventListener("submit", function (e) {
+  document.getElementById("hostLookupForm").addEventListener("submit", function (e) {
     e.preventDefault();
-    const newAddress = document.getElementById("netAddressInput").value.trim().toLowerCase();
-    if (newAddress) {
+    const inputValue = document.getElementById("hostLookupInput").value.trim();
+    if (inputValue) {
+      const isPublicKey = /^ed25519:/i.test(inputValue);
       const url = new URL(window.location.href);
-      url.searchParams.set("net_address", newAddress);
+      if (isPublicKey) {
+        url.searchParams.set("public_key", inputValue);
+        url.searchParams.delete("net_address");
+      } else {
+        url.searchParams.set("net_address", inputValue.toLowerCase());
+        url.searchParams.delete("public_key");
+      }
       window.location.href = url.toString();
     }
   });
 
-  function addToRecentHistory(address) {
+  function addToRecentHistory(type, value) {
     const history = JSON.parse(localStorage.getItem("recentHosts") || "[]");
-    if (!history.includes(address)) {
-      history.unshift(address);
-      if (history.length > 5) history.pop();
-      localStorage.setItem("recentHosts", JSON.stringify(history));
-    }
+    const normalizedHistory = history.map(item => {
+      if (typeof item === 'string') {
+        return { type: 'net_address', value: item };
+      }
+      return item;
+    }).filter(item => item && item.type && item.value);
+
+    const exists = normalizedHistory.some(item => item.type === type && item.value === value);
+    if (!exists) normalizedHistory.unshift({ type, value });
+    if (normalizedHistory.length > 5) normalizedHistory.length = 5;
+    localStorage.setItem("recentHosts", JSON.stringify(normalizedHistory));
   }
 
   function loadRecentHistory() {
     const list = document.getElementById("recentHostList");
     const container = document.getElementById("recentHosts");
     const history = JSON.parse(localStorage.getItem("recentHosts") || "[]");
+    const normalizedHistory = history.map(item => {
+      if (typeof item === 'string') {
+        return { type: 'net_address', value: item };
+      }
+      return item;
+    }).filter(item => item && item.type && item.value);
 
-    if (history.length === 0) return;
+    if (normalizedHistory.length === 0) return;
 
-    list.innerHTML = history.map(addr =>
-      `<li><a href="?net_address=${encodeURIComponent(addr)}">${addr}</a></li>`
+    list.innerHTML = normalizedHistory.map(item => {
+      const param = item.type === 'public_key' ? 'public_key' : 'net_address';
+      return `<li><a href="?${param}=${encodeURIComponent(item.value)}">${item.value}</a></li>`;
+    }
     ).join("");
     container.style.display = '';
   }

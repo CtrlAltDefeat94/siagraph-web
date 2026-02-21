@@ -11,7 +11,10 @@ if (isset($_GET['scan'])) {
     $scan = filter_var($_GET['scan'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 }
 
-$cacheKey = 'host_troubleshooter:' . $_GET['net_address'];
+$lookupNetAddress = isset($_GET['net_address']) ? trim((string) $_GET['net_address']) : '';
+$lookupPublicKey = isset($_GET['public_key']) ? trim((string) $_GET['public_key']) : '';
+$cacheLookup = $lookupPublicKey !== '' ? $lookupPublicKey : $lookupNetAddress;
+$cacheKey = 'host_troubleshooter:' . $cacheLookup;
 #$cacheresult = Cache::getCache($cacheKey);
 if (!$scan == true && !empty($cacheresult)) {
     echo $cacheresult;
@@ -34,6 +37,7 @@ $response = array(
     'used_storage' => 0,
     'total_storage' => 0,
     'remaining_capacity_percentage' => 0,
+    'wallet_address' => null,
     'port_status' => array(
         'ipv4_rhp2' => null,
         'ipv4_rhp3' => null,
@@ -123,13 +127,32 @@ function checkIPVersion($host)
 //////////////////////////////
 
 
-// Validate presence of net_address param
-if (!isset($_GET['net_address'])) {
-    echo json_encode(['error' => 'Missing net_address parameter']);
+// Validate presence of net_address or public_key param
+if ($lookupNetAddress === '' && $lookupPublicKey === '') {
+    echo json_encode(['error' => 'Missing net_address or public_key parameter']);
     exit;
 }
 
-$net_address = $_GET['net_address'];
+$net_address = $lookupNetAddress;
+
+if ($net_address === '' && $lookupPublicKey !== '') {
+    $stmt = $mysqli->prepare("SELECT net_address FROM Hosts WHERE public_key = ? LIMIT 1");
+    if (!$stmt) {
+        echo json_encode(['error' => 'Unable to resolve public_key']);
+        exit;
+    }
+    $stmt->bind_param('s', $lookupPublicKey);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $hostRow = $result ? $result->fetch_assoc() : null;
+    $stmt->close();
+
+    if (!$hostRow || empty($hostRow['net_address'])) {
+        echo json_encode(['error' => 'public_key not found']);
+        exit;
+    }
+    $net_address = $hostRow['net_address'];
+}
 
 // Validate net_address format (host:port)
 if (!preg_match('/^([\w\.-]+):(\d+)$/', $net_address, $matches)) {
@@ -216,6 +239,7 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
             ### V2 host
             $response['total_storage'] = $host_info_data['v2Settings']['totalStorage'] * 4096 * 1024;
             $response['used_storage'] = $response['total_storage'] - ($host_info_data['v2Settings']['remainingStorage'] * 4096 * 1024);
+            $response["wallet_address"] = $host_info_data['v2Settings']['walletAddress'];
 
             $response['software_version'] = $host_info_data['v2Settings']['release'];
             $response['protocol_version'] = $host_info_data['v2Settings']['protocolVersion'];

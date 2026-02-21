@@ -2,32 +2,7 @@
 require_once 'bootstrap.php';
 require_once 'include/layout.php';
 
-use Siagraph\Utils\ApiClient;
-
-$json_data = ApiClient::fetchJson('/api/v1/hosts?limit=0');
-$dataError = !is_array($json_data) || !isset($json_data['hosts']);
-if ($dataError) {
-    $json_data = ['hosts' => []];
-}
-
-$versions = [];
-$countries = [];
-foreach ($json_data['hosts'] as $host) {
-    $ver = $host['software_version'];
-    $ct  = $host['country_name'];
-    if (!isset($versions[$ver])) {
-        $versions[$ver] = 1;
-    } else {
-        $versions[$ver]++;
-    }
-    if (!isset($countries[$ct])) {
-        $countries[$ct] = 1;
-    } else {
-        $countries[$ct]++;
-    }
-}
-ksort($versions);
-ksort($countries);
+$dataError = false;
 
 render_header('SiaGraph - Host Explorer');
 ?>
@@ -39,12 +14,13 @@ render_header('SiaGraph - Host Explorer');
 
         <h1 class="sg-container__heading text-center mb-2"><i class="bi bi-hdd-network me-2"></i>Host Explorer</h1>
         <div class="host-layout gap-4 items-start">
-            <section class="card">
+            <section class="card filters-card">
                 <h2 class="card__heading">Filters</h2>
-                <div class="card__content">
+                <button id="filtersToggle" class="filters-toggle" type="button" aria-expanded="false" aria-controls="filtersContent">Show filters</button>
+                <div class="card__content" id="filtersContent" hidden>
                     <div class="flex flex-col gap-3">
                         <label for="acceptingContractsFilter" class="flex items-center text-sm">
-                            <input type="checkbox" id="acceptingContractsFilter" class="h-4 w-4 me-2" onchange="applyFilters()">Accepting contracts
+                            <input type="checkbox" id="acceptingContractsFilter" class="h-4 w-4 me-2">Accepting contracts
                         </label>
                         <label for="activeOnly" class="flex items-center text-sm">
                             <input type="checkbox" id="activeOnly" class="h-4 w-4 me-2" onchange="handleShowInactiveChange()">Include inactive
@@ -52,44 +28,46 @@ render_header('SiaGraph - Host Explorer');
 
                         <div>
                             <label class="block mb-1 text-sm" for="versionFilter">Version</label>
-                            <select id="versionFilter" class="px-2 py-1 pe-3 border border-gray-600 rounded-md w-100 h-8 text-sm bg-gray-800 text-white" title="Filter by host software version">
+                            <select id="versionFilter" class="px-2 py-1 pe-3 border border-gray-600 rounded-md w-100 h-10 text-sm bg-gray-800 text-white" title="Filter by host software version">
                                 <option value="">All Versions</option>
-                                <?php foreach(array_keys($versions) as $ver){echo "<option value=\"$ver\">$ver</option>";} ?>
                             </select>
                         </div>
                         <div>
                             <label class="block mb-1 text-sm" for="countryFilter">Country</label>
-                            <select id="countryFilter" class="px-2 py-1 pe-4 border border-gray-600 rounded-md w-100 h-8 text-sm bg-gray-800 text-white" title="Filter by country">
+                            <select id="countryFilter" class="px-2 py-1 pe-4 border border-gray-600 rounded-md w-100 h-10 text-sm bg-gray-800 text-white" title="Filter by country">
                                 <option value="">All Countries</option>
-                                <?php foreach(array_keys($countries) as $ct){echo "<option value=\"$ct\">$ct</option>";} ?>
                             </select>
                         </div>
                         <div>
                             <label class="block mb-1 text-sm" for="maxContractPrice">Max Contract Price</label>
-                            <input type="number" id="maxContractPrice" class="px-2 py-1 border border-gray-600 rounded-md w-100 h-8 text-sm bg-gray-800 text-white placeholder-gray-400" onchange="applyFilters()">
+                            <input type="number" id="maxContractPrice" class="px-2 py-1 border border-gray-600 rounded-md w-100 h-10 text-sm bg-gray-800 text-white placeholder-gray-400" onchange="applyFilters()">
                         </div>
                         <div>
                             <label class="block mb-1 text-sm" for="maxStoragePrice">Max Storage Price</label>
-                            <input type="number" id="maxStoragePrice" class="px-2 py-1 border border-gray-600 rounded-md w-100 h-8 text-sm bg-gray-800 text-white placeholder-gray-400" onchange="applyFilters()">
+                            <input type="number" id="maxStoragePrice" class="px-2 py-1 border border-gray-600 rounded-md w-100 h-10 text-sm bg-gray-800 text-white placeholder-gray-400" onchange="applyFilters()">
                         </div>
                         <div>
                             <label class="block mb-1 text-sm" for="maxUploadPrice">Max Upload Price</label>
-                            <input type="number" id="maxUploadPrice" class="px-2 py-1 border border-gray-600 rounded-md w-100 h-8 text-sm bg-gray-800 text-white placeholder-gray-400" onchange="applyFilters()">
+                            <input type="number" id="maxUploadPrice" class="px-2 py-1 border border-gray-600 rounded-md w-100 h-10 text-sm bg-gray-800 text-white placeholder-gray-400" onchange="applyFilters()">
                         </div>
                         <div>
                             <label class="block mb-1 text-sm" for="maxDownloadPrice">Max Download Price</label>
-                            <input type="number" id="maxDownloadPrice" class="px-2 py-1 border border-gray-600 rounded-md w-100 h-8 text-sm bg-gray-800 text-white placeholder-gray-400" onchange="applyFilters()">
+                            <input type="number" id="maxDownloadPrice" class="px-2 py-1 border border-gray-600 rounded-md w-100 h-10 text-sm bg-gray-800 text-white placeholder-gray-400" onchange="applyFilters()">
+                        </div>
+                        <div class="flex justify-end">
+                            <button id="clearFiltersBtn" class="button h-10 px-3" type="button">Clear filters</button>
                         </div>
                     </div>
                 </div>
             </section>
 
             <section class="card">
-                <div class="flex items-center justify-between gap-2">
+                <div class="hosts-toolbar">
                     <h2 class="card__heading">Hosts</h2>
-                    <div class="flex flex-wrap items-center gap-2 w-100">
-                        <span class="text-sm">Sort:</span>
-                        <select id="sort" class="px-2 py-1 pe-4 border border-gray-600 rounded-md h-8 text-sm bg-gray-800 text-white" onchange="handleSortChange()" title="Rank: host reliability. Used Storage: storage currently used. Total Storage: host capacity. Storage Price: price per TB per month. Name: host network address. Age: how long the host has been online. 24h Growth: storage growth over the last day.">
+                    <div class="hosts-toolbar__controls">
+                        <div class="hosts-toolbar__sort">
+                            <span class="text-sm">Sort:</span>
+                            <select id="sort" class="px-2 py-1 pe-4 border border-gray-600 rounded-md h-10 text-sm bg-gray-800 text-white" onchange="handleSortChange()" title="Rank: host reliability. Used Storage: storage currently used. Total Storage: host capacity. Storage Price: price per TB per month. Name: host network address. Age: how long the host has been online. 24h Growth: storage growth over the last day.">
                             <option value="rank">Rank</option>
                             <option value="used_storage">Used Storage</option>
                             <option value="total_storage">Total Storage</option>
@@ -97,14 +75,16 @@ render_header('SiaGraph - Host Explorer');
                             <option value="net_address">Name</option>
                             <option value="age">Age</option>
                             <option value="growth">24h Growth</option>
-                        </select>
-                        <div class="ms-auto d-flex align-items-center gap-2">
-                            <input type="text" id="search" name="search" class="px-2 py-1 border border-gray-600 rounded-md h-8 text-sm w-full sm:w-64 bg-gray-800 text-white placeholder-gray-400" placeholder="Search net address" title="Type part of net address to filter hosts">
-                            <button class="button h-8 px-3" onclick="handleSearch()">Search</button>
+                            </select>
+                        </div>
+                        <div class="hosts-toolbar__search">
+                            <input type="text" id="search" name="search" class="px-2 py-1 border border-gray-600 rounded-md h-10 text-sm w-full sm:w-64 bg-gray-800 text-white placeholder-gray-400" placeholder="Search net address or public key" title="Type part of a net address or public key to filter hosts">
+                            <button class="button h-10 px-3" onclick="handleSearch()">Search</button>
                         </div>
                     </div>
                 </div>
                 <div class="card__content">
+                    <div id="loadMessage" class="text-sm text-gray-400 mb-2" aria-live="polite"></div>
                     <div class="overflow-x-auto">
                         <table id="hostTable" class="table-clean text-white min-w-full" style="visibility: hidden;">
                             <thead></thead>
@@ -127,13 +107,15 @@ render_header('SiaGraph - Host Explorer');
     <!-- JavaScript -->
     <script>
         var ajaxBaseUrl = '/api/v1/hosts';
+        var ajaxMetaUrl = '/api/v1/hosts?meta=1';
         var ajaxParams = { 'page': 1 }; // Object to hold URL parameters
-        var query;
-        document.getElementById('search').addEventListener("keydown", function (e) {
-            if (e.keyCode == 13) {
-                handleSearch();
-            }
-        });
+        var query = '';
+        let searchDebounceTimer = null;
+        let loadController = null;
+        let activeRequestId = 0;
+        let lastIsMobile = window.innerWidth < 768;
+        window.currentHosts = null;
+        window.currentPagination = null;
 
         document.addEventListener("DOMContentLoaded", function () {
             // Seed ajaxParams from current URL so we don't drop existing params
@@ -158,8 +140,10 @@ render_header('SiaGraph - Host Explorer');
                 if (q !== null) {
                     const searchEl = document.getElementById('search');
                     if (searchEl) searchEl.value = q;
+                    query = q.toLowerCase();
                 }
             })();
+
             // Set default sort criteria
             const sortElement = document.getElementById('sort');
             if (sortElement) {
@@ -179,20 +163,43 @@ render_header('SiaGraph - Host Explorer');
             const acceptingContractsCheckbox = document.getElementById('acceptingContractsFilter');
             acceptingContractsCheckbox.checked = acceptingContractsParam === 'true';
 
+            // Restore numeric inputs from URL
+            ['maxContractPrice', 'maxStoragePrice', 'maxUploadPrice', 'maxDownloadPrice'].forEach((key) => {
+                const input = document.getElementById(key);
+                if (input && ajaxParams[key] !== undefined) {
+                    input.value = ajaxParams[key];
+                }
+            });
+
+            // Wire UI events
+            document.getElementById('search').addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSearch();
+                }
+            });
+            document.getElementById('search').addEventListener('input', function () {
+                clearTimeout(searchDebounceTimer);
+                searchDebounceTimer = setTimeout(() => {
+                    handleSearch();
+                }, 300);
+            });
+            document.getElementById('versionFilter').addEventListener('change', applyFilters);
+            document.getElementById('countryFilter').addEventListener('change', applyFilters);
+            document.getElementById('acceptingContractsFilter').addEventListener('change', applyFilters);
+            document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
+            document.getElementById('filtersToggle').addEventListener('click', toggleFiltersPanel);
+
             // Render header for current viewport
             if (typeof renderTableHeader === 'function') {
                 renderTableHeader();
             }
 
-            // Trigger initial data load
-            applyFilters();
-
-            document.getElementById('versionFilter').addEventListener('change', applyFilters);
-            document.getElementById('countryFilter').addEventListener('change', applyFilters);
-            document.getElementById('acceptingContractsFilter').addEventListener('change', applyFilters);
+            syncFilterPanelForViewport();
+            loadFilterMeta().finally(() => {
+                applyFilters();
+            });
         });
-
-        let hosts = []; // Initialize hosts array
 
         function updateAjaxParams(params) {
             for (const key in params) {
@@ -200,8 +207,68 @@ render_header('SiaGraph - Host Explorer');
                     ajaxParams[key] = params[key];
                 }
             }
-
         }
+
+        function setLoadMessage(message) {
+            const messageEl = document.getElementById('loadMessage');
+            if (messageEl) messageEl.textContent = message || '';
+        }
+
+        function setFiltersOpen(isOpen) {
+            const content = document.getElementById('filtersContent');
+            const toggle = document.getElementById('filtersToggle');
+            if (!content || !toggle) return;
+            content.hidden = !isOpen;
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            toggle.textContent = isOpen ? 'Hide filters' : 'Show filters';
+        }
+
+        function toggleFiltersPanel() {
+            const content = document.getElementById('filtersContent');
+            if (!content) return;
+            setFiltersOpen(content.hidden);
+        }
+
+        function syncFilterPanelForViewport() {
+            const toggle = document.getElementById('filtersToggle');
+            if (!toggle) return;
+            if (isMobile()) {
+                toggle.style.display = 'inline-flex';
+                setFiltersOpen(false);
+            } else {
+                toggle.style.display = 'none';
+                setFiltersOpen(true);
+            }
+        }
+
+        function populateSelect(selectId, defaultLabel, items, currentValue) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            const selected = currentValue !== undefined ? String(currentValue) : '';
+            select.innerHTML = `<option value="">${defaultLabel}</option>`;
+            if (!Array.isArray(items)) return;
+            items.forEach((entry) => {
+                if (!entry || !entry.value) return;
+                const option = document.createElement('option');
+                option.value = entry.value;
+                option.textContent = `${entry.value} (${entry.count})`;
+                if (entry.value === selected) option.selected = true;
+                select.appendChild(option);
+            });
+        }
+
+        async function loadFilterMeta() {
+            try {
+                const response = await fetch(ajaxMetaUrl, { headers: { 'Accept': 'application/json' } });
+                if (!response.ok) throw new Error('Failed to load metadata');
+                const meta = await response.json();
+                populateSelect('versionFilter', 'All Versions', meta.versions || [], ajaxParams['version'] || '');
+                populateSelect('countryFilter', 'All Countries', meta.countries || [], ajaxParams['country'] || '');
+            } catch (error) {
+                setLoadMessage('Filter metadata is unavailable. You can still browse hosts.');
+            }
+        }
+
         function constructAjaxUrl() {
             let url = ajaxBaseUrl;
 
@@ -228,6 +295,7 @@ render_header('SiaGraph - Host Explorer');
             const version = document.getElementById('versionFilter').value;
             const country = document.getElementById('countryFilter').value;
             const acceptingContracts = document.getElementById('acceptingContractsFilter').checked;
+            const showInactive = document.getElementById('activeOnly').checked;
 
             if (version) {
                 ajaxParams['version'] = version;
@@ -245,6 +313,12 @@ render_header('SiaGraph - Host Explorer');
                 ajaxParams['acceptingContracts'] = true;
             } else {
                 delete ajaxParams['acceptingContracts'];
+            }
+
+            if (showInactive) {
+                ajaxParams['showinactive'] = true;
+            } else {
+                delete ajaxParams['showinactive'];
             }
 
             const contractPrice = document.getElementById('maxContractPrice').value;
@@ -276,6 +350,15 @@ render_header('SiaGraph - Host Explorer');
                 delete ajaxParams['maxDownloadPrice'];
             }
 
+            const searchInput = document.getElementById('search').value.trim();
+            if (searchInput) {
+                ajaxParams['query'] = searchInput;
+                query = searchInput;
+            } else {
+                delete ajaxParams['query'];
+                query = '';
+            }
+
             // Reset page to 1 when filters change
             ajaxParams['page'] = 1;
 
@@ -300,7 +383,7 @@ render_header('SiaGraph - Host Explorer');
 
         // Function to handle search
         function handleSearch() {
-            const searchInput = document.getElementById('search').value.toLowerCase();
+            const searchInput = document.getElementById('search').value.trim();
             updateAjaxParams({ query: searchInput });
             query = searchInput;
             applyFilters();
@@ -310,6 +393,20 @@ render_header('SiaGraph - Host Explorer');
             const rounded = Math.max(0, Math.min(10, Math.ceil(score)));
             const hue = (rounded / 10) * 120;
             return `<span class="score" style="color: hsl(${hue}, 70%, 50%);">${rounded}</span>`;
+        }
+
+        function isStorageDiffAvailable(host) {
+            return Number(host.used_storage_diff_available) === 1;
+        }
+
+        function getStorageDiffReason(host) {
+            if (host.used_storage_diff_reason === 'missing_latest') {
+                return 'Latest hourly sample is unavailable.';
+            }
+            if (host.used_storage_diff_reason === 'missing_baseline') {
+                return '24h baseline sample is unavailable.';
+            }
+            return '24h delta is unavailable.';
         }
 
         // Responsive helpers
@@ -343,7 +440,7 @@ render_header('SiaGraph - Host Explorer');
                         <th class="px-4 py-2 w-8 num">#</th>
                         <th class="px-4 py-2 w-80">Host</th>
                         <th class="px-4 py-2 w-32">Country</th>
-                        <th class="px-4 py-2 w-32 num">Used Storage<span class="text-xs text-gray-400 ml-1">(24h)</span></th>
+                        <th class="px-4 py-2 w-32 num">Used Storage<span class="text-xs text-gray-400 ml-1" title="24h delta is recalculated hourly.">(24h)</span></th>
                         <th class="px-4 py-2 w-28 num">Total Storage</th>
                         <th class="px-4 py-2 w-24 num text-nowrap">Price</th>
                         <th class="px-4 py-2 w-16 num">Score</th>
@@ -378,6 +475,15 @@ render_header('SiaGraph - Host Explorer');
                 const usedTB = Number((host.used_storage / (1000 * 1000 * 1000 * 1000)).toFixed(2)).toLocaleString(loc);
                 const totalTB = Number((host.total_storage / (1000 * 1000 * 1000 * 1000)).toFixed(2)).toLocaleString(loc);
                 const priceSC = Math.round(host.storage_price / (10 ** 12) * 4320).toLocaleString(loc);
+                const diffAvailable = isStorageDiffAvailable(host);
+                const growthGB = diffAvailable ? Math.round(Number(host.used_storage_diff) / (1000 * 1000 * 1000)) : 0;
+                const growthLabel = diffAvailable
+                    ? (growthGB > 0 ? `+${growthGB.toLocaleString(loc)} GB` : `${growthGB.toLocaleString(loc)} GB`)
+                    : 'N/A';
+                const growthClass = diffAvailable
+                    ? (growthGB > 0 ? 'metric-positive' : (growthGB < 0 ? 'metric-negative' : 'metric-neutral'))
+                    : 'metric-muted';
+                const growthTitle = diffAvailable ? '' : ` title="${getStorageDiffReason(host)}"`;
                 const computedIndex = (((currentPage - 1) * perPage) + index + 1);
                 const displayRank = (host.filtered_rank && Number(host.filtered_rank) > 0) ? host.filtered_rank : computedIndex;
                 if (isMobile()) {
@@ -386,12 +492,13 @@ render_header('SiaGraph - Host Explorer');
                         <td class="border px-2 py-2 num">${displayRank}</td>
                         <td class="border px-2 py-2 align-top">
                             <a href="/host?id=${host.host_id}" class="host-link hover:underline">${host.net_address}</a>${host.accepting_contracts == 0 ? ' <span class="text-red-500" title="Not accepting contracts">❌</span>' : ''}
-                            <div class="text-xs text-gray-300 mt-1">
-                                <span class="whitespace-nowrap">${host.country_name}</span> · 
-                                <span class="whitespace-nowrap">Used: ${usedTB} TB</span> · 
-                                <span class="whitespace-nowrap">Total: ${totalTB} TB</span> · 
-                                <span class="whitespace-nowrap">Price: ${priceSC} SC</span> · 
-                                <span class="whitespace-nowrap">Score: ${renderScore(host.total_score)}</span>
+                            <div class="text-xs text-gray-300 mt-1 mobile-metrics">
+                                <div><span class="metric-label">Country</span><span>${host.country_name}</span></div>
+                                <div><span class="metric-label">Used</span><span>${usedTB} TB</span></div>
+                                <div><span class="metric-label">Total</span><span>${totalTB} TB</span></div>
+                                <div><span class="metric-label">24h Growth</span><span class="${growthClass}"${growthTitle}>${growthLabel}</span></div>
+                                <div><span class="metric-label">Price</span><span>${priceSC} SC</span></div>
+                                <div><span class="metric-label">Score</span><span>${renderScore(host.total_score)}</span></div>
                             </div>
                         </td>
                     `;
@@ -477,52 +584,89 @@ render_header('SiaGraph - Host Explorer');
 
             // Attach event listener to update params, update URL, and load data
             pageButton.onclick = () => {
+                const totalPages = (window.currentPagination && window.currentPagination.total_pages) ? window.currentPagination.total_pages : 1;
+                if (page < 1 || page > totalPages) return;
                 updateAjaxParams({ page: page });
                 const url = new URL(window.location.href);
                 url.search = new URLSearchParams(ajaxParams).toString();
                 window.history.replaceState({}, '', url);
                 loadData();
-                console.log(page); // Log the current page value
             };
 
             return pageButton;
         }
 
 
-        function updateStorageDiff(data, page) {
+        function updateStorageDiff(data) {
             for (let i = 0; i < data.length; i++) {
                 const host = data[i];
-                const originalIndex = hosts.indexOf(host);
                 const storageDiffElement = document.getElementById(`storage-diff-${host.host_id}`);
-                const storageDiff = Math.round(host.used_storage_diff / (1000 * 1000 * 1000));
+                const diffAvailable = isStorageDiffAvailable(host);
+                const storageDiff = diffAvailable ? Math.round(Number(host.used_storage_diff) / (1000 * 1000 * 1000)) : 0;
 
                 if (storageDiffElement) {
-                    if (storageDiff > 0) {
+                    if (!diffAvailable) {
+                        storageDiffElement.innerHTML = `(N/A)`;
+                        storageDiffElement.style.color = 'rgb(156 163 175)';
+                        storageDiffElement.title = getStorageDiffReason(host);
+                    } else if (storageDiff > 0) {
                         const loc = (typeof window !== 'undefined' && window.APP_LOCALE) ? window.APP_LOCALE : undefined;
                         storageDiffElement.innerHTML = `(+${storageDiff.toLocaleString(loc)} GB)`;
                         storageDiffElement.style.color = 'green';
+                        storageDiffElement.title = '';
                     } else if (storageDiff < 0) {
                         const loc2 = (typeof window !== 'undefined' && window.APP_LOCALE) ? window.APP_LOCALE : undefined;
                         storageDiffElement.innerHTML = `(${storageDiff.toLocaleString(loc2)} GB)`;
                         storageDiffElement.style.color = 'red';
+                        storageDiffElement.title = '';
                     } else {
-                        storageDiffElement.innerHTML = ``;
+                        storageDiffElement.innerHTML = `(0 GB)`;
+                        storageDiffElement.style.color = 'rgb(209 213 219)';
+                        storageDiffElement.title = '';
                     }
                 }
             }
         }
 
         function handleShowInactiveChange() {
-            const activeOnlyCheckbox = document.getElementById('activeOnly');
-            const showInactive = activeOnlyCheckbox.checked;
-
-            if (showInactive) {
-                updateAjaxParams({ showinactive: true });
-            } else {
-                updateAjaxParams({ showinactive: false });
-            }
             applyFilters();
         }
+
+        function clearFilters() {
+            const controlIds = ['versionFilter', 'countryFilter', 'maxContractPrice', 'maxStoragePrice', 'maxUploadPrice', 'maxDownloadPrice', 'search'];
+            controlIds.forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            const acceptingContractsCheckbox = document.getElementById('acceptingContractsFilter');
+            if (acceptingContractsCheckbox) acceptingContractsCheckbox.checked = false;
+            const inactiveCheckbox = document.getElementById('activeOnly');
+            if (inactiveCheckbox) inactiveCheckbox.checked = false;
+
+            delete ajaxParams['version'];
+            delete ajaxParams['country'];
+            delete ajaxParams['maxContractPrice'];
+            delete ajaxParams['maxStoragePrice'];
+            delete ajaxParams['maxUploadPrice'];
+            delete ajaxParams['maxDownloadPrice'];
+            delete ajaxParams['acceptingContracts'];
+            delete ajaxParams['showinactive'];
+            delete ajaxParams['query'];
+            ajaxParams['page'] = 1;
+            query = '';
+            applyFilters();
+        }
+
+        function showErrorState(message) {
+            const tableBody = document.getElementById('hostTableBody');
+            renderTableHeader();
+            const colspan = isMobile() ? 2 : 7;
+            tableBody.innerHTML = `<tr><td colspan="${colspan}" class="px-4 py-8 text-center text-red-300">${message}</td></tr>`;
+            const paginationDiv = document.getElementById('pagination');
+            if (paginationDiv) paginationDiv.innerHTML = '';
+            showTable();
+        }
+
         // Function to load data from server based on page number and query
         function showLoadingSkeleton() {
             const tableBody = document.getElementById('hostTableBody');
@@ -545,37 +689,48 @@ render_header('SiaGraph - Host Explorer');
             showTable();
         }
 
-        function loadData() {
+        async function loadData() {
             showLoadingSkeleton();
-            const xhr = new XMLHttpRequest();
-            let url = constructAjaxUrl();
-            xhr.open('GET', url, true);
-            xhr.onload = function () {
-                if (xhr.status === 200) {
-                    const response = JSON.parse(xhr.responseText);
-                    const hosts = response.hosts; // Assuming the response contains an array of hosts
-                    const pagination = response.pagination;
+            setLoadMessage('Loading hosts...');
 
-                    // Cache for potential re-render on resize
-                    window.currentHosts = hosts;
-                    window.currentPagination = pagination;
+            if (loadController) {
+                loadController.abort();
+            }
+            loadController = new AbortController();
+            const requestId = ++activeRequestId;
 
-                    // Display the fetched data
-                    displayData(hosts, pagination);
-                } else {
-                    console.error('Failed to fetch data');
-                }
-            };
-            xhr.send();
+            try {
+                let url = constructAjaxUrl();
+                const response = await fetch(url, {
+                    signal: loadController.signal,
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!response.ok) throw new Error('Request failed');
+                const payload = await response.json();
+
+                // Ignore stale responses if a newer request has started.
+                if (requestId !== activeRequestId) return;
+
+                const hosts = Array.isArray(payload.hosts) ? payload.hosts : [];
+                const pagination = payload.pagination || { total_pages: 1, current_page: 1, per_page: 15, total_rows: 0 };
+                window.currentHosts = hosts;
+                window.currentPagination = pagination;
+                displayData(hosts, pagination);
+                setLoadMessage(`Showing ${hosts.length.toLocaleString()} hosts${pagination.total_rows ? ` of ${Number(pagination.total_rows).toLocaleString()}` : ''}.`);
+            } catch (error) {
+                if (error && error.name === 'AbortError') return;
+                showErrorState('Could not load host data. Please retry.');
+                setLoadMessage('Request failed.');
+            }
         }
 
         // Re-render on breakpoint changes
         (function setupResizeRerender(){
-            let lastIsMobile = isMobile();
             window.addEventListener('resize', () => {
                 const nowIsMobile = isMobile();
                 if (nowIsMobile !== lastIsMobile) {
                     lastIsMobile = nowIsMobile;
+                    syncFilterPanelForViewport();
                     if (window.currentHosts) {
                         displayData(window.currentHosts, window.currentPagination || { total_pages: 1, current_page: 1, per_page: 15 });
                     } else {
@@ -589,11 +744,58 @@ render_header('SiaGraph - Host Explorer');
 
 
 <style>
-    /* Two-column layout with fixed sidebar on md+ */
+    /* Two-column layout with wider/stickier sidebar on md+ */
     .host-layout{ display: grid; grid-template-columns: 1fr; align-items: start; }
     @media (min-width: 768px){ /* md */
-        .host-layout{ grid-template-columns: 240px 1fr; }
+        .host-layout{ grid-template-columns: clamp(230px, 17vw, 280px) 1fr; }
+        .filters-card { position: sticky; top: 1rem; }
     }
+
+    .filters-toggle {
+        display: none;
+        width: 100%;
+        min-height: 2.5rem;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 999px;
+        color: #fff;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .hosts-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+
+    .hosts-toolbar__controls {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .hosts-toolbar__sort {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        white-space: nowrap;
+    }
+
+    .hosts-toolbar__search {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: min(100%, 420px);
+    }
+
+    #search { flex: 1 1 auto; min-width: 12rem; }
+
     /* Ensure pagination is centered on all viewports */
     #pagination { display: flex; justify-content: center; align-items: center; }
     /* Keep pagination button content on one line and centered */
@@ -617,23 +819,72 @@ render_header('SiaGraph - Host Explorer');
         word-break: break-word;  /* fallback */
     }
 
+    .host-link {
+        color: #8ec5ff;
+        text-decoration: none;
+    }
+
+    .host-link::after {
+        content: " \2192";
+        opacity: 0.7;
+        font-size: 0.85em;
+    }
+
+    .host-link:hover,
+    .host-link:focus-visible {
+        color: #b3dbff;
+        opacity: 1;
+    }
+
+    .mobile-metrics {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.2rem;
+    }
+
+    .mobile-metrics > div {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .metric-label {
+        color: rgb(156 163 175);
+        margin-right: 0.5rem;
+    }
+
+    .metric-positive { color: #22c55e; }
+    .metric-negative { color: #ef4444; }
+    .metric-neutral { color: rgb(209 213 219); }
+    .metric-muted { color: rgb(156 163 175); }
+
     /* Mobile refinements: tighter cards, edge-to-edge table, smaller pagination */
     @media (max-width: 767.98px) {
         /* Reduce card chrome to free space */
         section.card { padding: 0.75rem; border-radius: 1rem; }
         /* Container side padding */
         #main-content.sg-container { padding-left: 0.75rem; padding-right: 0.75rem; gap: 1.5rem; }
-        /* Let the table use available width */
-        .table-clean { table-layout: fixed; }
         .table-clean th, .table-clean td { padding-left: 0.5rem; padding-right: 0.5rem; }
-        /* Allow long hostnames/IPs to wrap aggressively on small screens */
-        .table-clean .host-link { word-break: break-all; }
         /* Bleed the overflow container to the card edges */
         .card .card__content > .overflow-x-auto { margin-left: -0.75rem; margin-right: -0.75rem; }
+        .hosts-toolbar { flex-direction: column; align-items: stretch; }
+        .hosts-toolbar__controls { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0.5rem; }
+        .hosts-toolbar__sort { width: 100%; justify-content: space-between; }
+        .hosts-toolbar__sort select { flex: 1 1 auto; }
+        .hosts-toolbar__search { width: 100%; margin-left: 0; }
+        #search { min-width: 0; }
+        .filters-toggle { display: inline-flex; }
         /* Pagination: wrap and shrink */
         #pagination { display: flex; flex-wrap: wrap; gap: 0.25rem; }
         .pagination-button { padding: 0.25rem 0.5rem; font-size: 0.875rem; margin-right: 0 !important; }
         .pagination-button--digit { min-width: 36px; }
+    }
+
+    /* Tablet controls wrap cleanly */
+    @media (min-width: 768px) and (max-width: 1100px) {
+        .hosts-toolbar { align-items: flex-start; }
+        .hosts-toolbar__controls { flex-wrap: wrap; justify-content: flex-start; }
+        .hosts-toolbar__search { margin-left: 0; width: 100%; max-width: 100%; }
     }
 </style>
 <?php render_footer(); ?>

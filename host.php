@@ -61,6 +61,7 @@ if (!$hostCacheResult) {
 }
 $parts = explode(':', $hostdata['net_address']);
 $assumed_rhp4_port = end($parts) + 2;
+$hostscorePublicKeyId = preg_replace('/^ed25519:/', '', $hostdata['public_key'] ?? '');
 // Troubleshooter cache key (based on net address)
 $troubleshooterCacheKey = 'host_troubleshooter:' . $hostdata['net_address'];
 $troubleshooterCacheResult = json_decode(Cache::getCache($troubleshooterCacheKey), true);
@@ -101,29 +102,33 @@ if (!$troubleshooterCacheResult && 1==2) {
    <!-- Main Content Section -->
    <section id="main-content" class="sg-container">
 
-      <div class="flex justify-start mt-4 mb-2 gap-2">
-         <a class="hover:underline cursor-pointer flex items-center font-bold text-xl" href='/host_explorer'>Top
-            Hosts</a>
-         <span class="flex items-center font-bold text-xl ">/</span>
-         <span class="flex items-center font-bold text-xl"><?php echo htmlspecialchars($hostdata['net_address'], ENT_QUOTES, 'UTF-8'); ?></span>
+      <div class="flex justify-between items-center flex-wrap">
+         <div class="flex justify-start gap-2 items-center">
+            <a class="hover:underline cursor-pointer flex items-center font-medium text-lg" href='/host_explorer'>Top
+               Hosts</a>
+            <span class="flex items-center font-medium text-lg ">/</span>
+            <span class="flex items-center font-bold text-xl"><?php echo htmlspecialchars($hostdata['net_address'], ENT_QUOTES, 'UTF-8'); ?></span>
+         </div>
+         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto sm:justify-end">
+            <span class="text-xs sm:text-sm text-gray-300">Subscribe to receive alerts about this host</span>
+            <a class="btn btn-sm btn-brand flex items-center" data-bs-toggle="modal" data-bs-target="#subscribeModal">
+               🔔 Subscribe
+            </a>
+         </div>
       </div>
 
       <div class="sg-container__row">
-         <div class="sg-container__row-content">
+         <div class="sg-container__row-content host-top-columns">
             <div class="sg-container__column sg-container__column--half">
-               <section class="card w-full overflow-x-auto">
+               <section class="card w-full">
                   <h2 class="card__heading">Host stats</h2>
                   <div class="card__content">
-                     <table id="storageStatsTable" class="table table-dark table-clean text-white w-100 border-collapse">
-                        <tbody id="hostStats"></tbody>
-                     </table>
-
-                     <div class="flex justify-center items-center mt-3">
-                        <a class="cursor-pointer hover:underline text-blue-500 font-bold rounded" data-bs-toggle="modal"
-                           data-bs-target="#subscribeModal">
-                           🔔 Subscribe to alerts
-                        </a>
+                     <div class="table-responsive">
+                        <table id="storageStatsTable" class="table table-dark table-clean text-white w-100 border-collapse host-stats-table">
+                           <tbody id="hostStats"></tbody>
+                        </table>
                      </div>
+
                   </div>
                </section>
             </div>
@@ -131,7 +136,7 @@ if (!$troubleshooterCacheResult && 1==2) {
                <div class="sg-stack">
                <section class="card">
                   <div class="card__content">
-                     <div id="map" style="width:100%;height:16rem;"></div>
+                     <div id="map" style="width:100%;height:18rem;"></div>
                   </div>
                </section>
 
@@ -146,42 +151,66 @@ if (!$troubleshooterCacheResult && 1==2) {
                -->
 
                <section class="card">
-                  <h2 class="card__heading">HostScore Benchmarks</h2>
+                  <h2 class="card__heading flex items-center gap-2">
+                     HostScore Benchmarks
+                     <i class="bi bi-info-circle text-gray-300 text-sm" data-bs-toggle="tooltip" data-bs-placement="top"
+                        title="These benchmarks are sourced from hostscore.info.
+Hosts are scored by percentile: the top 10% receive 10, the next 10% receive 9, and so on.
+Missing benchmarks reduce the score, meaning a host with the same average could have a different score.
+Each benchmark server contributes equally to the score, regardless of how many benchmarks it produced.
+"></i>
+                  </h2>
                   <div class="card__content">
-                     <table id="hostscoreBenchmarks" class="table table-dark table-clean text-white w-100 border-collapse">
-                        <tbody>
-                           <tr class="bg-gray-800">
+                     <div class="table-responsive">
+                        <table id="hostscoreBenchmarks" class="table table-dark table-clean text-white w-100 border-collapse">
+                           <tbody>
+                           <tr class="bg-gray-700">
                               <td class="px-4 py-2 font-semibold">Final score</td>
-                              <td class="px-4 py-2 text-right">
-                                 <?php echo render_score(end($hostdata['node_scores']['global'])['total_score'] ?? 0); ?>
+                              <td class="px-4 py-2 text-right text-lg">
+                                 <span class="inline-flex items-center"><?php echo render_score(end($hostdata['node_scores']['global'])['total_score'] ?? 0); ?></span>
                               </td>
                            </tr>
                            <tr class="bg-gray-900">
-                              <td class="px-4 py-2 font-semibold">Time to First Byte</td>
+                              <td class="px-4 py-2 font-semibold">
+                                 <span data-bs-toggle="tooltip" data-bs-placement="top" title="Lower is better. Time until first response byte.">Time to First Byte</span>
+                              </td>
                               <td class="px-4 py-2 text-right">
-                                 <?php echo round($hostdata['benchmark']['ttfb'] / 1000 / 1000, 2) . " ms "; ?>
-                                 <span class="ms-1"><?php echo render_score(end($hostdata['node_scores']['global'])['ttfb_score'] ?? 0); ?></span>
+                                 <span class="inline-flex items-center gap-1 justify-end">
+                                    <span><?php echo round($hostdata['benchmark']['ttfb'] / 1000 / 1000, 1) . " ms"; ?></span>
+                                    <span><?php echo render_score(end($hostdata['node_scores']['global'])['ttfb_score'] ?? 0); ?></span>
+                                 </span>
                               </td>
                            </tr>
                            <tr class="bg-gray-800">
-                              <td class="px-4 py-2 font-semibold">Renter upload</td>
+                              <td class="px-4 py-2 font-semibold">
+                                 <span data-bs-toggle="tooltip" data-bs-placement="top" title="Ingress bandwidth from renter to host.">Ingress</span>
+                              </td>
                               <td class="px-4 py-2 text-right">
-                                 <?php echo round($hostdata['benchmark']['upload_speed'] / 1000 / 1000, 2) . " MB/s "; ?>
-                                 <span class="ms-1"><?php echo render_score(end($hostdata['node_scores']['global'])['upload_score'] ?? 0); ?></span>
+                                 <span class="inline-flex items-center gap-1 justify-end">
+                                    <span><?php echo round($hostdata['benchmark']['upload_speed'] / 1000 / 1000, 2) . " MB/s"; ?></span>
+                                    <span><?php echo render_score(end($hostdata['node_scores']['global'])['upload_score'] ?? 0); ?></span>
+                                 </span>
                               </td>
                            </tr>
                            <tr class="bg-gray-900">
-                              <td class="px-4 py-2 font-semibold">Renter download</td>
+                              <td class="px-4 py-2 font-semibold">
+                                 <span data-bs-toggle="tooltip" data-bs-placement="top" title="Egress bandwidth from host to renter.">Egress</span>
+                              </td>
                               <td class="px-4 py-2 text-right">
-                                 <?php echo round($hostdata['benchmark']['download_speed'] / 1000 / 1000, 2) . " MB/s "; ?>
-                                 <span class="ms-1"><?php echo render_score(end($hostdata['node_scores']['global'])['download_score'] ?? 0); ?></span>
+                                 <span class="inline-flex items-center gap-1 justify-end">
+                                    <span><?php echo round($hostdata['benchmark']['download_speed'] / 1000 / 1000, 2) . " MB/s"; ?></span>
+                                    <span><?php echo render_score(end($hostdata['node_scores']['global'])['download_score'] ?? 0); ?></span>
+                                 </span>
                               </td>
                            </tr>
-                        </tbody>
-                     </table>
-                     <div class="flex justify-center items-center">
-                        <a id='recentbenchmarks' class="cursor-pointer hover:underline text-blue-500 font-bold rounded"
+                           </tbody>
+                        </table>
+                     </div>
+                     <div class="hostscore-actions mt-3 pt-2 border-t border-gray-700 w-full">
+                        <a id='recentbenchmarks' class="button text-sm"
                            href='/host_benchmarks?id=<?php echo $host_id; ?>'>View recent benchmarks</a>
+                        <a class="button text-sm" target="_blank" rel="noopener noreferrer"
+                           href='https://hostscore.info/host/<?php echo rawurlencode($hostscorePublicKeyId); ?>'>View on HostScore</a>
                      </div>
                   </div>
                </section>
@@ -190,10 +219,12 @@ if (!$troubleshooterCacheResult && 1==2) {
                   <h2 class="card__heading">Averages of hosts with
                      final score <?php echo (end($hostdata['node_scores']['global'])['total_score'] ?? 0); ?></h2>
                   <div class="card__content">
-                     <table id="hostAverages" class="table table-dark table-clean text-white w-100 border-collapse" style="visibility: hidden;">
-                        <thead></thead>
-                        <tbody id="hostAveragesBody"></tbody>
-                     </table>
+                     <div class="table-responsive">
+                        <table id="hostAverages" class="table table-dark table-clean text-white w-100 border-collapse" style="visibility: hidden;">
+                           <thead></thead>
+                           <tbody id="hostAveragesBody"></tbody>
+                        </table>
+                     </div>
                   </div>
                </section>
                </div>
@@ -201,7 +232,7 @@ if (!$troubleshooterCacheResult && 1==2) {
          </div>
       </div>
 
-      <div class="sg-container__row mt-4">
+      <div class="sg-container__row mt-2">
          <div class="sg-container__row-content">
             <div class="sg-container__column">
                <section id="graph-section" class="card">
@@ -237,7 +268,7 @@ if (!$troubleshooterCacheResult && 1==2) {
             </div>
          </div>
       </div>
-      <div class="sg-container__row mt-4">
+      <div class="sg-container__row mt-2">
          <div class="sg-container__row-content">
             <div class="sg-container__column">
                <section id="graph-section2" class="card">
@@ -285,13 +316,13 @@ if (!$troubleshooterCacheResult && 1==2) {
       </div>
    </section>
    <!-- Footer Section -->
-   <div id="toast" class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded bg-gradient shadow-lg hidden z-50">
+   <div id="toast" class="bg-blue-600 text-white px-4 py-2 rounded bg-gradient shadow-lg" style="display:none; position:fixed; right:1rem; bottom:1rem; z-index:1080;">
       Copied to clipboard!
    </div>
    <!-- Subscription Modal -->
    <div class="modal fade" id="subscribeModal" tabindex="-1" aria-labelledby="subscribeModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-sm modal-dialog-centered">
-         <div class="modal-content bg-dark text-white">
+         <div class="modal-content bg-dark text-white subscribe-modal-content">
             <div class="modal-header">
                <h5 class="modal-title" id="subscribeModalLabel">Subscribe to Alerts</h5>
                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -313,7 +344,7 @@ if (!$troubleshooterCacheResult && 1==2) {
                      <input type="text" class="form-control" id="recipient" placeholder="you@example.com or user token"
                         required>
                      <!-- Telegram Instructions -->
-                     <div id="telegramInstructions" class="form-text text-muted mt-1 d-none">
+                     <div id="telegramInstructions" class="form-text text-muted mt-1" style="display:none;">
                         Start a chat with <a href="https://t.me/Siagraph_bot"
                            target="_blank"><strong>@Siagraph_bot</strong></a> and type <code>/start</code> to get your
                         chat ID.
@@ -322,9 +353,9 @@ if (!$troubleshooterCacheResult && 1==2) {
                   </div>
                   <div id="subscriptionStatus" class="mt-2 text-center small"></div>
                </div>
-               <div class="modal-footer p-0 pt-2 justify-content-between">
+               <div class="modal-footer px-3 py-2 justify-content-between">
                   <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-primary btn-sm" id="submitSubscriptionBtn">Subscribe</button>
+                  <button type="button" class="btn btn-sm btn-brand" id="submitSubscriptionBtn">Subscribe</button>
 
                </div>
             </form> <!-- ✅ Proper form closing -->
@@ -334,6 +365,60 @@ if (!$troubleshooterCacheResult && 1==2) {
 
    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+   #storageStatsTable.host-stats-table {
+      table-layout: fixed;
+      width: 100%;
+   }
+
+   #storageStatsTable.host-stats-table .host-stats-label {
+      width: 28%;
+      vertical-align: top;
+      white-space: normal;
+   }
+
+   #storageStatsTable.host-stats-table .host-stats-value {
+      width: 72%;
+      vertical-align: top;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+   }
+
+   #storageStatsTable.host-stats-table .host-public-key-value {
+      display: block;
+      max-width: 100%;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.85rem;
+      line-height: 1.35;
+   }
+
+   #storageStatsTable.host-stats-table .host-public-key-copy {
+      display: inline-flex;
+      margin-top: 0.35rem;
+   }
+
+   @media (max-width: 767.98px) {
+      #storageStatsTable.host-stats-table .host-stats-label { width: 34%; }
+      #storageStatsTable.host-stats-table .host-stats-value { width: 66%; }
+   }
+
+   @media (min-width: 1024px) {
+      .host-top-columns > .sg-container__column.sg-container__column--half:first-child {
+         width: calc(55% - 1rem);
+         flex: 0 0 calc(55% - 1rem);
+      }
+
+      .host-top-columns > .sg-container__column.sg-container__column--half:last-child {
+         width: calc(45% - 1rem);
+         flex: 0 0 calc(45% - 1rem);
+      }
+   }
+</style>
 
 <script>
    let hostdata = <?php echo json_encode($hostdata); ?>;
@@ -475,8 +560,8 @@ if (!$troubleshooterCacheResult && 1==2) {
          const structuredData = {
             "SiaGraph ID": data.host_id,
             "Netaddress": data.net_address,
-            "Public Key": `<span>${data.public_key.substring(0, 25)}...</span>
-                <button class='btn btn-sm btn-outline-light ms-2' aria-label='Copy public key'
+            "Public Key": `<span class="host-public-key-value">${data.public_key}</span>
+                <button class='btn btn-sm btn-outline-light host-public-key-copy' aria-label='Copy public key'
                 onclick='copyToClipboard("${data.public_key}")'>Copy</button>`,
             "V2": data.v2 ? 'Yes' : 'No',
             "Online": data.online ? 'Yes' : 'No',
@@ -515,10 +600,11 @@ if (!$troubleshooterCacheResult && 1==2) {
          }
          let rowIndex = 0;
          for (const key in structuredData) {
+            const zebra = rowIndex % 2 === 0 ? 'bg-gray-800' : 'bg-gray-900';
             const row = `
-              <tr>
-                <th scope="row" class="px-3 py-2">${key}</th>
-                <td class="px-3 py-2 text-end">${structuredData[key]}</td>
+              <tr class="${zebra}">
+                <th scope="row" class="px-3 py-2 host-stats-label">${key}</th>
+                <td class="px-3 py-2 text-end host-stats-value">${structuredData[key]}</td>
               </tr>`;
             hostStats.innerHTML += row;
             rowIndex++;
@@ -544,14 +630,16 @@ if (!$troubleshooterCacheResult && 1==2) {
       });
    }
 
+  let toastTimer = null;
   function showToast(message) {
      const toast = document.getElementById("toast");
      toast.textContent = message;
-     toast.classList.remove("hidden");
+     toast.style.display = "block";
 
       // Hide after 2 seconds
-     setTimeout(() => {
-        toast.classList.add("hidden");
+     if (toastTimer) clearTimeout(toastTimer);
+     toastTimer = setTimeout(() => {
+        toast.style.display = "none";
      }, 2000);
   }
 
@@ -597,18 +685,25 @@ if (!$troubleshooterCacheResult && 1==2) {
 
       const publicKey = "<?php echo htmlspecialchars($hostdata['public_key'], ENT_QUOTES, 'UTF-8'); ?>";
 
+      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+         new bootstrap.Tooltip(el, {
+            container: 'body',
+            customClass: 'sg-tooltip'
+         });
+      });
+
       function updateFormFields() {
          const selectedService = serviceInput.value.trim();
 
          // Toggle Telegram instructions
          if (selectedService === "telegram") {
-            telegramInstructions.classList.remove("d-none");
+            telegramInstructions.style.display = "block";
             recipientInput.placeholder = "Telegram Chat ID (e.g. 12345678)";
          } else if (selectedService === "pushover") {
-            telegramInstructions.classList.add("d-none");
+            telegramInstructions.style.display = "none";
             recipientInput.placeholder = "Pushover user token";
          } else {
-            telegramInstructions.classList.add("d-none");
+            telegramInstructions.style.display = "none";
             recipientInput.placeholder = "you@example.com";
          }
       }

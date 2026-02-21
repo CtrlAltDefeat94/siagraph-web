@@ -11,6 +11,51 @@ if ($cacheresult) {
     die;
 }
 
+if (isset($_GET['meta']) && $_GET['meta'] === '1') {
+    $versions = [];
+    $countries = [];
+
+    $versionSql = "SELECT software_version, COUNT(*) AS host_count
+                   FROM Hosts
+                   WHERE software_version IS NOT NULL AND software_version <> ''
+                   GROUP BY software_version
+                   ORDER BY software_version ASC";
+    $versionResult = $mysqli->query($versionSql);
+    if ($versionResult) {
+        while ($row = $versionResult->fetch_assoc()) {
+            $versions[] = [
+                'value' => $row['software_version'],
+                'count' => (int) $row['host_count'],
+            ];
+        }
+    }
+
+    $countrySql = "SELECT c.country_name, COUNT(*) AS host_count
+                   FROM Hosts h
+                   LEFT JOIN Countries c ON h.country = c.country_code
+                   WHERE c.country_name IS NOT NULL AND c.country_name <> ''
+                   GROUP BY c.country_name
+                   ORDER BY c.country_name ASC";
+    $countryResult = $mysqli->query($countrySql);
+    if ($countryResult) {
+        while ($row = $countryResult->fetch_assoc()) {
+            $countries[] = [
+                'value' => $row['country_name'],
+                'count' => (int) $row['host_count'],
+            ];
+        }
+    }
+
+    $metaOutput = [
+        'versions' => $versions,
+        'countries' => $countries,
+    ];
+
+    Cache::setCache(json_encode($metaOutput), $cacheKey, 'hour');
+    echo json_encode($metaOutput);
+    exit;
+}
+
 
 // Get the selected sorting criteria
 $sortMap = [
@@ -121,9 +166,19 @@ if (isset($_GET['acceptingContracts']) && $_GET['acceptingContracts'] === 'true'
 }
 
 if (isset($_GET['query']) && $_GET['query'] !== '') {
-    $whereParts[] = 'h.net_address LIKE CONCAT("%", ?, "%")';
-    $params[] = $_GET['query'];
-    $types .= 's';
+    $query = trim($_GET['query']);
+    $queryLooksLikePublicKey = stripos($query, 'ed25519:') === 0;
+
+    if ($queryLooksLikePublicKey) {
+        $whereParts[] = '(h.net_address LIKE CONCAT("%", ?, "%") OR h.public_key = ?)';
+        $params[] = $query;
+        $params[] = $query;
+        $types .= 'ss';
+    } else {
+        $whereParts[] = 'h.net_address LIKE CONCAT("%", ?, "%")';
+        $params[] = $query;
+        $types .= 's';
+    }
 }
 
 $whereClause = $whereParts ? 'WHERE ' . implode(' AND ', $whereParts) : '';
@@ -160,7 +215,7 @@ $sortColumnForRank = str_replace('h.', 'h3.', $sortColumnForRank);
 if ($sortValue === 'rank') {
     $sortColumnForRank = 'gr2.rnk';
 } elseif ($sortValue === 'growth') {
-    $sortColumnForRank = 'COALESCE(today_fr.used_storage - yesterday_fr.used_storage, 0)';
+    $sortColumnForRank = 'CASE WHEN latest_fr.used_storage IS NULL OR prev24_fr.used_storage IS NULL THEN NULL ELSE (CAST(latest_fr.used_storage AS SIGNED) - CAST(prev24_fr.used_storage AS SIGNED)) END';
 }
 
 $query = "SELECT
@@ -181,7 +236,19 @@ $query = "SELECT
     c.country_name,
     c.region,
     CEIL(COALESCE(s.total_score, 0)) AS total_score,
-    COALESCE(today_stats.used_storage - yesterday_stats.used_storage, 0) AS used_storage_diff,
+    CASE
+        WHEN latest_stats.used_storage IS NULL OR prev24_stats.used_storage IS NULL THEN NULL
+        ELSE (CAST(latest_stats.used_storage AS SIGNED) - CAST(prev24_stats.used_storage AS SIGNED))
+    END AS used_storage_diff,
+    CASE
+        WHEN latest_stats.used_storage IS NULL OR prev24_stats.used_storage IS NULL THEN 0
+        ELSE 1
+    END AS used_storage_diff_available,
+    CASE
+        WHEN latest_stats.used_storage IS NULL THEN 'missing_latest'
+        WHEN prev24_stats.used_storage IS NULL THEN 'missing_baseline'
+        ELSE NULL
+    END AS used_storage_diff_reason,
     COALESCE(gr.rnk, 0) AS `rank`,
     COALESCE(fr.filtered_rnk, 0) AS filtered_rank
 FROM
@@ -193,15 +260,21 @@ LEFT JOIN (
     WHERE node = 'Global' AND date = UTC_DATE()
 ) s ON h.public_key = s.public_key
 LEFT JOIN (
-    SELECT public_key, used_storage
-    FROM HostsDailyStats
-    WHERE date = UTC_DATE() - INTERVAL 1 DAY
-) yesterday_stats ON h.public_key = yesterday_stats.public_key
+    SELECT hs.public_key, hs.used_storage
+    FROM HostsHourlyStats hs
+    JOIN (
+        SELECT MAX(date) AS latest_date
+        FROM HostsHourlyStats
+    ) latest_ref ON hs.date = latest_ref.latest_date
+) latest_stats ON h.public_key = latest_stats.public_key
 LEFT JOIN (
-    SELECT public_key, used_storage
-    FROM HostsDailyStats
-    WHERE date = UTC_DATE()
-) today_stats ON h.public_key = today_stats.public_key
+    SELECT hs.public_key, hs.used_storage
+    FROM HostsHourlyStats hs
+    JOIN (
+        SELECT MAX(date) AS latest_date
+        FROM HostsHourlyStats
+    ) latest_ref ON hs.date = latest_ref.latest_date - INTERVAL 24 HOUR
+) prev24_stats ON h.public_key = prev24_stats.public_key
 /* Global ranks by total score (active-only), using window function for stability */
 LEFT JOIN (
     SELECT ranked.public_key, ranked.rnk
@@ -245,15 +318,21 @@ LEFT JOIN (
             WHERE node = 'Global' AND date = UTC_DATE()
         ) s3 ON h3.public_key = s3.public_key
         LEFT JOIN (
-            SELECT public_key, used_storage
-            FROM HostsDailyStats
-            WHERE date = UTC_DATE() - INTERVAL 1 DAY
-        ) yesterday_fr ON h3.public_key = yesterday_fr.public_key
+            SELECT hs.public_key, hs.used_storage
+            FROM HostsHourlyStats hs
+            JOIN (
+                SELECT MAX(date) AS latest_date
+                FROM HostsHourlyStats
+            ) latest_ref ON hs.date = latest_ref.latest_date
+        ) latest_fr ON h3.public_key = latest_fr.public_key
         LEFT JOIN (
-            SELECT public_key, used_storage
-            FROM HostsDailyStats
-            WHERE date = UTC_DATE()
-        ) today_fr ON h3.public_key = today_fr.public_key
+            SELECT hs.public_key, hs.used_storage
+            FROM HostsHourlyStats hs
+            JOIN (
+                SELECT MAX(date) AS latest_date
+                FROM HostsHourlyStats
+            ) latest_ref ON hs.date = latest_ref.latest_date - INTERVAL 24 HOUR
+        ) prev24_fr ON h3.public_key = prev24_fr.public_key
         /* Global ranks for ordering when sort=rank */
         LEFT JOIN (
             SELECT ranked2.public_key, ranked2.rnk

@@ -47,3 +47,126 @@
 .status-indicator.text-secondary {
   color: rgba(255, 255, 255, 0.65) !important;
 }
+
+/* Brand-colored Bootstrap-compatible button */
+.btn-brand {
+  background-color: var(--brand) !important;
+  border-color: var(--brand) !important;
+  color: var(--brand-contrast) !important;
+}
+
+.btn-brand:hover,
+.btn-brand:focus,
+.btn-brand:active {
+  background-color: #a73024 !important;
+  border-color: #a73024 !important;
+  color: var(--brand-contrast) !important;
+}
+
+/* Subscribe modal brand accents */
+.subscribe-modal-content {
+  border: 1px solid var(--brand-border);
+}
+
+.subscribe-modal-content .modal-header {
+  border-bottom-color: var(--brand-border);
+}
+
+.subscribe-modal-content .modal-footer {
+  border-top-color: var(--brand-border);
+}
+
+.subscribe-modal-content .form-control:focus,
+.subscribe-modal-content .form-select:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 0.2rem rgba(192, 57, 43, 0.25);
+}
+
+/* Ensure Bootstrap tooltip text is readable in dark theme */
+.sg-tooltip {
+  opacity: 1 !important;
+}
+
+.sg-tooltip .tooltip-inner {
+  background-color: #0f1115 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  max-width: 320px;
+  text-align: left;
+  white-space: pre-line;
+}
+
+.sg-tooltip .tooltip-arrow::before {
+  border-top-color: #0f1115 !important;
+  border-bottom-color: #0f1115 !important;
+}
+
+/* HostScore action row layout */
+.hostscore-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: nowrap;
+}
+
+/* Keep HostScore footer actions aligned within the row */
+.hostscore-actions .button {
+  align-self: auto;
+}
+
+/* Prevent long host values from forcing horizontal overflow */
+#storageStatsTable {
+  table-layout: fixed;
+  width: 100% !important;
+}
+
+#storageStatsTable th,
+#storageStatsTable td {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 767.98px) {
+  .hostscore-actions {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+  }
+
+  .hostscore-actions .button {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* Host stats: force a stacked row layout to avoid horizontal overflow */
+  #storageStatsTable,
+  #storageStatsTable tbody,
+  #storageStatsTable tr,
+  #storageStatsTable th,
+  #storageStatsTable td {
+    display: block;
+    width: 100% !important;
+  }
+
+  #storageStatsTable tr {
+    padding: 0.375rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  #storageStatsTable th,
+  #storageStatsTable td {
+    border: 0 !important;
+    padding: 0.25rem 0 !important;
+    text-align: left !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #storageStatsTable td .btn {
+    margin-left: 0 !important;
+    margin-top: 0.25rem;
+  }
+}

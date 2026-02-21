@@ -1,12 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     const dataEl = document.getElementById('index-data');
     const url = '/api/v1/daily/compare_metrics';
+    const explorerUrl = '/api/v1/explorer_metrics';
     const cachedData = JSON.parse(dataEl?.dataset.cachedData || 'null');
     const cachedHighlights = JSON.parse(dataEl?.dataset.cachedHighlights || '{}');
     const cachedExplorer = JSON.parse(dataEl?.dataset.cachedExplorer || 'null');
     if (cachedExplorer) {
         try {
-            localStorage.setItem('fetchCache:/api/v1/explorer_metrics', JSON.stringify({ timestamp: Date.now(), data: cachedExplorer }));
+            const version = (typeof window !== 'undefined' && window.FETCH_CACHE_VERSION) ? window.FETCH_CACHE_VERSION : 'v1';
+            const cacheKey = `fetchCache:${version}:${explorerUrl}`;
+            localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: cachedExplorer }));
         } catch (err) {
             console.warn('Failed to seed explorer metrics cache', err);
         }
@@ -22,8 +25,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const loc = (typeof window !== 'undefined' && window.APP_LOCALE) ? window.APP_LOCALE : undefined;
         blockFoundTimeElement.textContent = 'Found at: ' + new Date(blockFoundTime).toLocaleString(loc);
     }
+    async function fetchFresh(url, options = {}, parseAs = 'json') {
+        try {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                throw new Error(`Unexpected HTTP code: ${response.status}`);
+            }
+            const data = parseAs === 'text' ? await response.text() : await response.json();
+            try {
+                const version = (typeof window !== 'undefined' && window.FETCH_CACHE_VERSION) ? window.FETCH_CACHE_VERSION : 'v1';
+                const cacheKey = `fetchCache:${version}:${url}`;
+                localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data }));
+            } catch (err) {
+                // Ignore storage errors
+            }
+            return data;
+        } catch (error) {
+            console.error('Error fetching data:', error.message);
+            return null;
+        }
+    }
     async function fetchExplorerData() {
-        const explorerData = await fetchData('/api/v1/explorer_metrics');
+        const explorerData = await fetchFresh(explorerUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
         if (explorerData) {
             const {
                 blockHeight,

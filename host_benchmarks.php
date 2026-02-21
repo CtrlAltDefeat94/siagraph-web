@@ -197,7 +197,9 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                     <section class="graph-container">
                         <h2 class="card__heading">Upload speed for
                             renters</h2>
-                        <canvas id="uploadChart" style="height:400px !important;width: 100% !important;"></canvas>
+                        <div class="benchmark-chart-wrap">
+                            <canvas id="uploadChart" class="benchmark-chart-canvas"></canvas>
+                        </div>
                     </section>
                 </section>
             </div>
@@ -206,7 +208,9 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                     <section class="graph-container">
                         <h2 class="card__heading">Download speed for
                             renters</h2>
-                        <canvas id="downloadChart" style="height:400px !important;width: 100% !important;"></canvas>
+                        <div class="benchmark-chart-wrap">
+                            <canvas id="downloadChart" class="benchmark-chart-canvas"></canvas>
+                        </div>
                     </section>
                 </section>
             </div>
@@ -231,6 +235,7 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
         let selectedNode = 'global';
         let downloadChart;
         let uploadChart;
+        let sortState = { key: 'timestamp', dir: 'desc' };
 
         // Responsive helpers (match host_explorer behavior)
         function isMobile() {
@@ -247,28 +252,223 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
             if (tbl) tbl.style.visibility = 'hidden';
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function truncateText(value, maxLength) {
+            if (!value || value.length <= maxLength) return value;
+            return `${value.slice(0, maxLength - 1)}...`;
+        }
+
+        function getNumericSafe(value) {
+            const n = Number(value);
+            return Number.isFinite(n) ? n : 0;
+        }
+
+        function getSortValue(benchmark, key) {
+            switch (key) {
+                case 'timestamp':
+                    return new Date(benchmark.timestamp).getTime();
+                case 'upload':
+                    return getNumericSafe(benchmark.uploadSpeed);
+                case 'download':
+                    return getNumericSafe(benchmark.downloadSpeed);
+                case 'ttfb':
+                    return getNumericSafe(benchmark.ttfb);
+                case 'success':
+                    return benchmark.success ? 1 : 0;
+                case 'node':
+                    return String(benchmark.node || '').toLowerCase();
+                default:
+                    return 0;
+            }
+        }
+
+        function getSortedBenchmarks(node) {
+            const source = groupedBenchmarks && groupedBenchmarks[node] ? groupedBenchmarks[node] : [];
+            const sorted = [...source];
+            sorted.sort((a, b) => {
+                const aValue = getSortValue(a, sortState.key);
+                const bValue = getSortValue(b, sortState.key);
+                if (aValue === bValue) return 0;
+                if (sortState.dir === 'asc') {
+                    return aValue > bValue ? 1 : -1;
+                }
+                return aValue < bValue ? 1 : -1;
+            });
+            return sorted;
+        }
+
+        function getSortArrow(key) {
+            if (sortState.key !== key) return '';
+            return sortState.dir === 'asc' ? ' ▲' : ' ▼';
+        }
+
+        function renderSortButton(label, key, extraClasses = '') {
+            return `<button type="button" class="table-sort-btn ${extraClasses}" data-sort-key="${key}">${label}${getSortArrow(key)}</button>`;
+        }
+
+        function bindSortHandlers() {
+            const buttons = document.querySelectorAll('#hostTable thead .table-sort-btn[data-sort-key]');
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const nextKey = this.getAttribute('data-sort-key');
+                    if (!nextKey) return;
+                    if (sortState.key === nextKey) {
+                        sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortState.key = nextKey;
+                        sortState.dir = nextKey === 'timestamp' ? 'desc' : 'asc';
+                    }
+                    populateTable(selectedNode);
+                });
+            });
+        }
+
+        function getShortLocalizedTime(timestamp) {
+            const d = new Date(timestamp);
+            if (Number.isNaN(d.getTime())) return escapeHtml(timestamp);
+            const loc = (typeof window !== 'undefined' && window.APP_LOCALE) ? window.APP_LOCALE : undefined;
+            return new Intl.DateTimeFormat(loc, {
+                month: 'short',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(d);
+        }
+
+        function renderStatusPill(benchmark, truncateAt = 48) {
+            if (benchmark.success) {
+                return '<span class="status-pill status-pill--ok">OK</span>';
+            }
+            const rawError = String(benchmark.error || 'Error');
+            const displayText = escapeHtml(truncateText(rawError, truncateAt));
+            const titleText = escapeHtml(rawError);
+            return `<span class="status-pill status-pill--error" title="${titleText}">${displayText}</span>`;
+        }
+
+        function formatChartNumber(value, digits = 2) {
+            const n = Number(value);
+            if (!Number.isFinite(n)) return '0';
+            const loc = (typeof window !== 'undefined' && window.APP_LOCALE) ? window.APP_LOCALE : undefined;
+            return n.toLocaleString(loc, {
+                minimumFractionDigits: digits,
+                maximumFractionDigits: digits
+            });
+        }
+
+        function formatTooltipDate(value) {
+            const dt = moment(value);
+            if (!dt.isValid()) return '';
+            const hasTime = !(dt.hour() === 0 && dt.minute() === 0 && dt.second() === 0);
+            return hasTime ? dt.format('DD MMM YYYY HH:mm') : dt.format('DD MMM YYYY');
+        }
+
+        function createSpeedChartOptions() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'MB/s'
+                        },
+                        startAtZero: true,
+                        ticks: {
+                            callback: value => formatChartNumber(value, 2)
+                        },
+                        grid: {
+                            color: 'rgba(255,255,255,0.08)'
+                        }
+                    },
+                    x: {
+                        type: 'time',
+                        title: {
+                            display: false,
+                            text: 'Date'
+                        },
+                        time: {
+                            unit: 'day',
+                            tooltipFormat: 'MMM DD',
+                            displayFormats: {
+                                day: 'MMM DD'
+                            }
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: isMobile() ? 6 : 10
+                        },
+                        grid: {
+                            color: 'rgba(255,255,255,0.05)'
+                        }
+                    }
+                },
+                interaction: { mode: 'nearest', intersect: false },
+                plugins: {
+                    title: { display: false },
+                    legend: {
+                        position: 'bottom',
+                        onClick: () => {},
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 10,
+                            filter: (legendItem, chartData) => {
+                                const ds = chartData?.datasets?.[legendItem.datasetIndex];
+                                return !(ds && ds.isAuxiliary === true);
+                            }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: context => {
+                                let label = '';
+                                if (context.dataset.label) {
+                                    label = context.dataset.label + ': ';
+                                }
+                                const value = context.parsed.y;
+                                const decimals = context.dataset.decimalPlaces ?? 0;
+                                label += `${formatChartNumber(value, decimals)} MB/s`;
+                                return label;
+                            },
+                            title: items => formatTooltipDate(items[0].parsed.x)
+                        }
+                    }
+                }
+            };
+        }
+
         function renderTableHeader() {
             const thead = document.querySelector('#hostTable thead');
             if (!thead) return;
             if (isMobile()) {
                 thead.innerHTML = `
-                    <tr class="bg-gray-900">
-                        <th class="px-4 py-2 timestamp-col">Timestamp</th>
-                        <th class="px-4 py-2 node-col">Node</th>
+                    <tr>
+                        <th class="px-3 py-2 timestamp-col">${renderSortButton('Timestamp', 'timestamp')}</th>
+                        <th class="px-3 py-2 node-col">${renderSortButton('Node', 'node')}</th>
                     </tr>
                 `;
             } else {
                 thead.innerHTML = `
-                    <tr class="bg-gray-900">
-                        <th class="px-4 py-2 timestamp-col">Timestamp</th>
-                        <th class="px-4 py-2 node-col">Node</th>
-                        <th class="px-4 py-2 upload-col">Upload Speed</th>
-                        <th class="px-4 py-2 download-col">Download Speed</th>
-                        <th class="px-4 py-2 ttfb-col">Time to First Byte</th>
-                        <th class="px-4 py-2 success-col">Success</th>
+                    <tr>
+                        <th class="px-3 py-2 timestamp-col">${renderSortButton('Timestamp', 'timestamp')}</th>
+                        <th class="px-3 py-2 node-col">${renderSortButton('Node', 'node')}</th>
+                        <th class="px-3 py-2 upload-col num">${renderSortButton('Upload Speed', 'upload', 'num')}</th>
+                        <th class="px-3 py-2 download-col num">${renderSortButton('Download Speed', 'download', 'num')}</th>
+                        <th class="px-3 py-2 ttfb-col num">${renderSortButton('Time to First Byte', 'ttfb', 'num')}</th>
+                        <th class="px-3 py-2 success-col">${renderSortButton('Success', 'success')}</th>
                     </tr>
                 `;
             }
+            bindSortHandlers();
         }
 
         function generateColor(index, total) {
@@ -295,9 +495,9 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                     backgroundColor: color,
                     pointBackgroundColor: color,
                     fill: false,
-                    pointRadius: 5,
+                    pointRadius: isMobile() ? 3 : 4,
                     pointHitRadius: 10,
-                    pointHoverRadius: 7,
+                    pointHoverRadius: 6,
                     showLine: false,
                     decimalPlaces: 2
                 });
@@ -308,9 +508,9 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                     backgroundColor: color,
                     pointBackgroundColor: color,
                     fill: false,
-                    pointRadius: 5,
+                    pointRadius: isMobile() ? 3 : 4,
                     pointHitRadius: 10,
-                    pointHoverRadius: 7,
+                    pointHoverRadius: 6,
                     showLine: false,
                     decimalPlaces: 2
                 });
@@ -327,65 +527,73 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
             const downloadBounds = calculateBounds(avgDownloadSpeeds, downloadStdDevs);
             const uploadBounds = calculateBounds(avgUploadSpeeds, uploadStdDevs);
 
-            datasetsDownload.push({
-                label: 'Daily Avg.',
-                data: dailyDates.map((t, i) => ({ x: t, y: avgDownloadSpeeds[i] })),
-                borderColor: 'green',
+                datasetsDownload.push({
+                    label: 'Daily Avg.',
+                    data: dailyDates.map((t, i) => ({ x: t, y: avgDownloadSpeeds[i] })),
+                    borderColor: 'green',
                 backgroundColor: 'rgba(0,255,0,0.2)',
                 fill: false,
-                pointRadius: 0,
-                borderWidth: 2,
-                decimalPlaces: 2
-            });
-            datasetsDownload.push({
-                label: 'Upper Bound',
-                data: dailyDates.map((t, i) => ({ x: t, y: downloadBounds[0][i] })),
+                    pointRadius: 0,
+                    borderWidth: 2,
+                    tension: 0.25,
+                    decimalPlaces: 2,
+                    isAuxiliary: true
+                });
+                datasetsDownload.push({
+                    label: '+1σ',
+                    data: dailyDates.map((t, i) => ({ x: t, y: downloadBounds[0][i] })),
                 borderColor: 'rgba(50,205,50,0.5)',
                 pointRadius: 0,
-                fill: '+1',
-                backgroundColor: 'rgba(50,205,50,0.1)',
-                borderWidth: 0,
-                decimalPlaces: 2
-            });
-            datasetsDownload.push({
-                label: 'Lower Bound',
-                data: dailyDates.map((t, i) => ({ x: t, y: downloadBounds[1][i] })),
+                    fill: '+1',
+                    backgroundColor: 'rgba(50,205,50,0.1)',
+                    borderWidth: 0,
+                    decimalPlaces: 2,
+                    isAuxiliary: true
+                });
+                datasetsDownload.push({
+                    label: '-1σ',
+                    data: dailyDates.map((t, i) => ({ x: t, y: downloadBounds[1][i] })),
                 borderColor: 'rgba(50,205,50,0.5)',
-                pointRadius: 0,
-                fill: false,
-                borderWidth: 0,
-                decimalPlaces: 2
-            });
+                    pointRadius: 0,
+                    fill: false,
+                    borderWidth: 0,
+                    decimalPlaces: 2,
+                    isAuxiliary: true
+                });
 
-            datasetsUpload.push({
-                label: 'Daily Avg.',
+                datasetsUpload.push({
+                    label: 'Daily Avg.',
                 data: dailyDates.map((t, i) => ({ x: t, y: avgUploadSpeeds[i] })),
                 borderColor: 'green',
                 backgroundColor: 'rgba(0,255,0,0.2)',
                 fill: false,
-                pointRadius: 0,
-                borderWidth: 2,
-                decimalPlaces: 2
-            });
-            datasetsUpload.push({
-                label: 'Upper Bound',
-                data: dailyDates.map((t, i) => ({ x: t, y: uploadBounds[0][i] })),
+                    pointRadius: 0,
+                    borderWidth: 2,
+                    tension: 0.25,
+                    decimalPlaces: 2,
+                    isAuxiliary: true
+                });
+                datasetsUpload.push({
+                    label: '+1σ',
+                    data: dailyDates.map((t, i) => ({ x: t, y: uploadBounds[0][i] })),
                 borderColor: 'rgba(50,205,50,0.5)',
                 pointRadius: 0,
-                fill: '+1',
-                backgroundColor: 'rgba(50,205,50,0.1)',
-                borderWidth: 0,
-                decimalPlaces: 2
-            });
-            datasetsUpload.push({
-                label: 'Lower Bound',
-                data: dailyDates.map((t, i) => ({ x: t, y: uploadBounds[1][i] })),
+                    fill: '+1',
+                    backgroundColor: 'rgba(50,205,50,0.1)',
+                    borderWidth: 0,
+                    decimalPlaces: 2,
+                    isAuxiliary: true
+                });
+                datasetsUpload.push({
+                    label: '-1σ',
+                    data: dailyDates.map((t, i) => ({ x: t, y: uploadBounds[1][i] })),
                 borderColor: 'rgba(50,205,50,0.5)',
-                pointRadius: 0,
-                fill: false,
-                borderWidth: 0,
-                decimalPlaces: 2
-            });
+                    pointRadius: 0,
+                    fill: false,
+                    borderWidth: 0,
+                    decimalPlaces: 2,
+                    isAuxiliary: true
+                });
 
             return { download: datasetsDownload, upload: datasetsUpload };
         }
@@ -445,25 +653,32 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
         function populateTable(node) {
             renderTableHeader();
             if (groupedBenchmarks && groupedBenchmarks[node]) {
-                const benchmarks = groupedBenchmarks[node];
+                const benchmarks = getSortedBenchmarks(node);
                 const tableBody = document.querySelector('#hostTableBody'); // Ensure this matches the correct selector
                 let tableRows = ''; // Accumulate rows as a string
 
                 benchmarks.forEach((benchmark, index) => {
                     const isEvenRow = (parseInt(index, 10) + 1) % 2 === 0;
                     const rowClass = isEvenRow ? 'bg-gray-800' : 'bg-gray-900';
+                    const uploadValue = (getNumericSafe(benchmark.uploadSpeed) / 1000000).toFixed(2);
+                    const downloadValue = (getNumericSafe(benchmark.downloadSpeed) / 1000000).toFixed(2);
+                    const ttfbValue = getNumericSafe(benchmark.ttfb) / 1000000;
+                    const safeNode = escapeHtml(benchmark.node);
+                    const statusPill = renderStatusPill(benchmark, isMobile() ? 28 : 56);
                     if (isMobile()) {
-                        // Mobile: Only Timestamp + Node with inline details
+                        // Mobile: Keep 2-column layout, but stack details for readability.
                         tableRows += `
                         <tr class="${rowClass}">
-                            <td class="border px-4 py-2 timestamp-col" data-timestamp="${benchmark.timestamp}">${getLocalizedTime(benchmark.timestamp)}</td>
-                            <td class="border px-4 py-2 node-col">
-                                ${benchmark.node}
-                                <div class="text-xs text-gray-400 mt-1">
-                                    <span class="whitespace-nowrap">Up: ${(benchmark.uploadSpeed / 1000000).toFixed(2)} MB/s</span> ·
-                                    <span class="whitespace-nowrap">Down: ${(benchmark.downloadSpeed / 1000000).toFixed(2)} MB/s</span> ·
-                                    <span class="whitespace-nowrap">TTFB: ${(benchmark.ttfb / 1000000)} ms</span> ·
-                                    <span class="whitespace-nowrap">${benchmark.success ? 'OK' : benchmark['error']}</span>
+                            <td class="border px-3 py-2 timestamp-col" data-timestamp="${escapeHtml(benchmark.timestamp)}">
+                                <span class="timestamp-short" title="${escapeHtml(getLocalizedTime(benchmark.timestamp))}">${getShortLocalizedTime(benchmark.timestamp)}</span>
+                            </td>
+                            <td class="border px-3 py-2 node-col">
+                                <div class="font-semibold">${safeNode}</div>
+                                <div class="bench-detail-list text-xs mt-1">
+                                    <div class="bench-detail-row"><span class="bench-detail-label">Up</span><span class="num">${uploadValue} MB/s</span></div>
+                                    <div class="bench-detail-row"><span class="bench-detail-label">Down</span><span class="num">${downloadValue} MB/s</span></div>
+                                    <div class="bench-detail-row"><span class="bench-detail-label">TTFB</span><span class="num">${ttfbValue} ms</span></div>
+                                    <div class="bench-detail-row"><span class="bench-detail-label">Status</span><span>${statusPill}</span></div>
                                 </div>
                             </td>
                         </tr>`;
@@ -471,12 +686,12 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                         // Desktop: All separate columns
                         tableRows += `
                         <tr class="${rowClass}">
-                            <td class="border px-4 py-2 timestamp-col" data-timestamp="${benchmark.timestamp}">${getLocalizedTime(benchmark.timestamp)}</td>
-                            <td class="border px-4 py-2 node-col">${benchmark.node}</td>
-                            <td class="border px-4 py-2 upload-col">${(benchmark.uploadSpeed / 1000000).toFixed(2)} MB/s</td>
-                            <td class="border px-4 py-2 download-col">${(benchmark.downloadSpeed / 1000000).toFixed(2)} MB/s</td>
-                            <td class="border px-4 py-2 ttfb-col">${(benchmark.ttfb / 1000000)} ms</td>
-                            <td class="border px-4 py-2 success-col">${benchmark.success ? 'OK' : benchmark['error']}</td>
+                            <td class="border px-3 py-2 timestamp-col" data-timestamp="${escapeHtml(benchmark.timestamp)}">${escapeHtml(getLocalizedTime(benchmark.timestamp))}</td>
+                            <td class="border px-3 py-2 node-col">${safeNode}</td>
+                            <td class="border px-3 py-2 upload-col num">${uploadValue} MB/s</td>
+                            <td class="border px-3 py-2 download-col num">${downloadValue} MB/s</td>
+                            <td class="border px-3 py-2 ttfb-col num">${ttfbValue} ms</td>
+                            <td class="border px-3 py-2 success-col">${statusPill}</td>
                         </tr>`;
                     }
                 });
@@ -508,57 +723,7 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                 data: {
                     datasets: initialData.download
                 },
-                options: {
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'MB/s'
-                            },
-                            startAtZero: true
-                        },
-                        x: {
-                            type: 'time',
-                            title: {
-                                display: false,
-                                text: 'Date'
-                            },
-                            time: {
-                                unit: 'day',
-                                tooltipFormat: 'MMM DD',
-                                displayFormats: {
-                                    day: 'MMM DD'
-                                }
-                            },
-                            ticks: {
-                                autoSkip: true,
-                                maxTicksLimit: 10
-                            }
-                        }
-                    },
-                    interaction: { mode: 'nearest', intersect: false },
-                    plugins: {
-                        title: { display: false },
-                        legend: { onClick: e => e.stopPropagation() },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            callbacks: {
-                                label: context => {
-                                    let label = '';
-                                    if (context.dataset.label) {
-                                        label = context.dataset.label + ': ';
-                                    }
-                                    const value = context.parsed.y;
-                                    const decimals = context.dataset.decimalPlaces ?? 0;
-                                    label += value.toFixed(decimals).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-                                    return label;
-                                },
-                                title: items => moment(items[0].parsed.x).format('DD MMM YYYY')
-                            }
-                        }
-                    }
-                }
+                options: createSpeedChartOptions()
             });
 
             const uploadCtx = document.getElementById('uploadChart').getContext('2d');
@@ -567,56 +732,7 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                 data: {
                     datasets: initialData.upload
                 },
-                options: {
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'MB/s'
-                            },
-                            startAtZero: true
-                        },
-                        x: {
-                            type: 'time',
-                            title: {
-                                display: false,
-                                text: 'Date'
-                            },
-                            time: {
-                                unit: 'day',
-                                tooltipFormat: 'MMM DD',
-                                displayFormats: {
-                                    day: 'MMM DD'
-                                }
-                            },
-                            ticks: {
-                                autoSkip: true,
-                                maxTicksLimit: 10
-                            }
-                        }
-                    },
-                    interaction: { mode: 'nearest', intersect: false },
-                    plugins: {
-                        title: { display: false },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            callbacks: {
-                                label: context => {
-                                    let label = '';
-                                    if (context.dataset.label) {
-                                        label = context.dataset.label + ': ';
-                                    }
-                                    const value = context.parsed.y;
-                                    const decimals = context.dataset.decimalPlaces ?? 0;
-                                    label += value.toFixed(decimals).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-                                    return label;
-                                },
-                                title: items => moment(items[0].parsed.x).format('DD MMM YYYY')
-                            }
-                        }
-                    }
-                }
+                options: createSpeedChartOptions()
             });
 
             // Render the table for current viewport without flicker
@@ -631,6 +747,15 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                 const nowIsMobile = isMobile();
                 if (nowIsMobile !== lastIsMobile) {
                     lastIsMobile = nowIsMobile;
+                    const tickLimit = nowIsMobile ? 6 : 10;
+                    if (downloadChart?.options?.scales?.x?.ticks) {
+                        downloadChart.options.scales.x.ticks.maxTicksLimit = tickLimit;
+                        downloadChart.update('none');
+                    }
+                    if (uploadChart?.options?.scales?.x?.ticks) {
+                        uploadChart.options.scales.x.ticks.maxTicksLimit = tickLimit;
+                        uploadChart.update('none');
+                    }
                     // Re-render current node table
                     populateTable(selectedNode);
                 }
@@ -639,9 +764,57 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
     </script>
 
     <style>
+        .benchmark-chart-wrap {
+            position: relative;
+            height: 400px;
+            min-height: 280px;
+            width: 100%;
+        }
+
+        .benchmark-chart-canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+        .table-container .overflow-x-auto {
+            max-height: none;
+            overflow-y: visible;
+        }
+
+        #hostTable {
+            table-layout: fixed;
+        }
+
         #hostTable th,
         #hostTable td {
             white-space: nowrap;
+        }
+
+        #hostTable thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background-color: rgba(24, 24, 24, 0.96);
+        }
+
+        #hostTable .table-sort-btn {
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: 0;
+            color: inherit;
+            padding: 0;
+            font-weight: inherit;
+            line-height: 1.2;
+        }
+
+        #hostTable .table-sort-btn.num {
+            text-align: right;
+        }
+
+        #hostTable .table-sort-btn:hover {
+            text-decoration: underline;
         }
 
         #hostTable .timestamp-col {
@@ -649,7 +822,7 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
         }
 
         #hostTable .node-col {
-            width: 90px;
+            width: 100px;
         }
 
         #hostTable .upload-col,
@@ -659,7 +832,73 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
         }
 
         #hostTable .success-col {
-            width: 80px;
+            width: 240px;
+        }
+
+        #hostTable .status-pill {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            line-height: 1.2;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+        }
+
+        #hostTable .status-pill--ok {
+            color: #16a34a;
+            border: 1px solid rgba(22, 163, 74, 0.6);
+            background-color: rgba(22, 163, 74, 0.12);
+        }
+
+        #hostTable .status-pill--error {
+            color: #f87171;
+            border: 1px solid rgba(248, 113, 113, 0.6);
+            background-color: rgba(248, 113, 113, 0.12);
+        }
+
+        @media (max-width: 767.98px) {
+            .benchmark-chart-wrap {
+                height: 320px;
+            }
+
+            #hostTable th,
+            #hostTable td {
+                white-space: normal;
+                vertical-align: top;
+            }
+
+            #hostTable .timestamp-col {
+                width: 124px;
+            }
+
+            #hostTable .node-col {
+                width: auto;
+            }
+
+            #hostTable .bench-detail-list {
+                display: grid;
+                gap: 0.2rem;
+                color: #d1d5db;
+            }
+
+            #hostTable .bench-detail-row {
+                display: flex;
+                justify-content: space-between;
+                gap: 0.75rem;
+                align-items: baseline;
+            }
+
+            #hostTable .bench-detail-label {
+                color: #9ca3af;
+                font-weight: 600;
+            }
+
+            #hostTable .status-pill {
+                max-width: 180px;
+            }
         }
     </style>
 
