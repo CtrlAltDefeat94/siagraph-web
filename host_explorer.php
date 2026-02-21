@@ -64,6 +64,7 @@ render_header('SiaGraph - Host Explorer');
             <section class="card">
                 <div class="hosts-toolbar">
                     <h2 class="card__heading">Hosts</h2>
+                    <div id="loadMessage" class="hosts-toolbar__meta text-sm text-gray-400" aria-live="polite"></div>
                     <div class="hosts-toolbar__controls">
                         <div class="hosts-toolbar__sort">
                             <span class="text-sm">Sort:</span>
@@ -84,7 +85,6 @@ render_header('SiaGraph - Host Explorer');
                     </div>
                 </div>
                 <div class="card__content">
-                    <div id="loadMessage" class="text-sm text-gray-400 mb-2" aria-live="polite"></div>
                     <div class="overflow-x-auto">
                         <table id="hostTable" class="table-clean text-white min-w-full" style="visibility: hidden;">
                             <thead></thead>
@@ -744,10 +744,10 @@ render_header('SiaGraph - Host Explorer');
 
 
 <style>
-    /* Two-column layout with wider/stickier sidebar on md+ */
+    /* Two-column layout: keep overall page width, give Hosts table a bit more room on md+ */
     .host-layout{ display: grid; grid-template-columns: 1fr; align-items: start; }
     @media (min-width: 768px){ /* md */
-        .host-layout{ grid-template-columns: clamp(230px, 17vw, 280px) 1fr; }
+        .host-layout{ grid-template-columns: clamp(210px, 15vw, 250px) minmax(0, 1fr); column-gap: 1rem; }
         .filters-card { position: sticky; top: 1rem; }
     }
 
@@ -771,12 +771,18 @@ render_header('SiaGraph - Host Explorer');
         gap: 0.75rem;
     }
 
+    .hosts-toolbar__meta {
+        margin-left: auto;
+        white-space: nowrap;
+    }
+
     .hosts-toolbar__controls {
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        width: 100%;
+        width: auto;
         justify-content: flex-end;
+        flex: 0 1 auto;
     }
 
     .hosts-toolbar__sort {
@@ -787,7 +793,6 @@ render_header('SiaGraph - Host Explorer');
     }
 
     .hosts-toolbar__search {
-        margin-left: auto;
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
@@ -868,6 +873,7 @@ render_header('SiaGraph - Host Explorer');
         /* Bleed the overflow container to the card edges */
         .card .card__content > .overflow-x-auto { margin-left: -0.75rem; margin-right: -0.75rem; }
         .hosts-toolbar { flex-direction: column; align-items: stretch; }
+        .hosts-toolbar__meta { margin-left: 0; white-space: normal; }
         .hosts-toolbar__controls { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0.5rem; }
         .hosts-toolbar__sort { width: 100%; justify-content: space-between; }
         .hosts-toolbar__sort select { flex: 1 1 auto; }
