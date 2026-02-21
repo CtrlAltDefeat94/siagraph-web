@@ -1,9 +1,37 @@
 <?php
+function versioned_asset_url(string $path): string {
+    // Leave absolute/external URLs unchanged.
+    if (preg_match('#^(?:[a-z]+:)?//#i', $path) === 1) {
+        return $path;
+    }
+
+    $urlPath = parse_url($path, PHP_URL_PATH);
+    if (!is_string($urlPath) || $urlPath === '') {
+        return $path;
+    }
+
+    $relativePath = ltrim($urlPath, '/');
+    $fullPath = dirname(__DIR__) . '/' . $relativePath;
+    if (!is_file($fullPath)) {
+        return $path;
+    }
+
+    $separator = strpos($path, '?') !== false ? '&' : '?';
+    return $path . $separator . 'v=' . filemtime($fullPath);
+}
+
 function render_header(
     string $title = 'SiaGraph',
     string $description = 'SiaGraph provides network statistics, charts, and insights for the Sia storage platform.',
     array $extra_head = []
 ) {
+    if (!headers_sent()) {
+        // Always revalidate HTML, but keep static assets cacheable via versioned URLs.
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+    }
+
     ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -25,17 +53,17 @@ function render_header(
         
         <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.0/nouislider.min.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-        <link rel="stylesheet" href="css/dark.css">
-        <link rel="stylesheet" href="css/style.css">
-        <link rel="stylesheet" href="css/theme.css">
-        <link rel="stylesheet" href="css/overrides.css">
-        <link rel="icon" href="img/favicon.ico" type="image/png">
+        <link rel="stylesheet" href="<?php echo htmlspecialchars(versioned_asset_url('css/dark.css'), ENT_QUOTES, 'UTF-8'); ?>">
+        <link rel="stylesheet" href="<?php echo htmlspecialchars(versioned_asset_url('css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
+        <link rel="stylesheet" href="<?php echo htmlspecialchars(versioned_asset_url('css/theme.css'), ENT_QUOTES, 'UTF-8'); ?>">
+        <link rel="stylesheet" href="<?php echo htmlspecialchars(versioned_asset_url('css/overrides.css'), ENT_QUOTES, 'UTF-8'); ?>">
+        <link rel="icon" href="<?php echo htmlspecialchars(versioned_asset_url('img/favicon.ico'), ENT_QUOTES, 'UTF-8'); ?>" type="image/png">
         <script>
             window.APP_LOCALE = <?php echo json_encode($APP_LOCALE_BCP47); ?>;
             // Bump this to invalidate client-side cached API responses
             window.FETCH_CACHE_VERSION = '2024-01-cutoff-1';
         </script>
-        <script src="script.js" defer></script>
+        <script src="<?php echo htmlspecialchars(versioned_asset_url('script.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
         <?php foreach ($extra_head as $tag) { echo $tag; } ?>
     </head>
     <body class="d-flex flex-column min-vh-100">
@@ -52,8 +80,8 @@ function render_footer(array $scripts = []) {
         <script src="https://cdn.jsdelivr.net/npm/chart.js@3" defer></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1" defer></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.0/nouislider.min.js" defer></script>
-        <script src="js/graph-renderer.js" defer></script>
-        <?php foreach ($scripts as $script) { echo "<script src=\"{$script}\"></script>"; } ?>
+        <script src="<?php echo htmlspecialchars(versioned_asset_url('js/graph-renderer.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+        <?php foreach ($scripts as $script) { echo "<script src=\"" . htmlspecialchars(versioned_asset_url($script), ENT_QUOTES, 'UTF-8') . "\"></script>"; } ?>
     </body>
     </html>
 <?php }
