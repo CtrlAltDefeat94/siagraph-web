@@ -237,9 +237,15 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
         let uploadChart;
         let sortState = { key: 'timestamp', dir: 'desc' };
 
-        // Responsive helpers (match host_explorer behavior)
-        function isMobile() {
+        // Responsive helpers
+        function isMobileViewport() {
             return window.innerWidth < 768; // Tailwind md breakpoint
+        }
+
+        function isCompactBenchmarksView() {
+            const container = document.querySelector('.table-container');
+            const availableWidth = container ? container.clientWidth : window.innerWidth;
+            return availableWidth < 980;
         }
 
         function showTable() {
@@ -403,7 +409,7 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                         },
                         ticks: {
                             autoSkip: true,
-                            maxTicksLimit: isMobile() ? 6 : 10
+                            maxTicksLimit: isMobileViewport() ? 6 : 10
                         },
                         grid: {
                             color: 'rgba(255,255,255,0.05)'
@@ -449,7 +455,10 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
         function renderTableHeader() {
             const thead = document.querySelector('#hostTable thead');
             if (!thead) return;
-            if (isMobile()) {
+            const compact = isCompactBenchmarksView();
+            const table = document.getElementById('hostTable');
+            if (table) table.classList.toggle('compact-table', compact);
+            if (compact) {
                 thead.innerHTML = `
                     <tr>
                         <th class="px-3 py-2 timestamp-col">${renderSortButton('Timestamp', 'timestamp')}</th>
@@ -495,7 +504,7 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                     backgroundColor: color,
                     pointBackgroundColor: color,
                     fill: false,
-                    pointRadius: isMobile() ? 3 : 4,
+                    pointRadius: isMobileViewport() ? 3 : 4,
                     pointHitRadius: 10,
                     pointHoverRadius: 6,
                     showLine: false,
@@ -508,7 +517,7 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                     backgroundColor: color,
                     pointBackgroundColor: color,
                     fill: false,
-                    pointRadius: isMobile() ? 3 : 4,
+                    pointRadius: isMobileViewport() ? 3 : 4,
                     pointHitRadius: 10,
                     pointHoverRadius: 6,
                     showLine: false,
@@ -664,8 +673,8 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                     const downloadValue = (getNumericSafe(benchmark.downloadSpeed) / 1000000).toFixed(2);
                     const ttfbValue = getNumericSafe(benchmark.ttfb) / 1000000;
                     const safeNode = escapeHtml(benchmark.node);
-                    const statusPill = renderStatusPill(benchmark, isMobile() ? 28 : 56);
-                    if (isMobile()) {
+                    const statusPill = renderStatusPill(benchmark, isCompactBenchmarksView() ? 28 : 56);
+                    if (isCompactBenchmarksView()) {
                         // Mobile: Keep 2-column layout, but stack details for readability.
                         tableRows += `
                         <tr class="${rowClass}">
@@ -701,7 +710,7 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                 showTable();
             } else {
                 const tableBody = document.querySelector('#hostTableBody'); // Ensure this matches the correct selector
-                const colspan = isMobile() ? 2 : 6;
+                const colspan = isCompactBenchmarksView() ? 2 : 6;
                 tableBody.innerHTML = `
                 <tr>
                     <td colspan="${colspan}" class="text-center">No benchmarks found for this host.</td>
@@ -742,9 +751,11 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
 
         // Re-render on breakpoint changes
         (function setupResizeRerender(){
-            let lastIsMobile = isMobile();
+            let lastIsMobile = isMobileViewport();
+            let lastIsCompact = isCompactBenchmarksView();
             window.addEventListener('resize', () => {
-                const nowIsMobile = isMobile();
+                const nowIsMobile = isMobileViewport();
+                const nowIsCompact = isCompactBenchmarksView();
                 if (nowIsMobile !== lastIsMobile) {
                     lastIsMobile = nowIsMobile;
                     const tickLimit = nowIsMobile ? 6 : 10;
@@ -756,7 +767,9 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
                         uploadChart.options.scales.x.ticks.maxTicksLimit = tickLimit;
                         uploadChart.update('none');
                     }
-                    // Re-render current node table
+                }
+                if (nowIsCompact !== lastIsCompact) {
+                    lastIsCompact = nowIsCompact;
                     populateTable(selectedNode);
                 }
             });
@@ -780,14 +793,25 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
         .table-container .overflow-x-auto {
             max-height: none;
             overflow-y: visible;
+            overflow-x: hidden;
+            min-width: 0;
         }
 
         #hostTable {
-            table-layout: fixed;
+            width: 100%;
+            min-width: 0;
+            table-layout: auto;
         }
 
         #hostTable th,
         #hostTable td {
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            min-width: 0;
+        }
+
+        #hostTable .num {
             white-space: nowrap;
         }
 
@@ -833,6 +857,19 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
 
         #hostTable .success-col {
             width: 240px;
+        }
+
+        #hostTable.compact-table {
+            table-layout: fixed;
+        }
+
+        #hostTable.compact-table .timestamp-col {
+            width: 8.5rem;
+            max-width: 8.5rem;
+        }
+
+        #hostTable.compact-table .node-col {
+            width: auto;
         }
 
         #hostTable .status-pill {

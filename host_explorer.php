@@ -113,7 +113,8 @@ render_header('SiaGraph - Host Explorer');
         let searchDebounceTimer = null;
         let loadController = null;
         let activeRequestId = 0;
-        let lastIsMobile = window.innerWidth < 768;
+        let lastIsMobile = false;
+        let lastViewportIsMobile = window.innerWidth < 768;
         window.currentHosts = null;
         window.currentPagination = null;
 
@@ -191,6 +192,8 @@ render_header('SiaGraph - Host Explorer');
             document.getElementById('filtersToggle').addEventListener('click', toggleFiltersPanel);
 
             // Render header for current viewport
+            lastIsMobile = isCompactHostsView();
+            lastViewportIsMobile = isMobileViewport();
             if (typeof renderTableHeader === 'function') {
                 renderTableHeader();
             }
@@ -232,7 +235,7 @@ render_header('SiaGraph - Host Explorer');
         function syncFilterPanelForViewport() {
             const toggle = document.getElementById('filtersToggle');
             if (!toggle) return;
-            if (isMobile()) {
+            if (isMobileViewport()) {
                 toggle.style.display = 'inline-flex';
                 setFiltersOpen(false);
             } else {
@@ -410,8 +413,15 @@ render_header('SiaGraph - Host Explorer');
         }
 
         // Responsive helpers
-        function isMobile() {
+        function isMobileViewport() {
             return window.innerWidth < 768; // Tailwind md breakpoint
+        }
+
+        function isCompactHostsView() {
+            const hostsCard = document.querySelector('.host-layout > section.card:last-child');
+            const availableWidth = hostsCard ? hostsCard.clientWidth : window.innerWidth;
+            // Compact mode needs to account for actual card width, not just viewport width.
+            return availableWidth < 960;
         }
 
         function showTable() {
@@ -427,10 +437,13 @@ render_header('SiaGraph - Host Explorer');
         function renderTableHeader() {
             const thead = document.querySelector('#hostTable thead');
             if (!thead) return;
-            if (isMobile()) {
+            const compact = isCompactHostsView();
+            const table = document.getElementById('hostTable');
+            if (table) table.classList.toggle('compact-table', compact);
+            if (compact) {
                 thead.innerHTML = `
                     <tr>
-                        <th class="px-2 py-2 num">#</th>
+                        <th class="px-2 py-2 num rank-col">#</th>
                         <th class="px-2 py-2">Host</th>
                     </tr>
                 `;
@@ -458,7 +471,7 @@ render_header('SiaGraph - Host Explorer');
 
             if (!data || data.length === 0) {
                 const emptyRow = document.createElement('tr');
-                const colspan = isMobile() ? 2 : 7;
+                const colspan = isCompactHostsView() ? 2 : 7;
                 emptyRow.innerHTML = `<td colspan="${colspan}" class="px-4 py-8 text-center text-gray-400">No hosts match your filters.</td>`;
                 tableBody.appendChild(emptyRow);
                 document.getElementById('pagination').innerHTML = '';
@@ -486,10 +499,10 @@ render_header('SiaGraph - Host Explorer');
                 const growthTitle = diffAvailable ? '' : ` title="${getStorageDiffReason(host)}"`;
                 const computedIndex = (((currentPage - 1) * perPage) + index + 1);
                 const displayRank = (host.filtered_rank && Number(host.filtered_rank) > 0) ? host.filtered_rank : computedIndex;
-                if (isMobile()) {
+                if (isCompactHostsView()) {
                     // Mobile: Only two columns (# and Host with details)
                     row.innerHTML = `
-                        <td class="border px-2 py-2 num">${displayRank}</td>
+                        <td class="border px-2 py-2 num rank-col">${displayRank}</td>
                         <td class="border px-2 py-2 align-top">
                             <a href="/host?id=${host.host_id}" class="host-link hover:underline">${host.net_address}</a>${host.accepting_contracts == 0 ? ' <span class="text-red-500" title="Not accepting contracts">❌</span>' : ''}
                             <div class="text-xs text-gray-300 mt-1 mobile-metrics">
@@ -535,7 +548,7 @@ render_header('SiaGraph - Host Explorer');
             const paginationDiv = document.getElementById('pagination');
             paginationDiv.innerHTML = ''; // Clear existing buttons
 
-            const maxVisibleButtons = isMobile() ? 3 : 5;
+            const maxVisibleButtons = isCompactHostsView() ? 3 : 5;
 
             // Calculate start and end page numbers for pagination
             let startPage = currentPage - Math.floor(maxVisibleButtons / 2);
@@ -545,8 +558,8 @@ render_header('SiaGraph - Host Explorer');
             // Adjust start page again if end page is at the boundary
             startPage = Math.max(endPage - maxVisibleButtons + 1, 1);
 
-            const firstButton = createPaginationButton(1, isMobile() ? '«' : 'First');
-            const prevButton = createPaginationButton(currentPage - 1, isMobile() ? '‹' : 'Previous');
+            const firstButton = createPaginationButton(1, isCompactHostsView() ? '«' : 'First');
+            const prevButton = createPaginationButton(currentPage - 1, isCompactHostsView() ? '‹' : 'Previous');
             paginationDiv.appendChild(firstButton);
             paginationDiv.appendChild(prevButton);
             // Add first and previous buttons
@@ -565,8 +578,8 @@ render_header('SiaGraph - Host Explorer');
                 paginationDiv.appendChild(pageButton);
             }
 
-            const nextButton = createPaginationButton(currentPage + 1, isMobile() ? '›' : 'Next');
-            const lastButton = createPaginationButton(totalPages, isMobile() ? '»' : 'Last');
+            const nextButton = createPaginationButton(currentPage + 1, isCompactHostsView() ? '›' : 'Next');
+            const lastButton = createPaginationButton(totalPages, isCompactHostsView() ? '»' : 'Last');
             paginationDiv.appendChild(nextButton);
             paginationDiv.appendChild(lastButton);
 
@@ -660,7 +673,7 @@ render_header('SiaGraph - Host Explorer');
         function showErrorState(message) {
             const tableBody = document.getElementById('hostTableBody');
             renderTableHeader();
-            const colspan = isMobile() ? 2 : 7;
+            const colspan = isCompactHostsView() ? 2 : 7;
             tableBody.innerHTML = `<tr><td colspan="${colspan}" class="px-4 py-8 text-center text-red-300">${message}</td></tr>`;
             const paginationDiv = document.getElementById('pagination');
             if (paginationDiv) paginationDiv.innerHTML = '';
@@ -671,7 +684,7 @@ render_header('SiaGraph - Host Explorer');
         function showLoadingSkeleton() {
             const tableBody = document.getElementById('hostTableBody');
             renderTableHeader();
-            const cols = isMobile() ? 2 : 7;
+            const cols = isCompactHostsView() ? 2 : 7;
             tableBody.innerHTML = '';
             for (let r = 0; r < 8; r++) {
                 const tr = document.createElement('tr');
@@ -727,10 +740,14 @@ render_header('SiaGraph - Host Explorer');
         // Re-render on breakpoint changes
         (function setupResizeRerender(){
             window.addEventListener('resize', () => {
-                const nowIsMobile = isMobile();
+                const nowIsMobile = isCompactHostsView();
+                const nowViewportIsMobile = isMobileViewport();
+                if (nowViewportIsMobile !== lastViewportIsMobile) {
+                    lastViewportIsMobile = nowViewportIsMobile;
+                    syncFilterPanelForViewport();
+                }
                 if (nowIsMobile !== lastIsMobile) {
                     lastIsMobile = nowIsMobile;
-                    syncFilterPanelForViewport();
                     if (window.currentHosts) {
                         displayData(window.currentHosts, window.currentPagination || { total_pages: 1, current_page: 1, per_page: 15 });
                     } else {
@@ -746,6 +763,7 @@ render_header('SiaGraph - Host Explorer');
 <style>
     /* Two-column layout: keep overall page width, give Hosts table a bit more room on md+ */
     .host-layout{ display: grid; grid-template-columns: 1fr; align-items: start; }
+    .host-layout > .card { min-width: 0; }
     @media (min-width: 768px){ /* md */
         .host-layout{ grid-template-columns: clamp(210px, 15vw, 250px) minmax(0, 1fr); column-gap: 1rem; }
         .filters-card { position: sticky; top: 1rem; }
@@ -769,11 +787,15 @@ render_header('SiaGraph - Host Explorer');
         align-items: center;
         justify-content: space-between;
         gap: 0.75rem;
+        flex-wrap: wrap;
+        min-width: 0;
     }
 
     .hosts-toolbar__meta {
-        margin-left: auto;
-        white-space: nowrap;
+        margin-left: 0;
+        white-space: normal;
+        flex: 1 1 14rem;
+        min-width: 0;
     }
 
     .hosts-toolbar__controls {
@@ -782,7 +804,9 @@ render_header('SiaGraph - Host Explorer');
         gap: 0.75rem;
         width: auto;
         justify-content: flex-end;
-        flex: 0 1 auto;
+        flex: 1 1 28rem;
+        min-width: 0;
+        flex-wrap: wrap;
     }
 
     .hosts-toolbar__sort {
@@ -796,10 +820,44 @@ render_header('SiaGraph - Host Explorer');
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        width: min(100%, 420px);
+        width: min(100%, 520px);
+        min-width: 0;
+        flex: 1 1 20rem;
     }
 
-    #search { flex: 1 1 auto; min-width: 12rem; }
+    #search { flex: 1 1 auto; min-width: 0; }
+
+    .card .card__content > .overflow-x-auto {
+        overflow-x: hidden;
+        min-width: 0;
+    }
+
+    #hostTable {
+        width: 100%;
+        min-width: 0;
+        table-layout: auto;
+    }
+
+    #hostTable th,
+    #hostTable td {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    #hostTable th.num,
+    #hostTable td.num {
+        white-space: nowrap;
+    }
+
+    #hostTable.compact-table .rank-col {
+        width: 3.5rem;
+        max-width: 3.5rem;
+    }
+
+    #hostTable.compact-table {
+        table-layout: fixed;
+    }
 
     /* Ensure pagination is centered on all viewports */
     #pagination { display: flex; justify-content: center; align-items: center; }
@@ -878,7 +936,6 @@ render_header('SiaGraph - Host Explorer');
         .hosts-toolbar__sort { width: 100%; justify-content: space-between; }
         .hosts-toolbar__sort select { flex: 1 1 auto; }
         .hosts-toolbar__search { width: 100%; margin-left: 0; }
-        #search { min-width: 0; }
         .filters-toggle { display: inline-flex; }
         /* Pagination: wrap and shrink */
         #pagination { display: flex; flex-wrap: wrap; gap: 0.25rem; }
