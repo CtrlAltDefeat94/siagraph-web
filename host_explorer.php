@@ -931,11 +931,39 @@ render_header('SiaGraph - Host Explorer');
         /* Bleed the overflow container to the card edges */
         .card .card__content > .overflow-x-auto { margin-left: -0.75rem; margin-right: -0.75rem; }
         .hosts-toolbar { flex-direction: column; align-items: stretch; }
-        .hosts-toolbar__meta { margin-left: 0; white-space: normal; }
-        .hosts-toolbar__controls { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0.5rem; }
+        .hosts-toolbar__meta {
+            margin-left: 0;
+            white-space: normal;
+            flex: 0 0 auto;
+            min-height: 0;
+        }
+        .hosts-toolbar__meta:empty { display: none; }
+        .hosts-toolbar__controls {
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+            gap: 0.5rem;
+            flex: 0 0 auto;
+            min-height: 0;
+        }
         .hosts-toolbar__sort { width: 100%; justify-content: space-between; }
         .hosts-toolbar__sort select { flex: 1 1 auto; }
-        .hosts-toolbar__search { width: 100%; margin-left: 0; }
+        .hosts-toolbar__search {
+            width: 100%;
+            margin-left: 0;
+            flex: 0 0 auto;
+            flex-wrap: nowrap;
+            align-items: center;
+        }
+        .hosts-toolbar__search .button {
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+        #search {
+            width: auto !important;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
         .filters-toggle { display: inline-flex; }
         /* Pagination: wrap and shrink */
         #pagination { display: flex; flex-wrap: wrap; gap: 0.25rem; }
