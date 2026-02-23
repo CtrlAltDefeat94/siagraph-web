@@ -92,7 +92,7 @@ render_header("SiaGraph - Token Volume"); ?>
                 renderGraph(
                     'aggregates-siafund-volume',
                     [
-                        $graphConfigs['siafund_volume']
+                        array_merge($graphConfigs['siafund_volume'], ['unitDivisor' => 1, 'decimalPlaces' => 0])
                     ],
                     'date',
                     $aggEndpoint,

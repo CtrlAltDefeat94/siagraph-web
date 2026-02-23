@@ -595,7 +595,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                label: 'Accepting contracts',
                value: () => data.settings.acceptingcontracts ? 'Yes' : 'No',
                warningWhen: d => !d.settings.acceptingcontracts,
-               warningHtml: () => "When this setting is disabled, renters treat the host as retiring. They will stop using it and may begin migrating data immediately.<br><br><strong class='text-danger'>If this is your host and you are not retiring, re-enable this setting as soon as possible!</strong>",
+               warningHtml: () => "When this setting is disabled, renters treat the host as retiring. They will stop using the host and may begin migrating data immediately.<br><br><strong class='text-danger'>If this is your host and you are not retiring, re-enable this setting as soon as possible!</strong>",
                warningStyle: 'critical',
                warningIcon: 'bi bi-exclamation-triangle-fill'
             },

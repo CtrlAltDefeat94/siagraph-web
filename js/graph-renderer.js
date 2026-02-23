@@ -355,6 +355,7 @@ class GraphRenderer {
                         tooltip: {
                             mode: 'index',
                             intersect: this.charttype === 'pie' ? true : false,
+                            boxPadding: 6,
                             callbacks: {
                                 title: (context) => {
                                     if (this.charttype === 'pie') {
