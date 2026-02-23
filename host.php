@@ -569,11 +569,6 @@ Each benchmark server contributes equally to the score, regardless of how many b
 
       // Helper to unwrap SC values shaped like { sc: number }
       function sc_value(v){ return (v && typeof v === 'object' && 'sc' in v) ? v.sc : v; }
-      function ratioWithin(actual, expected, tolerance = 0.01) {
-         if (!isFinite(actual) || !isFinite(expected) || expected === 0) return false;
-         return Math.abs(actual - expected) <= tolerance;
-      }
-
       const hostStats = document.getElementById("hostStats");
       //const resultsSection = document.getElementById("resultsSection");
 
@@ -581,9 +576,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
       if (data && Object.keys(data).length > 0) {
          const storagePriceRaw = Number(sc_value(data.settings.storageprice) ?? 0);
          const collateralRaw = Number(sc_value(data.settings.collateral) ?? 0);
-         const maxCollateralRaw = Number(sc_value(data.settings.maxcollateral) ?? 0);
          const collateralRatio = storagePriceRaw > 0 ? (collateralRaw / storagePriceRaw) : NaN;
-         const maxCollateralRatio = collateralRaw > 0 ? (maxCollateralRaw / collateralRaw) : NaN;
 
          const hostStatRows = [
             { id: 'host_id', label: 'SiaGraph ID', value: () => data.host_id },
@@ -602,7 +595,9 @@ Each benchmark server contributes equally to the score, regardless of how many b
                label: 'Accepting contracts',
                value: () => data.settings.acceptingcontracts ? 'Yes' : 'No',
                warningWhen: d => !d.settings.acceptingcontracts,
-               warningText: () => 'Only disable this while retiring a host. If it is disabled, renters can immediately stop using active contracts with this host.'
+               warningHtml: () => "When this setting is disabled, renters treat the host as retiring. They will stop using it and may begin migrating data immediately.<br><br><strong class='text-danger'>If this is your host and you are not retiring, re-enable this setting as soon as possible!</strong>",
+               warningStyle: 'critical',
+               warningIcon: 'bi bi-exclamation-triangle-fill'
             },
             { id: 'first_seen', label: 'First seen', value: () => data.first_seen },
             { id: 'last_announced', label: 'Last announced', value: () => data.last_announced },
@@ -634,10 +629,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
             {
                id: 'max_collateral',
                label: 'Max collateral',
-               value: () => (isFinite(maxCollateralRatio) ? `${maxCollateralRatio.toFixed(2)}× collateral` : 'N/A'),
-               warningWhen: () => maxCollateralRaw <= 0 || !ratioWithin(maxCollateralRatio, 10, 0.01),
-               warningText: () => 'Max collateral should be set to 10x collateral.',
-               warningClass: 'text-warning'
+               value: () => ((data.settings.maxcollateral.sc ?? data.settings.maxcollateral) / 1e24).toFixed(4) + ' SC'
             },
             { id: 'max_contract_duration', label: 'Max contract duration', value: () => (data.settings.maxduration / 4320).toFixed(0) + ' Months' }
          ];
@@ -660,16 +652,27 @@ Each benchmark server contributes equally to the score, regardless of how many b
             const zebra = rowIndex % 2 === 0 ? 'bg-gray-800' : 'bg-gray-900';
             const value = rowDef.value(data);
             const showWarning = typeof rowDef.warningWhen === 'function' ? rowDef.warningWhen(data) : false;
-            const warningText = showWarning
+            const warningHtml = showWarning && typeof rowDef.warningHtml === 'function'
+               ? String(rowDef.warningHtml(data)).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+               : '';
+            const warningText = showWarning && !warningHtml
                ? escapeHtmlAttr(typeof rowDef.warningText === 'function' ? rowDef.warningText(data) : (rowDef.warningText || ''))
                : '';
             const warningClass = rowDef.warningClass || 'text-danger';
-            const renderedValue = showWarning
-               ? `<span class="${warningClass}">${value}</span>
-                  <span class="ms-1 ${warningClass} align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="${warningText}" aria-label="${escapeHtmlAttr(rowDef.label)} warning">
-                     <i class="bi bi-info-circle"></i>
-                  </span>`
-               : value;
+            const warningIcon = rowDef.warningIcon || 'bi bi-info-circle';
+            const warningStyle = rowDef.warningStyle || 'default';
+            let renderedValue = value;
+            if (showWarning && warningStyle === 'critical') {
+               renderedValue = `<span class="badge bg-danger text-white fw-semibold">${value}</span>
+                  <span class="ms-2 text-danger align-middle" data-bs-toggle="tooltip" data-bs-placement="top" ${warningHtml ? 'data-bs-html="true"' : ''} title="${warningHtml || warningText}" aria-label="${escapeHtmlAttr(rowDef.label)} warning">
+                     <i class="${warningIcon}"></i>
+                  </span>`;
+            } else if (showWarning) {
+               renderedValue = `<span class="${warningClass}">${value}</span>
+                  <span class="ms-1 ${warningClass} align-middle" data-bs-toggle="tooltip" data-bs-placement="top" ${warningHtml ? 'data-bs-html="true"' : ''} title="${warningHtml || warningText}" aria-label="${escapeHtmlAttr(rowDef.label)} warning">
+                     <i class="${warningIcon}"></i>
+                  </span>`;
+            }
             const row = `
               <tr class="${zebra}">
                 <th scope="row" class="px-3 py-2 host-stats-label">${rowDef.label}</th>
