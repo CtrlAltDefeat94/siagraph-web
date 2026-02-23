@@ -453,6 +453,25 @@ Each benchmark server contributes equally to the score, regardless of how many b
       L.marker([latitude, longitude]).addTo(map)
          .bindPopup('Host Location'); // Popup message when marker is clicked
    }
+
+   function escapeHtmlAttr(value) {
+      return String(value)
+         .replace(/&/g, '&amp;')
+         .replace(/</g, '&lt;')
+         .replace(/>/g, '&gt;')
+         .replace(/"/g, '&quot;')
+         .replace(/'/g, '&#39;');
+   }
+
+   function initTooltips(scope = document) {
+      scope.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+         bootstrap.Tooltip.getOrCreateInstance(el, {
+            container: 'body',
+            customClass: 'sg-tooltip'
+         });
+      });
+   }
+
    function displayHostData(data, exchangeRate = null, currency) {
       const currencySymbols = {
          'eur': '€',
@@ -550,65 +569,117 @@ Each benchmark server contributes equally to the score, regardless of how many b
 
       // Helper to unwrap SC values shaped like { sc: number }
       function sc_value(v){ return (v && typeof v === 'object' && 'sc' in v) ? v.sc : v; }
+      function ratioWithin(actual, expected, tolerance = 0.01) {
+         if (!isFinite(actual) || !isFinite(expected) || expected === 0) return false;
+         return Math.abs(actual - expected) <= tolerance;
+      }
 
       const hostStats = document.getElementById("hostStats");
       //const resultsSection = document.getElementById("resultsSection");
 
       hostStats.innerHTML = "";
       if (data && Object.keys(data).length > 0) {
-         // Start with the common structure
-         const structuredData = {
-            "SiaGraph ID": data.host_id,
-            "Netaddress": data.net_address,
-            "Public Key": `<span class="host-public-key-value">${data.public_key}</span>
+         const storagePriceRaw = Number(sc_value(data.settings.storageprice) ?? 0);
+         const collateralRaw = Number(sc_value(data.settings.collateral) ?? 0);
+         const maxCollateralRaw = Number(sc_value(data.settings.maxcollateral) ?? 0);
+         const collateralRatio = storagePriceRaw > 0 ? (collateralRaw / storagePriceRaw) : NaN;
+         const maxCollateralRatio = collateralRaw > 0 ? (maxCollateralRaw / collateralRaw) : NaN;
+
+         const hostStatRows = [
+            { id: 'host_id', label: 'SiaGraph ID', value: () => data.host_id },
+            { id: 'netaddress', label: 'Netaddress', value: () => data.net_address },
+            {
+               id: 'public_key',
+               label: 'Public Key',
+               value: () => `<span class="host-public-key-value">${data.public_key}</span>
                 <button class='btn btn-sm btn-outline-light host-public-key-copy' aria-label='Copy public key'
-                onclick='copyToClipboard("${data.public_key}")'>Copy</button>`,
-            "V2": data.v2 ? 'Yes' : 'No',
-            "Online": data.online ? 'Yes' : 'No',
-            "Accepting contracts": data.settings.acceptingcontracts ? 'Yes' : 'No',
-            "First seen": data.first_seen,
-            "Last announced": data.last_announced,
-            "Country": data.country,
-            "Software version": data.software_version,
-            "Protocol version": data.protocol_version,
-            "Used storage": (data.used_storage / 1e12).toFixed(2) + " TB",
-            "Total storage": (data.total_storage / 1e12).toFixed(2) + " TB",
-            "Storage price": formatSCtoFiat(((data.settings.storageprice.sc ?? data.settings.storageprice) / 1e12) * 4320, 6) + "/TB/Month",
-            "Ingress price": formatSCtoFiat(((data.settings.ingressprice.sc ?? data.settings.ingressprice) / 1e12)) + "/TB",
-            "Egress price": formatSCtoFiat(((data.settings.egressprice.sc ?? data.settings.egressprice) / 1e12)) + "/TB",
-            "Contract price": ((data.settings.contractprice.sc ?? data.settings.contractprice) / 1e24).toFixed(4) + " SC",
-            "Sector access price": ((data.settings.freesectorprice.sc ?? data.settings.freesectorprice) / 1e18).toFixed(4) + " SC/million",
-            "Collateral": ((data.settings.collateral.sc ?? data.settings.collateral) / (data.settings.storageprice.sc ?? data.settings.storageprice)).toFixed(2) + "× storage price",
-            "Max collateral": ((data.settings.maxcollateral.sc ?? data.settings.maxcollateral) / 1e24).toFixed(4) + " SC",
-            "Max contract duration": (data.settings.maxduration / 4320).toFixed(0) + " Months"
-         };
-         // Append additional fields based on whether V2 is true or false
+                onclick='copyToClipboard("${data.public_key}")'>Copy</button>`
+            },
+            { id: 'v2', label: 'V2', value: () => data.v2 ? 'Yes' : 'No' },
+            { id: 'online', label: 'Online', value: () => data.online ? 'Yes' : 'No' },
+            {
+               id: 'accepting_contracts',
+               label: 'Accepting contracts',
+               value: () => data.settings.acceptingcontracts ? 'Yes' : 'No',
+               warningWhen: d => !d.settings.acceptingcontracts,
+               warningText: () => 'Only disable this while retiring a host. If it is disabled, renters can immediately stop using active contracts with this host.'
+            },
+            { id: 'first_seen', label: 'First seen', value: () => data.first_seen },
+            { id: 'last_announced', label: 'Last announced', value: () => data.last_announced },
+            { id: 'country', label: 'Country', value: () => data.country },
+            { id: 'software_version', label: 'Software version', value: () => data.software_version },
+            { id: 'protocol_version', label: 'Protocol version', value: () => data.protocol_version },
+            { id: 'used_storage', label: 'Used storage', value: () => (data.used_storage / 1e12).toFixed(2) + ' TB' },
+            { id: 'total_storage', label: 'Total storage', value: () => (data.total_storage / 1e12).toFixed(2) + ' TB' },
+            {
+               id: 'storage_price',
+               label: 'Storage price',
+               value: () => formatSCtoFiat(((data.settings.storageprice.sc ?? data.settings.storageprice) / 1e12) * 4320, 6) + '/TB/Month',
+               warningWhen: () => storagePriceRaw <= 0,
+               warningText: () => 'Storage price should not be zero.',
+               warningClass: 'text-warning'
+            },
+            { id: 'ingress_price', label: 'Ingress price', value: () => formatSCtoFiat(((data.settings.ingressprice.sc ?? data.settings.ingressprice) / 1e12)) + '/TB' },
+            { id: 'egress_price', label: 'Egress price', value: () => formatSCtoFiat(((data.settings.egressprice.sc ?? data.settings.egressprice) / 1e12)) + '/TB' },
+            { id: 'contract_price', label: 'Contract price', value: () => ((data.settings.contractprice.sc ?? data.settings.contractprice) / 1e24).toFixed(4) + ' SC' },
+            { id: 'sector_access_price', label: 'Sector access price', value: () => ((data.settings.freesectorprice.sc ?? data.settings.freesectorprice) / 1e18).toFixed(4) + ' SC/million' },
+            {
+               id: 'collateral',
+               label: 'Collateral',
+               value: () => ((data.settings.collateral.sc ?? data.settings.collateral) / (data.settings.storageprice.sc ?? data.settings.storageprice)).toFixed(2) + '× storage price',
+               warningWhen: () => collateralRaw <= 0 || !isFinite(collateralRatio) || collateralRatio < 2,
+               warningText: () => 'Collateral minimum requirement is 2x storage price and it must be greater than zero.',
+               warningClass: 'text-warning'
+            },
+            {
+               id: 'max_collateral',
+               label: 'Max collateral',
+               value: () => (isFinite(maxCollateralRatio) ? `${maxCollateralRatio.toFixed(2)}× collateral` : 'N/A'),
+               warningWhen: () => maxCollateralRaw <= 0 || !ratioWithin(maxCollateralRatio, 10, 0.01),
+               warningText: () => 'Max collateral should be set to 10x collateral.',
+               warningClass: 'text-warning'
+            },
+            { id: 'max_contract_duration', label: 'Max contract duration', value: () => (data.settings.maxduration / 4320).toFixed(0) + ' Months' }
+         ];
+
          if (!data.v2) {
-            // V1
-            Object.assign(structuredData, {
-               "Base RPC price": (data.settings.baserpcprice.sc ?? data.settings.baserpcprice),
-               "Emperheral Account Expiry": data.settings.ephemeralaccountexpiry,
-               "Max Download Batch Size": data.settings.maxdownloadbatchsize / 1024 / 1024 + "MB",
-               "Max ephemeral account balance": (data.settings.max_ephemeral_account_balance / 1e24).toFixed(4) + " SC",
-               "maxrevisebatchsize": data.settings.maxrevisebatchsize,
-               "Sector size": data.settings.sectorsize.toLocaleString(window.APP_LOCALE || undefined) + " bytes",
-               "siamuxport": data.settings.siamuxport,
-               "Window size": data.settings.windowsize + " Blocks"
-            });
-
-
+            hostStatRows.push(
+               { id: 'base_rpc_price', label: 'Base RPC price', value: () => (data.settings.baserpcprice.sc ?? data.settings.baserpcprice) },
+               { id: 'ephemeral_account_expiry', label: 'Emperheral Account Expiry', value: () => data.settings.ephemeralaccountexpiry },
+               { id: 'max_download_batch_size', label: 'Max Download Batch Size', value: () => data.settings.maxdownloadbatchsize / 1024 / 1024 + 'MB' },
+               { id: 'max_ephemeral_account_balance', label: 'Max ephemeral account balance', value: () => (data.settings.max_ephemeral_account_balance / 1e24).toFixed(4) + ' SC' },
+               { id: 'max_revise_batch_size', label: 'maxrevisebatchsize', value: () => data.settings.maxrevisebatchsize },
+               { id: 'sector_size', label: 'Sector size', value: () => data.settings.sectorsize.toLocaleString(window.APP_LOCALE || undefined) + ' bytes' },
+               { id: 'siamux_port', label: 'siamuxport', value: () => data.settings.siamuxport },
+               { id: 'window_size', label: 'Window size', value: () => data.settings.windowsize + ' Blocks' }
+            );
          }
+
          let rowIndex = 0;
-         for (const key in structuredData) {
+         hostStatRows.forEach((rowDef) => {
             const zebra = rowIndex % 2 === 0 ? 'bg-gray-800' : 'bg-gray-900';
+            const value = rowDef.value(data);
+            const showWarning = typeof rowDef.warningWhen === 'function' ? rowDef.warningWhen(data) : false;
+            const warningText = showWarning
+               ? escapeHtmlAttr(typeof rowDef.warningText === 'function' ? rowDef.warningText(data) : (rowDef.warningText || ''))
+               : '';
+            const warningClass = rowDef.warningClass || 'text-danger';
+            const renderedValue = showWarning
+               ? `<span class="${warningClass}">${value}</span>
+                  <span class="ms-1 ${warningClass} align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="${warningText}" aria-label="${escapeHtmlAttr(rowDef.label)} warning">
+                     <i class="bi bi-info-circle"></i>
+                  </span>`
+               : value;
             const row = `
               <tr class="${zebra}">
-                <th scope="row" class="px-3 py-2 host-stats-label">${key}</th>
-                <td class="px-3 py-2 text-end host-stats-value">${structuredData[key]}</td>
+                <th scope="row" class="px-3 py-2 host-stats-label">${rowDef.label}</th>
+                <td class="px-3 py-2 text-end host-stats-value">${renderedValue}</td>
               </tr>`;
             hostStats.innerHTML += row;
             rowIndex++;
-         }
+         });
+
+         initTooltips(hostStats);
 
          // Populate averages responsively
          populateHostAverages();
@@ -685,12 +756,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
 
       const publicKey = "<?php echo htmlspecialchars($hostdata['public_key'], ENT_QUOTES, 'UTF-8'); ?>";
 
-      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-         new bootstrap.Tooltip(el, {
-            container: 'body',
-            customClass: 'sg-tooltip'
-         });
-      });
+      initTooltips(document);
 
       function updateFormFields() {
          const selectedService = serviceInput.value.trim();

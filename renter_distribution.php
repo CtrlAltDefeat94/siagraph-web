@@ -43,6 +43,9 @@ render_header(
                                 </div>
                             </div>
                         </div>
+                        <p class="mb-0 mt-3 pt-2 text-end" style="font-size:0.9rem; opacity:0.9; border-top:1px solid rgba(255,255,255,0.12);">
+                            <sup>*</sup> Based on blockchain contract data; values are estimates.
+                        </p>
                     </div>
                 </section>
             </div>

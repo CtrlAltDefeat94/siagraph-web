@@ -77,7 +77,7 @@ $rawConnection->close();
 $response = [
     'largest_sizes' => $sizes,
     'total_filesize' => $totalFilesize,
-    'total_renters' => $totalRenters,
+    'total_renters' => $totalRenters
 ];
 
 $jsonResult = json_encode($response);

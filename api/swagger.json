@@ -1346,6 +1346,75 @@
           }
         }
       }
+    },
+    "/storage/renter_distribution": {
+      "get": {
+        "summary": "Renter Storage Distribution",
+        "description": "Returns the largest renter storage totals (by utilized filesize) and aggregate totals. Data is derived from on-chain contract records and should be considered an estimate. The total sum may be different from the sum reported by Hosts.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Number of top renters to return. Defaults to 10.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "largest_sizes": {
+                      "type": "array",
+                      "description": "Largest renter utilized filesizes in bytes, sorted descending.",
+                      "items": {
+                        "type": "integer"
+                      }
+                    },
+                    "total_filesize": {
+                      "type": "integer",
+                      "description": "Sum of utilized filesize for all renters in bytes."
+                    },
+                    "total_renters": {
+                      "type": "integer",
+                      "description": "Number of renters represented in the aggregation."
+                    },
+                    "disclaimer": {
+                      "type": "string",
+                      "description": "Estimation caveat for this dataset."
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Example response",
+                    "value": {
+                      "largest_sizes": [
+                        193584918219,
+                        176440021002,
+                        165930882140
+                      ],
+                      "total_filesize": 943296183221,
+                      "total_renters": 237,
+                      "disclaimer": "Based on blockchain contract data; values are estimates and not exact ground truth."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error."
+          }
+        }
+      }
     }
   }
 }
