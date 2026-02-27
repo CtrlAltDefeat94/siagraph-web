@@ -1,0 +1,38 @@
+.host-troubleshooter-search {
+  max-width: 800px;
+}
+
+.host-troubleshooter-recent,
+.host-troubleshooter-results {
+  display: none;
+}
+
+.host-troubleshooter-status-col {
+  flex: 0 0 360px;
+  max-width: 360px;
+}
+
+.host-troubleshooter-info-col {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+#hostInfo {
+  table-layout: fixed;
+}
+
+.host-troubleshooter-progress {
+  height: 24px;
+}
+
+#storageBar {
+  width: 0%;
+}
+
+@media (max-width: 991.98px) {
+  .host-troubleshooter-status-col,
+  .host-troubleshooter-info-col {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+}

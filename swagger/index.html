@@ -6,20 +6,83 @@
   <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css">
 </head>
 <body>
+  <div style="padding:12px 16px; background:#111827; color:#fff; display:flex; gap:8px; align-items:center;">
+    <label for="specSelect" style="font-family: sans-serif; font-size:14px;">API Spec:</label>
+    <select id="specSelect" style="padding:4px 8px;">
+      <option value="v2">SiaGraph API v2 (Canonical)</option>
+      <option value="v1">SiaGraph API v1 (Legacy)</option>
+    </select>
+    <span id="specStatus" style="font-family:sans-serif; font-size:12px; opacity:0.9;"></span>
+  </div>
   <div id="swagger-ui"></div>
   <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
   <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-standalone-preset.js"></script>
   <script>
-    window.onload = function() {
-      SwaggerUIBundle({
-        url: '/api/swagger.json',
-        dom_id: '#swagger-ui',
-        presets: [
-          SwaggerUIBundle.presets.apis,
-          SwaggerUIStandalonePreset
-        ],
-        layout: 'BaseLayout'
+    window.onload = function () {
+      const select = document.getElementById('specSelect');
+      const specStatus = document.getElementById('specStatus');
+      const params = new URLSearchParams(window.location.search);
+      const specParam = params.get('spec');
+      const selectedKey = specParam === 'v1' ? 'v1' : 'v2';
+      select.value = selectedKey;
+
+      const path = window.location.pathname;
+      const rootPath = path
+        .replace(/\/swagger\/index\.html$/, '')
+        .replace(/\/swagger\/$/, '')
+        .replace(/\/swagger$/, '');
+
+      function buildSpecUrl(key) {
+        const rel = key === 'v1' ? '/api/v1/swagger.json' : '/api/v2/swagger.json';
+        const base = rootPath === '' ? '' : rootPath;
+        return base + rel;
+      }
+
+      select.addEventListener('change', function () {
+        const nextSpec = select.value === 'v1' ? 'v1' : 'v2';
+        const url = new URL(window.location.href);
+        url.searchParams.set('spec', nextSpec);
+        window.location.href = url.toString();
       });
+
+      const specUrl = buildSpecUrl(selectedKey);
+      specStatus.textContent = 'loading ' + specUrl;
+      fetch(specUrl, { cache: 'no-store' })
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error('Failed to load spec: HTTP ' + response.status);
+          }
+          return response.json();
+        })
+        .then(function (specDoc) {
+          const title = ((specDoc || {}).info || {}).title || '';
+          if (selectedKey === 'v2' && !/v2/i.test(title)) {
+            throw new Error('Loaded spec does not appear to be V2 (title: ' + title + ')');
+          }
+          if (selectedKey === 'v1' && /v2/i.test(title)) {
+            throw new Error('Loaded spec does not appear to be V1 (title: ' + title + ')');
+          }
+          specStatus.textContent = selectedKey.toUpperCase() + ' loaded: ' + title;
+          SwaggerUIBundle({
+            spec: specDoc,
+            dom_id: '#swagger-ui',
+            deepLinking: true,
+            presets: [
+              SwaggerUIBundle.presets.apis,
+              SwaggerUIStandalonePreset
+            ],
+            layout: 'StandaloneLayout'
+          });
+        })
+        .catch(function (error) {
+          specStatus.textContent = 'failed: ' + specUrl;
+          const el = document.getElementById('swagger-ui');
+          el.innerHTML = '<div style=\"padding:16px;font-family:sans-serif;color:#b91c1c;\">Unable to load API spec from <code>' +
+            specUrl +
+            '</code><br>' +
+            error.message +
+            '</div>';
+        });
     };
   </script>
 </body>

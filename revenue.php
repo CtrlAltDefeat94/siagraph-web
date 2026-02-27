@@ -7,6 +7,7 @@ $graphConfigs = require 'include/graph_configs.php';
 
 use Siagraph\Utils\ApiClient;
 use Siagraph\Utils\Locale;
+use Siagraph\Utils\CurrencyDisplay;
 
 // fetch latest aggregates
 $aggEndpoint = '/api/v1/daily/aggregates';
@@ -14,7 +15,7 @@ $latestData = ApiClient::fetchJson($aggEndpoint);
 $dataError = !is_array($latestData);
 $latest = $dataError ? [] : end($latestData);
 $prev = [];
-$currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
+$currencyCookie = CurrencyDisplay::selectedCurrency();
 $asOf = !$dataError && isset($latest['date']) ? $latest['date'] : null;
 $asOfText = $asOf ? ('Daily value as of ' . \Siagraph\Utils\Locale::date($asOf)) : 'Daily value';
 
@@ -33,13 +34,14 @@ render_header('SiaGraph - Revenue & Burn');
                 $rev = $latest['contract_revenue'] ?? null;
                 $value = 'N/A';
                 if ($rev) {
-                    if ($currencyCookie === 'sc') {
-                        $value = Locale::decimal(($rev['sc'] ?? 0)/1e24, 2) . ' SC';
-                    } elseif ($currencyCookie === 'usd') {
-                        $value = 'USD ' . Locale::decimal(($rev['usd'] ?? 0), 2);
-                    } else {
-                        $value = 'EUR ' . Locale::decimal(($rev['eur'] ?? 0), 2);
-                    }
+                    $value = CurrencyDisplay::formatMonetary([
+                        'scValue' => isset($rev['sc']) ? ((float) $rev['sc'] / 1e24) : null,
+                        'fiatValue' => isset($rev[$currencyCookie]) ? (float) $rev[$currencyCookie] : null,
+                        'currency' => $currencyCookie,
+                        'date' => $asOf,
+                        'decimals' => 2,
+                        'scDecimals' => 2,
+                    ]);
                 }
                 render_stat_card([
                     'icon' => 'bi bi-cash-coin',
@@ -55,13 +57,14 @@ render_header('SiaGraph - Revenue & Burn');
                 $burn = $latest['burned_funds'] ?? null;
                 $value2 = 'N/A';
                 if ($burn) {
-                    if ($currencyCookie === 'sc') {
-                        $value2 = Locale::decimal(($burn['sc'] ?? 0)/1e24, 2) . ' SC';
-                    } elseif ($currencyCookie === 'usd') {
-                        $value2 = 'USD ' . Locale::decimal(($burn['usd'] ?? 0), 2);
-                    } else {
-                        $value2 = 'EUR ' . Locale::decimal(($burn['eur'] ?? 0), 2);
-                    }
+                    $value2 = CurrencyDisplay::formatMonetary([
+                        'scValue' => isset($burn['sc']) ? ((float) $burn['sc'] / 1e24) : null,
+                        'fiatValue' => isset($burn[$currencyCookie]) ? (float) $burn[$currencyCookie] : null,
+                        'currency' => $currencyCookie,
+                        'date' => $asOf,
+                        'decimals' => 2,
+                        'scDecimals' => 2,
+                    ]);
                 }
                 render_stat_card([
                     'icon' => 'bi bi-fire',

@@ -12,8 +12,9 @@ $graphConfigs = require 'include/graph_configs.php';
 use Siagraph\Utils\Cache;
 use Siagraph\Utils\Formatter;
 use Siagraph\Utils\ApiClient;
+use Siagraph\Utils\CurrencyDisplay;
 
-$currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
+$currencyCookie = CurrencyDisplay::selectedCurrency();
 $recentstats = Cache::getCache(Cache::RECENT_STATS_KEY);
 if ($recentstats) {
     $recentstats = json_decode($recentstats, true);
@@ -56,7 +57,18 @@ foreach ($yearData as $y => $vals) {
                 <i class="bi bi-currency-bitcoin me-1"></i>
                 <span>Price:</span>
                 <span class="fw-bold">
-                    <?php echo strtoupper($currencyCookie) . ' ' . (!empty($recentstats) ? $recentstats['actual']['coin_price'][$currencyCookie] : 0); ?>
+                    <?php
+                    $coinFiat = !empty($recentstats) && isset($recentstats['actual']['coin_price'][$currencyCookie])
+                        ? (float) $recentstats['actual']['coin_price'][$currencyCookie]
+                        : null;
+                    echo CurrencyDisplay::formatMonetary([
+                        'scValue' => 1,
+                        'fiatValue' => $coinFiat,
+                        'currency' => $currencyCookie,
+                        'decimals' => 6,
+                        'scDecimals' => 0,
+                    ]);
+                    ?>
                 </span>
             </div>
             <section class="graph-container">

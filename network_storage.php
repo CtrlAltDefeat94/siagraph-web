@@ -18,6 +18,19 @@ $dataError = !is_array($latestData);
 $latest = $dataError ? [] : end($latestData);
 $asOf = !$dataError && isset($latest['date']) ? $latest['date'] : null;
 $prev = [];
+$athData = ApiClient::fetchJson('/api/v1/storage/ath', true, 'day');
+$athPayload = is_array($athData) && isset($athData['utilized_storage']) && is_array($athData['utilized_storage'])
+    ? $athData['utilized_storage']
+    : [];
+$daysSinceAth = isset($athPayload['days_since_ath']) && $athPayload['days_since_ath'] !== null
+    ? (string) $athPayload['days_since_ath']
+    : 'N/A';
+$athBytes = isset($athPayload['ath_bytes']) && $athPayload['ath_bytes'] !== null
+    ? Locale::decimal(((float) $athPayload['ath_bytes']) / 1e15, 2) . ' PB'
+    : 'N/A';
+$athDate = isset($athPayload['ath_date']) && $athPayload['ath_date'] !== null
+    ? (string) $athPayload['ath_date']
+    : null;
 ?>
 <?php render_header("SiaGraph - Storage"); ?>
 <section id="main-content" class="sg-container">
@@ -51,26 +64,26 @@ $prev = [];
                 ]);
                 ?>
             </div>
-            <div class="sg-container__column sg-container__column--one-fourth" id="athBadgeContainer" style="display:none;">
+            <div class="sg-container__column sg-container__column--one-fourth" id="athBadgeContainer" <?php if ($athDate): ?>title="<?php echo htmlspecialchars('ATH set on ' . $athDate); ?>"<?php endif; ?>>
                 <div class="card">
                     <div class="card__content">
                         <div class="mb-1 text-gray-400 text-sm">
                             <i class="bi bi-flag me-1"></i>Days since ATH
                         </div>
                         <div class="flex items-center justify-start">
-                            <span id="athBadgeValue" class="glanceNumber text-2xl font-semibold">--</span>
+                            <span id="athBadgeValue" class="glanceNumber text-2xl font-semibold"><?php echo htmlspecialchars($daysSinceAth); ?></span>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="sg-container__column sg-container__column--one-fourth" id="athSizeContainer" style="display:none;">
+            <div class="sg-container__column sg-container__column--one-fourth" id="athSizeContainer" <?php if ($athDate): ?>title="<?php echo htmlspecialchars('ATH set on ' . $athDate); ?>"<?php endif; ?>>
                 <div class="card">
                     <div class="card__content">
                         <div class="mb-1 text-gray-400 text-sm">
                             <i class="bi bi-trophy me-1"></i>ATH Utilized Storage
                         </div>
                         <div class="flex items-center justify-start">
-                            <span id="athSizeValue" class="glanceNumber text-2xl font-semibold">--</span>
+                            <span id="athSizeValue" class="glanceNumber text-2xl font-semibold"><?php echo htmlspecialchars($athBytes); ?></span>
                         </div>
                     </div>
                 </div>
@@ -127,7 +140,7 @@ $prev = [];
                     'line',
                     $intervalDefault,
                     true,
-                    'true',
+                    'false',
                     $months,
                     'false',
                     'percentage'
@@ -148,7 +161,7 @@ $prev = [];
                     <button id="scaleToggle" class="btn btn-primary btn-sm">Switch to Logarithmic Forecast</button>
                 </div>
                 <div class="graph-container">
-                    <canvas id="forecastChart" height="500" style="max-height:80vh !important;width:100% !important;"></canvas>
+                    <canvas id="forecastChart" class="sg-chart-canvas"></canvas>
                 </div>
                 </div>
             </section>
@@ -303,38 +316,6 @@ $prev = [];
                 });
             } catch (e) {
                 console.error('Failed to render storage forecast', e);
-            }
-        });
-        document.addEventListener('DOMContentLoaded', async function () {
-            const container = document.getElementById('athBadgeContainer');
-            const valueEl = document.getElementById('athBadgeValue');
-            const sizeContainer = document.getElementById('athSizeContainer');
-            const sizeValueEl = document.getElementById('athSizeValue');
-            if (!container || !valueEl) {
-                return;
-            }
-            try {
-                const response = await fetchWithCache('/api/v1/storage/ath');
-                const payload = response && response.utilized_storage ? response.utilized_storage : null;
-                if (!payload) {
-                    return;
-                }
-                if (payload.days_since_ath !== null && payload.days_since_ath !== undefined) {
-                    valueEl.textContent = payload.days_since_ath;
-                    container.style.display = 'block';
-                    if (payload.ath_date) {
-                        container.title = `ATH set on ${payload.ath_date}`;
-                    }
-                }
-                if (sizeContainer && sizeValueEl && payload.ath_bytes !== null && payload.ath_bytes !== undefined) {
-                    sizeValueEl.textContent = formatPB(payload.ath_bytes);
-                    sizeContainer.style.display = 'block';
-                    if (payload.ath_date) {
-                        sizeContainer.title = `ATH set on ${payload.ath_date}`;
-                    }
-                }
-            } catch (e) {
-                console.error('Failed to load ATH badge', e);
             }
         });
     </script>

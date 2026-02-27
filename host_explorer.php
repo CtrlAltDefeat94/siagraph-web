@@ -4,7 +4,9 @@ require_once 'include/layout.php';
 
 $dataError = false;
 
-render_header('SiaGraph - Host Explorer');
+render_header('SiaGraph - Host Explorer', 'SiaGraph - Host Explorer', [
+    '<link rel="stylesheet" href="' . htmlspecialchars(versioned_asset_url('css/pages/host-explorer.css'), ENT_QUOTES, 'UTF-8') . '">'
+]);
 ?>
     <?php if ($dataError): ?>
         <p class="text-center text-muted">Host data unavailable.</p>
@@ -86,11 +88,11 @@ render_header('SiaGraph - Host Explorer');
                 </div>
                 <div class="card__content">
                     <div class="overflow-x-auto">
-                        <table id="hostTable" class="table-clean text-white min-w-full" style="visibility: hidden;">
+                        <table id="hostTable" class="table-clean text-white min-w-full table-loading">
                             <thead></thead>
                         <!-- Table body -->
                         <tbody id="hostTableBody">
-                            <!-- Table rows will be dynamically populated here -->
+                            <tr><td colspan="7" class="px-4 py-3"><span class="skeleton-line"></span></td></tr>
                         </tbody>
                         </table>
                         <!-- Pagination -->
@@ -115,6 +117,8 @@ render_header('SiaGraph - Host Explorer');
         let activeRequestId = 0;
         let lastIsMobile = false;
         let lastViewportIsMobile = window.innerWidth < 768;
+        const cookieMatch = document.cookie.match(/(?:^|; )currency=([^;]+)/i);
+        let selectedCurrency = (cookieMatch && cookieMatch[1] ? decodeURIComponent(cookieMatch[1]) : 'eur').toLowerCase();
         window.currentHosts = null;
         window.currentPagination = null;
 
@@ -190,6 +194,17 @@ render_header('SiaGraph - Host Explorer');
             document.getElementById('acceptingContractsFilter').addEventListener('change', applyFilters);
             document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
             document.getElementById('filtersToggle').addEventListener('click', toggleFiltersPanel);
+            document.addEventListener('currencyChange', function (e) {
+                selectedCurrency = String((e && e.detail) || 'eur').toLowerCase();
+                if (window.currentHosts) {
+                    displayData(window.currentHosts, window.currentPagination || { total_pages: 1, current_page: 1, per_page: 15 });
+                }
+            });
+            document.addEventListener('globalRatesReady', function () {
+                if (window.currentHosts) {
+                    displayData(window.currentHosts, window.currentPagination || { total_pages: 1, current_page: 1, per_page: 15 });
+                }
+            });
 
             // Render header for current viewport
             lastIsMobile = isCompactHostsView();
@@ -402,6 +417,25 @@ render_header('SiaGraph - Host Explorer');
             return Number(host.used_storage_diff_available) === 1;
         }
 
+        function hostPriceDisplay(storagePriceRaw) {
+            const scValue = Number(storagePriceRaw) / (10 ** 12) * 4320;
+            if (!Number.isFinite(scValue)) return 'N/A';
+            const rate = window.currencyDisplay && typeof window.currencyDisplay.getRateForDate === 'function'
+                ? window.currencyDisplay.getRateForDate(null, selectedCurrency)
+                : null;
+            if (window.currencyDisplay && typeof window.currencyDisplay.formatFiatWithScTooltip === 'function') {
+                return window.currencyDisplay.formatFiatWithScTooltip({
+                    scValue: scValue,
+                    currency: selectedCurrency,
+                    rate: rate,
+                    decimals: 2,
+                    scDecimals: 2
+                });
+            }
+            const loc = (typeof window !== 'undefined' && window.APP_LOCALE) ? window.APP_LOCALE : undefined;
+            return `${Number(scValue).toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SC`;
+        }
+
         function getStorageDiffReason(host) {
             if (host.used_storage_diff_reason === 'missing_latest') {
                 return 'Latest hourly sample is unavailable.';
@@ -426,12 +460,12 @@ render_header('SiaGraph - Host Explorer');
 
         function showTable() {
             const tbl = document.getElementById('hostTable');
-            if (tbl) tbl.style.visibility = 'visible';
+            if (tbl) tbl.classList.remove('table-loading');
         }
 
         function hideTable() {
             const tbl = document.getElementById('hostTable');
-            if (tbl) tbl.style.visibility = 'hidden';
+            if (tbl) tbl.classList.add('table-loading');
         }
 
         function renderTableHeader() {
@@ -452,7 +486,7 @@ render_header('SiaGraph - Host Explorer');
                     <tr>
                         <th class="px-4 py-2 w-8 num">#</th>
                         <th class="px-4 py-2 w-80">Host</th>
-                        <th class="px-4 py-2 w-32">Country</th>
+                        <th class="px-4 py-2 w-38">Country</th>
                         <th class="px-4 py-2 w-32 num">Used Storage<span class="text-xs text-gray-400 ml-1" title="24h delta is recalculated hourly.">(24h)</span></th>
                         <th class="px-4 py-2 w-28 num">Total Storage</th>
                         <th class="px-4 py-2 w-24 num text-nowrap">Price</th>
@@ -487,7 +521,7 @@ render_header('SiaGraph - Host Explorer');
                 const loc = (typeof window !== 'undefined' && window.APP_LOCALE) ? window.APP_LOCALE : undefined;
                 const usedTB = Number((host.used_storage / (1000 * 1000 * 1000 * 1000)).toFixed(2)).toLocaleString(loc);
                 const totalTB = Number((host.total_storage / (1000 * 1000 * 1000 * 1000)).toFixed(2)).toLocaleString(loc);
-                const priceSC = Math.round(host.storage_price / (10 ** 12) * 4320).toLocaleString(loc);
+                const priceText = hostPriceDisplay(host.storage_price);
                 const diffAvailable = isStorageDiffAvailable(host);
                 const growthGB = diffAvailable ? Math.round(Number(host.used_storage_diff) / (1000 * 1000 * 1000)) : 0;
                 const growthLabel = diffAvailable
@@ -510,7 +544,7 @@ render_header('SiaGraph - Host Explorer');
                                 <div><span class="metric-label">Used</span><span>${usedTB} TB</span></div>
                                 <div><span class="metric-label">Total</span><span>${totalTB} TB</span></div>
                                 <div><span class="metric-label">24h Growth</span><span class="${growthClass}"${growthTitle}>${growthLabel}</span></div>
-                                <div><span class="metric-label">Price</span><span>${priceSC} SC</span></div>
+                                <div><span class="metric-label">Price</span><span>${priceText}</span></div>
                                 <div><span class="metric-label">Score</span><span>${renderScore(host.total_score)}</span></div>
                             </div>
                         </td>
@@ -528,7 +562,7 @@ render_header('SiaGraph - Host Explorer');
                             <span id="storage-diff-${host.host_id}" class="text-xs text-gray-400 ml-1"></span>
                         </td>
                         <td class="border px-4 py-2 num">${totalTB} TB</td>
-                        <td class="border px-4 py-2 num text-nowrap">${priceSC} SC</td>
+                        <td class="border px-4 py-2 num text-nowrap">${priceText}</td>
                         <td class="border px-4 py-2 num">${renderScore(host.total_score)}</td>
                     `;
                 }
@@ -760,222 +794,4 @@ render_header('SiaGraph - Host Explorer');
 
 
 
-<style>
-    /* Two-column layout: keep overall page width, give Hosts table a bit more room on md+ */
-    .host-layout{ display: grid; grid-template-columns: 1fr; align-items: start; }
-    .host-layout > .card { min-width: 0; }
-    @media (min-width: 768px){ /* md */
-        .host-layout{ grid-template-columns: clamp(210px, 15vw, 250px) minmax(0, 1fr); column-gap: 1rem; }
-        .filters-card { position: sticky; top: 1rem; }
-    }
-
-    .filters-toggle {
-        display: none;
-        width: 100%;
-        min-height: 2.5rem;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 999px;
-        color: #fff;
-        font-size: 0.875rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .hosts-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-        min-width: 0;
-    }
-
-    .hosts-toolbar__meta {
-        margin-left: 0;
-        white-space: normal;
-        flex: 1 1 14rem;
-        min-width: 0;
-    }
-
-    .hosts-toolbar__controls {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        width: auto;
-        justify-content: flex-end;
-        flex: 1 1 28rem;
-        min-width: 0;
-        flex-wrap: wrap;
-    }
-
-    .hosts-toolbar__sort {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        white-space: nowrap;
-    }
-
-    .hosts-toolbar__search {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        width: min(100%, 520px);
-        min-width: 0;
-        flex: 1 1 20rem;
-    }
-
-    #search { flex: 1 1 auto; min-width: 0; }
-
-    .card .card__content > .overflow-x-auto {
-        overflow-x: hidden;
-        min-width: 0;
-    }
-
-    #hostTable {
-        width: 100%;
-        min-width: 0;
-        table-layout: auto;
-    }
-
-    #hostTable th,
-    #hostTable td {
-        white-space: normal;
-        overflow-wrap: anywhere;
-        word-break: break-word;
-    }
-
-    #hostTable th.num,
-    #hostTable td.num {
-        white-space: nowrap;
-    }
-
-    #hostTable.compact-table .rank-col {
-        width: 3.5rem;
-        max-width: 3.5rem;
-    }
-
-    #hostTable.compact-table {
-        table-layout: fixed;
-    }
-
-    /* Ensure pagination is centered on all viewports */
-    #pagination { display: flex; justify-content: center; align-items: center; }
-    /* Keep pagination button content on one line and centered */
-    .pagination-button { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
-    .pagination-button:not(.pagination-button--digit) {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-
-    .pagination-button--invisible {
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    .pagination-button--digit { min-width: 44px; }
-
-    /* Prevent long net addresses from expanding the table */
-    .table-clean td:nth-child(2),
-    .table-clean .host-link {
-        overflow-wrap: anywhere; /* modern wrap for unbreakable strings */
-        word-break: break-word;  /* fallback */
-    }
-
-    .host-link {
-        color: #8ec5ff;
-        text-decoration: none;
-    }
-
-    .host-link::after {
-        content: " \2192";
-        opacity: 0.7;
-        font-size: 0.85em;
-    }
-
-    .host-link:hover,
-    .host-link:focus-visible {
-        color: #b3dbff;
-        opacity: 1;
-    }
-
-    .mobile-metrics {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 0.2rem;
-    }
-
-    .mobile-metrics > div {
-        display: flex;
-        justify-content: space-between;
-        gap: 0.5rem;
-    }
-
-    .metric-label {
-        color: rgb(156 163 175);
-        margin-right: 0.5rem;
-    }
-
-    .metric-positive { color: #22c55e; }
-    .metric-negative { color: #ef4444; }
-    .metric-neutral { color: rgb(209 213 219); }
-    .metric-muted { color: rgb(156 163 175); }
-
-    /* Mobile refinements: tighter cards, edge-to-edge table, smaller pagination */
-    @media (max-width: 767.98px) {
-        /* Reduce card chrome to free space */
-        section.card { padding: 0.75rem; border-radius: 1rem; }
-        /* Container side padding */
-        #main-content.sg-container { padding-left: 0.75rem; padding-right: 0.75rem; gap: 1.5rem; }
-        .table-clean th, .table-clean td { padding-left: 0.5rem; padding-right: 0.5rem; }
-        /* Bleed the overflow container to the card edges */
-        .card .card__content > .overflow-x-auto { margin-left: -0.75rem; margin-right: -0.75rem; }
-        .hosts-toolbar { flex-direction: column; align-items: stretch; }
-        .hosts-toolbar__meta {
-            margin-left: 0;
-            white-space: normal;
-            flex: 0 0 auto;
-            min-height: 0;
-        }
-        .hosts-toolbar__meta:empty { display: none; }
-        .hosts-toolbar__controls {
-            flex-direction: column;
-            align-items: stretch;
-            justify-content: flex-start;
-            gap: 0.5rem;
-            flex: 0 0 auto;
-            min-height: 0;
-        }
-        .hosts-toolbar__sort { width: 100%; justify-content: space-between; }
-        .hosts-toolbar__sort select { flex: 1 1 auto; }
-        .hosts-toolbar__search {
-            width: 100%;
-            margin-left: 0;
-            flex: 0 0 auto;
-            flex-wrap: nowrap;
-            align-items: center;
-        }
-        .hosts-toolbar__search .button {
-            flex: 0 0 auto;
-            white-space: nowrap;
-        }
-        #search {
-            width: auto !important;
-            flex: 1 1 auto;
-            min-width: 0;
-        }
-        .filters-toggle { display: inline-flex; }
-        /* Pagination: wrap and shrink */
-        #pagination { display: flex; flex-wrap: wrap; gap: 0.25rem; }
-        .pagination-button { padding: 0.25rem 0.5rem; font-size: 0.875rem; margin-right: 0 !important; }
-        .pagination-button--digit { min-width: 36px; }
-    }
-
-    /* Tablet controls wrap cleanly */
-    @media (min-width: 768px) and (max-width: 1100px) {
-        .hosts-toolbar { align-items: flex-start; }
-        .hosts-toolbar__controls { flex-wrap: wrap; justify-content: flex-start; }
-        .hosts-toolbar__search { margin-left: 0; width: 100%; max-width: 100%; }
-    }
-</style>
 <?php render_footer(); ?>

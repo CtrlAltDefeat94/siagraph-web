@@ -67,7 +67,7 @@ function render_header(
         <?php foreach ($extra_head as $tag) { echo $tag; } ?>
     </head>
     <body class="d-flex flex-column min-vh-100">
-    <span aria-hidden="true" style="position:fixed;top:0;left:0;right:0;bottom:auto;height:64rem;pointer-events:none;z-index:-10;background:radial-gradient(49.63% 57.02% at 58.99% -7.2%, rgba(255,0,0,0.15) 39.4%, rgba(0,0,0,0) 100%)"></span>
+    <span aria-hidden="true" class="sg-page-glow"></span>
 	<?php include __DIR__ . '/header.html'; ?>
 	<main class="flex-grow-1">
 <?php }

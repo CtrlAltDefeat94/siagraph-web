@@ -12,4 +12,8 @@ $SETTINGS = array(
     "network" => "mainnet",
     "last_scan_host_online" => "12 HOUR",
     "siagraph_base_url" => "https://siagraph.info",
+    // Optional: secret used to sign v2 alert unsubscribe tokens
+    "alerts_unsubscribe_secret" => "",
+    // Optional: token lifetime in seconds (default 31536000 = 365 days)
+    "alerts_unsubscribe_ttl_seconds" => 31536000,
 );

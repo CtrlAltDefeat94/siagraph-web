@@ -7,12 +7,14 @@ require_once 'include/components/stat_card.php';
 require_once 'include/components/host_pricing_trends.php';
 use Siagraph\Utils\Formatter;
 use Siagraph\Utils\ApiClient;
+use Siagraph\Utils\CurrencyDisplay;
 $months = 6; // default visible range; slider will cover all data
 $data = ApiClient::fetchJson('/api/v1/daily/host_prices');
-$currencyCookie = isset($_COOKIE['currency']) ? strtolower($_COOKIE['currency']) : 'eur';
+$currencyCookie = CurrencyDisplay::selectedCurrency();
 $dataError = !is_array($data);
 $latest = $dataError ? [] : end($data);
 $asOf = !$dataError && isset($latest['date']) ? $latest['date'] : null;
+$ratesByDate = $asOf ? CurrencyDisplay::loadDailyRates($asOf, $asOf) : [];
 ?>
 <?php render_header('SiaGraph - Host Pricing'); ?>
 <section id="main-content" class="sg-container">
@@ -30,7 +32,17 @@ $asOf = !$dataError && isset($latest['date']) ? $latest['date'] : null;
             render_stat_card([
                 'icon' => 'bi bi-hdd-fill',
                 'label' => 'Average Storage Price',
-                'value' => isset($latest['avg_storage_price']) ? Formatter::formatSiacoins($latest['avg_storage_price']/1e12) : 'N/A',
+                'value' => isset($latest['avg_storage_price'])
+                    ? CurrencyDisplay::formatMonetary([
+                        'scValue' => ((float) $latest['avg_storage_price'] / 1e12) * 4320,
+                        'currency' => $currencyCookie,
+                        'date' => $asOf,
+                        'ratesByDate' => $ratesByDate,
+                        'decimals' => 2,
+                        'scDecimals' => 2,
+                        'suffix' => '/TB/Month',
+                    ])
+                    : 'N/A',
                 'context' => $asOf ? ('Daily snapshot as of ' . $asOf) : 'Daily snapshot',
             ]);
             ?>
@@ -40,7 +52,17 @@ $asOf = !$dataError && isset($latest['date']) ? $latest['date'] : null;
             render_stat_card([
                 'icon' => 'bi bi-upload',
                 'label' => 'Average Upload Price',
-                'value' => isset($latest['avg_upload_price']) ? Formatter::formatSiacoins($latest['avg_upload_price']/1e12) : 'N/A',
+                'value' => isset($latest['avg_upload_price'])
+                    ? CurrencyDisplay::formatMonetary([
+                        'scValue' => (float) $latest['avg_upload_price'] / 1e12,
+                        'currency' => $currencyCookie,
+                        'date' => $asOf,
+                        'ratesByDate' => $ratesByDate,
+                        'decimals' => 2,
+                        'scDecimals' => 2,
+                        'suffix' => '/TB',
+                    ])
+                    : 'N/A',
                 'context' => $asOf ? ('Daily snapshot as of ' . $asOf) : 'Daily snapshot',
             ]);
             ?>
@@ -50,7 +72,17 @@ $asOf = !$dataError && isset($latest['date']) ? $latest['date'] : null;
             render_stat_card([
                 'icon' => 'bi bi-download',
                 'label' => 'Average Download Price',
-                'value' => isset($latest['avg_download_price']) ? Formatter::formatSiacoins($latest['avg_download_price']/1e12) : 'N/A',
+                'value' => isset($latest['avg_download_price'])
+                    ? CurrencyDisplay::formatMonetary([
+                        'scValue' => (float) $latest['avg_download_price'] / 1e12,
+                        'currency' => $currencyCookie,
+                        'date' => $asOf,
+                        'ratesByDate' => $ratesByDate,
+                        'decimals' => 2,
+                        'scDecimals' => 2,
+                        'suffix' => '/TB',
+                    ])
+                    : 'N/A',
                 'context' => $asOf ? ('Daily snapshot as of ' . $asOf) : 'Daily snapshot',
             ]);
             ?>

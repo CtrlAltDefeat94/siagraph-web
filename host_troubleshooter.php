@@ -1,13 +1,15 @@
 <?php require_once 'bootstrap.php'; ?>
 <?php require_once 'include/layout.php'; ?>
-<?php render_header('SiaGraph - Host Troubleshooter'); ?>
+<?php render_header('SiaGraph - Host Troubleshooter', 'SiaGraph - Host Troubleshooter', [
+    '<link rel="stylesheet" href="' . htmlspecialchars(versioned_asset_url('css/pages/host-troubleshooter.css'), ENT_QUOTES, 'UTF-8') . '">'
+]); ?>
 <section id="main-content" class="sg-container">
     <h1 class="sg-container__heading text-center mb-2"><i class="bi bi-wrench me-2"></i>Host Troubleshooter</h1>
 
     <!-- Search -->
     <div class="sg-container__row mb-4">
         <div class="sg-container__row-content sg-container__row-content--center">
-            <div class="sg-container__column" style="max-width: 800px;">
+            <div class="sg-container__column host-troubleshooter-search">
                 <section class="card">
                     <h2 class="card__heading">Lookup a Host</h2>
                     <div class="card__content">
@@ -21,7 +23,7 @@
                         </form>
                     </div>
                 </section>
-                <section id="recentHosts" class="card mt-3" style="display: none;">
+                <section id="recentHosts" class="card mt-3 host-troubleshooter-recent">
                     <h2 class="card__heading">Recently Searched Hosts</h2>
                     <div class="card__content">
                         <ul id="recentHostList" class="mb-0"></ul>
@@ -32,22 +34,22 @@
     </div>
 
     <!-- Results -->
-    <div id="resultsSection" style="display: none;">
+    <div id="resultsSection" class="host-troubleshooter-results">
         <div id="warningsErrors" class="mb-4"></div>
 
         <div class="sg-container__row mb-4">
             <div class="sg-container__row-content">
-                <div class="sg-container__column" style="flex:0 0 360px;max-width:360px">
+                <div class="sg-container__column host-troubleshooter-status-col">
                     <section class="card">
                         <h2 class="card__heading">Connection Status</h2>
                         <div class="card__content" id="connectionStatus"></div>
                     </section>
                 </div>
-                <div class="sg-container__column" style="flex:1 1 0%;min-width:0">
+                <div class="sg-container__column host-troubleshooter-info-col">
                     <section class="card">
                         <h2 class="card__heading">Host Information</h2>
                         <div class="card__content">
-                            <table class="table table-dark table-clean" style="table-layout:fixed" id="hostInfo"></table>
+                            <table class="table table-dark table-clean" id="hostInfo"></table>
                         </div>
                     </section>
                 </div>
@@ -60,8 +62,8 @@
                     <section class="card">
                         <h2 class="card__heading">Storage Usage</h2>
                         <div class="card__content">
-                            <div class="progress" style="height: 24px;">
-                                <div id="storageBar" class="progress-bar" role="progressbar" style="width: 0%;">0%</div>
+                            <div class="progress host-troubleshooter-progress">
+                                <div id="storageBar" class="progress-bar" role="progressbar">0%</div>
                             </div>
                             <div id="storageStats" class="text-center text-muted mt-2"></div>
                         </div>
@@ -428,18 +430,22 @@
       return `<li><a href="?${param}=${encodeURIComponent(item.value)}">${item.value}</a></li>`;
     }
     ).join("");
-    container.style.display = '';
+    container.style.display = 'block';
   }
 
   async function applyFiatValues() {
     const currency = getCookieSafe("currency") || "eur";
-    let rate = 1;
+    let rate = null;
     if (currency !== 'sc') {
       try {
-        const rateText = await fetchCachedOrDirect(`https://explorer.siagraph.info/api/exchange-rate/siacoin/${currency}`, {}, 86400000, 'text');
-        rate = parseFloat(rateText);
-
-        if (isNaN(rate)) {
+        if (window.currencyDisplay && typeof window.currencyDisplay.getRateForDate === 'function') {
+          rate = window.currencyDisplay.getRateForDate(null, currency);
+        }
+        if (!Number.isFinite(Number(rate))) {
+          const rateText = await fetchCachedOrDirect(`https://explorer.siagraph.info/api/exchange-rate/siacoin/${currency}`, {}, 86400000, 'text');
+          rate = parseFloat(rateText);
+        }
+        if (!Number.isFinite(Number(rate))) {
           return;
         }
       } catch (err) {
@@ -450,9 +456,24 @@
     document.querySelectorAll('.fiat-value').forEach(el => {
       const scRaw = parseFloat(el.getAttribute('data-sc') || "0");
       if (!isNaN(scRaw)) {
+        if (currency === 'sc') {
+          el.textContent = '';
+          return;
+        }
+        if (window.currencyDisplay && typeof window.currencyDisplay.formatFiatWithScTooltip === 'function') {
+          el.innerHTML = window.currencyDisplay.formatFiatWithScTooltip({
+            scValue: scRaw,
+            currency: currency,
+            rate: rate,
+            decimals: 2,
+            scDecimals: 2
+          });
+          return;
+        }
         const fiat = scRaw * rate;
-        el.textContent = `${currency.toUpperCase()} ${fiat >= 0.01 ? fiat.toFixed(2) : fiat.toFixed(5)}`;
-
+        const text = `${currency.toUpperCase()} ${fiat >= 0.01 ? fiat.toFixed(2) : fiat.toFixed(5)}`;
+        el.textContent = text;
+        el.title = `SC value: ${scRaw.toFixed(2)} SC`;
       }
     });
   }

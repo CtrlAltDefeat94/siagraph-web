@@ -160,7 +160,9 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
 }
 
 ?>
-<?php render_header("SiaGraph - Host Benchmarks"); ?>
+<?php render_header("SiaGraph - Host Benchmarks", "SiaGraph - Host Benchmarks", [
+    '<link rel="stylesheet" href="' . htmlspecialchars(versioned_asset_url('css/pages/host-benchmarks.css'), ENT_QUOTES, 'UTF-8') . '">'
+]); ?>
 
     <!-- Main Content Section -->
     <section id="main-content" class="sg-container masonry-container">
@@ -179,7 +181,7 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
 
         <div class="d-flex flex-wrap mb-3 align-items-center">
             <label for="nodeSelect" class="form-label me-2 mb-0">Select Node:</label>
-            <select id="nodeSelect" class="form-select" style="width: auto;">
+            <select id="nodeSelect" class="form-select host-benchmark-node-select">
                 <?php
                 // Populate dropdown options for each node group
                 foreach ($groupedBenchmarks as $node => $benchmarks) {
@@ -221,9 +223,9 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
             <h2 class="card__heading">Benchmarks of the past 7 days
             </h2>
             <div class="overflow-x-auto">
-                <table id="hostTable" class="table table-dark table-clean text-white min-w-full border-collapse" style="visibility: hidden;">
+                <table id="hostTable" class="table table-dark table-clean text-white min-w-full border-collapse table-loading">
                     <thead></thead>
-                    <tbody id="hostTableBody"></tbody>
+                    <tbody id="hostTableBody"><tr><td colspan="5" class="px-4 py-3"><span class="skeleton-line"></span></td></tr></tbody>
                 </table>
             </div>
         </section>
@@ -250,12 +252,12 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
 
         function showTable() {
             const tbl = document.getElementById('hostTable');
-            if (tbl) tbl.style.visibility = 'visible';
+            if (tbl) tbl.classList.remove('table-loading');
         }
 
         function hideTable() {
             const tbl = document.getElementById('hostTable');
-            if (tbl) tbl.style.visibility = 'hidden';
+            if (tbl) tbl.classList.add('table-loading');
         }
 
         function escapeHtml(value) {
@@ -775,168 +777,5 @@ function fetchData($host_id, $page, $sortCriteria, $showInactive, $result, $sort
             });
         })();
     </script>
-
-    <style>
-        .benchmark-chart-wrap {
-            position: relative;
-            height: 400px;
-            min-height: 280px;
-            width: 100%;
-        }
-
-        .benchmark-chart-canvas {
-            width: 100% !important;
-            height: 100% !important;
-            display: block;
-        }
-
-        .table-container .overflow-x-auto {
-            max-height: none;
-            overflow-y: visible;
-            overflow-x: hidden;
-            min-width: 0;
-        }
-
-        #hostTable {
-            width: 100%;
-            min-width: 0;
-            table-layout: auto;
-        }
-
-        #hostTable th,
-        #hostTable td {
-            white-space: normal;
-            overflow-wrap: anywhere;
-            word-break: break-word;
-            min-width: 0;
-        }
-
-        #hostTable .num {
-            white-space: nowrap;
-        }
-
-        #hostTable thead th {
-            position: sticky;
-            top: 0;
-            z-index: 2;
-            background-color: rgba(24, 24, 24, 0.96);
-        }
-
-        #hostTable .table-sort-btn {
-            width: 100%;
-            text-align: left;
-            background: transparent;
-            border: 0;
-            color: inherit;
-            padding: 0;
-            font-weight: inherit;
-            line-height: 1.2;
-        }
-
-        #hostTable .table-sort-btn.num {
-            text-align: right;
-        }
-
-        #hostTable .table-sort-btn:hover {
-            text-decoration: underline;
-        }
-
-        #hostTable .timestamp-col {
-            width: 170px;
-        }
-
-        #hostTable .node-col {
-            width: 100px;
-        }
-
-        #hostTable .upload-col,
-        #hostTable .download-col,
-        #hostTable .ttfb-col {
-            width: 130px;
-        }
-
-        #hostTable .success-col {
-            width: 240px;
-        }
-
-        #hostTable.compact-table {
-            table-layout: fixed;
-        }
-
-        #hostTable.compact-table .timestamp-col {
-            width: 8.5rem;
-            max-width: 8.5rem;
-        }
-
-        #hostTable.compact-table .node-col {
-            width: auto;
-        }
-
-        #hostTable .status-pill {
-            display: inline-block;
-            padding: 0.15rem 0.5rem;
-            border-radius: 9999px;
-            font-size: 0.8rem;
-            line-height: 1.2;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            vertical-align: middle;
-        }
-
-        #hostTable .status-pill--ok {
-            color: #16a34a;
-            border: 1px solid rgba(22, 163, 74, 0.6);
-            background-color: rgba(22, 163, 74, 0.12);
-        }
-
-        #hostTable .status-pill--error {
-            color: #f87171;
-            border: 1px solid rgba(248, 113, 113, 0.6);
-            background-color: rgba(248, 113, 113, 0.12);
-        }
-
-        @media (max-width: 767.98px) {
-            .benchmark-chart-wrap {
-                height: 320px;
-            }
-
-            #hostTable th,
-            #hostTable td {
-                white-space: normal;
-                vertical-align: top;
-            }
-
-            #hostTable .timestamp-col {
-                width: 124px;
-            }
-
-            #hostTable .node-col {
-                width: auto;
-            }
-
-            #hostTable .bench-detail-list {
-                display: grid;
-                gap: 0.2rem;
-                color: #d1d5db;
-            }
-
-            #hostTable .bench-detail-row {
-                display: flex;
-                justify-content: space-between;
-                gap: 0.75rem;
-                align-items: baseline;
-            }
-
-            #hostTable .bench-detail-label {
-                color: #9ca3af;
-                font-weight: 600;
-            }
-
-            #hostTable .status-pill {
-                max-width: 180px;
-            }
-        }
-    </style>
 
 <?php render_footer(); ?>

@@ -5,10 +5,11 @@ require_once 'include/components/range_controls.php';
 require_once 'include/components/stat_card.php';
 include_once 'include/graph.php';
 $graphConfigs = require 'include/graph_configs.php';
-$currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
+$currencyCookie = \Siagraph\Utils\CurrencyDisplay::selectedCurrency();
 
 use Siagraph\Utils\ApiClient;
 use Siagraph\Utils\Locale;
+use Siagraph\Utils\CurrencyDisplay;
 
 $months = 12; // default visible range for charts
 
@@ -28,6 +29,14 @@ $asOfMonthly = !$monthlyError && isset($latestMonthly['date']) ? $latestMonthly[
 $latestDailyPerSf = isset($latestDaily["siafund_tax_revenue"]["sc"]) ? ($latestDaily["siafund_tax_revenue"]["sc"] / 1e24) / 10000 : 0;
 $latestMonthlyRevenueAll = isset($latestMonthly["siafund_tax_revenue"]["sc"]) ? floatval($latestMonthly["siafund_tax_revenue"]["sc"]) / 1e24 : 0;
 $latestMonthlyTradedSf = isset($latestMonthly['siafund_volume']) ? floatval($latestMonthly['siafund_volume']) / 1e24 : 0;
+$ratesByDate = [];
+if ($asOfDaily && $asOfMonthly) {
+    $ratesByDate = CurrencyDisplay::loadDailyRates($asOfDaily, $asOfMonthly);
+} elseif ($asOfDaily) {
+    $ratesByDate = CurrencyDisplay::loadDailyRates($asOfDaily, $asOfDaily);
+} elseif ($asOfMonthly) {
+    $ratesByDate = CurrencyDisplay::loadDailyRates($asOfMonthly, $asOfMonthly);
+}
 ?>
 <?php render_header('SiaGraph - Siafunds'); ?>
 <section id="main-content" class="sg-container">
@@ -43,7 +52,14 @@ $latestMonthlyTradedSf = isset($latestMonthly['siafund_volume']) ? floatval($lat
             render_stat_card([
                 'icon' => 'bi bi-piggy-bank',
                 'label' => 'Latest Daily Revenue per Siafund',
-                'value' => $dailyError ? 'N/A' : Locale::decimal($latestDailyPerSf, 6) . ' SC',
+                'value' => $dailyError ? 'N/A' : CurrencyDisplay::formatMonetary([
+                    'scValue' => $latestDailyPerSf,
+                    'currency' => $currencyCookie,
+                    'date' => $asOfDaily,
+                    'ratesByDate' => $ratesByDate,
+                    'decimals' => 6,
+                    'scDecimals' => 6,
+                ]),
                 'context' => $asOfDaily ? ('Daily value as of ' . $asOfDaily) : 'Daily value',
             ]);
             ?>
@@ -53,7 +69,14 @@ $latestMonthlyTradedSf = isset($latestMonthly['siafund_volume']) ? floatval($lat
             render_stat_card([
                 'icon' => 'bi bi-calendar3',
                 'label' => 'Latest Monthly Revenue (All Siafunds)',
-                'value' => $monthlyError ? 'N/A' : Locale::decimal($latestMonthlyRevenueAll, 2) . ' SC',
+                'value' => $monthlyError ? 'N/A' : CurrencyDisplay::formatMonetary([
+                    'scValue' => $latestMonthlyRevenueAll,
+                    'currency' => $currencyCookie,
+                    'date' => $asOfMonthly,
+                    'ratesByDate' => $ratesByDate,
+                    'decimals' => 2,
+                    'scDecimals' => 2,
+                ]),
                 'context' => $asOfMonthly ? ('Monthly total as of ' . $asOfMonthly) : 'Monthly total',
             ]);
             ?>
@@ -82,8 +105,7 @@ $latestMonthlyTradedSf = isset($latestMonthly['siafund_volume']) ? floatval($lat
                         array_merge(
                             $graphConfigs['siafund_tax_revenue'],
                             [
-                                'transform' => "return useFiat ? entry['siafund_tax_revenue'][currency] / 10000 : entry['siafund_tax_revenue']['sc'] / (1e24 * 10000);",
-                                'fiatUnit' => strtoupper($currencyCookie),
+                                'transform' => "var bucket = entry['siafund_tax_revenue']; var sc = (window.currencyDisplay && window.currencyDisplay.normalizeScValue) ? window.currencyDisplay.normalizeScValue(bucket) : null; if (sc === null) return null; var perSf = sc / 10000; if (!useFiat) return perSf; var direct = (bucket && bucket[currency] !== undefined) ? Number(bucket[currency]) : null; if (isFinite(direct)) return direct / 10000; var r = (window.currencyDisplay && window.currencyDisplay.resolveRateForEntryDate) ? window.currencyDisplay.resolveRateForEntryDate(entry['date'], currency, null) : null; return (isFinite(r) && r > 0) ? perSf * r : perSf;",
                                 'decimalPlaces' => 6
                             ]
                         )
@@ -113,10 +135,7 @@ $latestMonthlyTradedSf = isset($latestMonthly['siafund_volume']) ? floatval($lat
                 renderGraph(
                     'monthly-siafund-tax-total',
                     [
-                        array_merge(
-                            $graphConfigs['siafund_tax_revenue'],
-                            ['fiatUnit' => strtoupper($currencyCookie)]
-                        )
+                        $graphConfigs['siafund_tax_revenue']
                     ],
                     'date',
                     $monthlyEndpoint,

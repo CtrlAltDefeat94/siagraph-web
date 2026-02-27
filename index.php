@@ -7,6 +7,7 @@ $graphConfigs = require 'include/graph_configs.php';
 use Siagraph\Utils\Cache;
 use Siagraph\Utils\Formatter;
 use Siagraph\Utils\Locale;
+use Siagraph\Utils\CurrencyDisplay;
 
 $recentstats = Cache::getCache(Cache::RECENT_STATS_KEY);
 if (is_string($recentstats) && $recentstats !== '') {
@@ -69,7 +70,7 @@ if (!empty($explorerData)) {
     $nextBlock = $explorerData['blockHeight'] + 1;
 }
 
-$currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
+$currencyCookie = CurrencyDisplay::selectedCurrency();
 $resolution = (isset($_GET['resolution']) && $_GET['resolution'] === 'monthly') ? 'monthly' : 'daily';
 $aggEndpoint = '/api/v1/' . $resolution . '/aggregates';
 $metricsEndpoint = '/api/v1/' . $resolution . '/metrics';
@@ -122,17 +123,37 @@ $intervalDefault = $resolution === 'monthly' ? 'month' : 'week';
                                         <span class="fs-6">30-day Network Revenue</span>
                                         <br>
                                         <?php
-                                        $revenueActual = !empty($recentstats) ? $recentstats['actual']['30_day_revenue'][$currencyCookie] : 0;
-                                        $revenueChange = !empty($recentstats) ? $recentstats['change']['30_day_revenue'][$currencyCookie] : 0;
-                                        if ($currencyCookie === 'sc') {
-                                            $revenueActual /= 1e24;
-                                            $revenueChange /= 1e24;
-                                        }
+                                        $revenueActualSc = !empty($recentstats) && isset($recentstats['actual']['30_day_revenue']['sc'])
+                                            ? ((float) $recentstats['actual']['30_day_revenue']['sc'] / 1e24)
+                                            : null;
+                                        $revenueActualFiat = !empty($recentstats) && isset($recentstats['actual']['30_day_revenue'][$currencyCookie])
+                                            ? (float) $recentstats['actual']['30_day_revenue'][$currencyCookie]
+                                            : null;
+                                        $revenueChangeSc = !empty($recentstats) && isset($recentstats['change']['30_day_revenue']['sc'])
+                                            ? ((float) $recentstats['change']['30_day_revenue']['sc'] / 1e24)
+                                            : null;
+                                        $revenueChangeFiat = !empty($recentstats) && isset($recentstats['change']['30_day_revenue'][$currencyCookie])
+                                            ? (float) $recentstats['change']['30_day_revenue'][$currencyCookie]
+                                            : null;
+                                        $revenueActualText = CurrencyDisplay::formatMonetary([
+                                            'scValue' => $revenueActualSc,
+                                            'fiatValue' => $revenueActualFiat,
+                                            'currency' => $currencyCookie,
+                                            'decimals' => 2,
+                                            'scDecimals' => 2,
+                                        ]);
+                                        $revenueChangeText = CurrencyDisplay::formatMonetary([
+                                            'scValue' => $revenueChangeSc,
+                                            'fiatValue' => $revenueChangeFiat,
+                                            'currency' => $currencyCookie,
+                                            'decimals' => 2,
+                                            'scDecimals' => 2,
+                                        ]);
                                         ?>
                                         <span id="stats3a"
-                                            class="glanceNumber fs-4"><?php echo strtoupper($currencyCookie) . " " . Locale::decimal($revenueActual, ($currencyCookie==='sc'?2:2)); ?></span>
+                                            class="glanceNumber fs-4"><?php echo $revenueActualText; ?></span>
                                         <span id="stats3b" style="opacity: 0.3"
-                                            class="fs-6">(<?php echo strtoupper($currencyCookie) . " " . Siagraph\Utils\Locale::signedDecimal($revenueChange,  ($currencyCookie==='sc'?2:2)); ?>)</span>
+                                            class="fs-6">(<?php echo $revenueChangeText; ?>)</span>
                                     </div>
                                 </div>
                             </div>
@@ -166,12 +187,34 @@ $intervalDefault = $resolution === 'monthly' ? 'month' : 'week';
                                     <div class="p-2">
                                         <span class="fs-6">Siacoin Market Value</span>
                                         <br>
+                                        <?php
+                                        $coinPriceActualFiat = !empty($recentstats) && isset($recentstats['actual']['coin_price'][$currencyCookie])
+                                            ? (float) $recentstats['actual']['coin_price'][$currencyCookie]
+                                            : null;
+                                        $coinPriceChangeFiat = !empty($recentstats) && isset($recentstats['change']['coin_price'][$currencyCookie])
+                                            ? (float) $recentstats['change']['coin_price'][$currencyCookie]
+                                            : null;
+                                        $coinPriceChangeSc = !empty($recentstats) && isset($recentstats['change']['coin_price']['sc'])
+                                            ? (float) $recentstats['change']['coin_price']['sc']
+                                            : null;
+                                        ?>
                                         <span id="stats6a"
-                                            class="glanceNumber fs-4"><?php echo strtoupper($currencyCookie) . " " . (!empty($recentstats) ? Locale::decimal($recentstats['actual']['coin_price'][$currencyCookie], 6) : 0); ?>
+                                            class="glanceNumber fs-4"><?php echo CurrencyDisplay::formatMonetary([
+                                                'scValue' => 1,
+                                                'fiatValue' => $coinPriceActualFiat,
+                                                'currency' => $currencyCookie,
+                                                'decimals' => 6,
+                                                'scDecimals' => 0,
+                                            ]); ?>
                                         </span>
                                         <span id="stats6b" style="opacity: 0.3"
-                                            class="fs-6">(<?php echo strtoupper($currencyCookie) . " ";
-                                            echo !empty($recentstats) ? Siagraph\Utils\Locale::signedDecimal($recentstats['change']['coin_price'][$currencyCookie], 6) : 0; ?>)</span>
+                                            class="fs-6">(<?php echo CurrencyDisplay::formatMonetary([
+                                                'scValue' => $coinPriceChangeSc,
+                                                'fiatValue' => $coinPriceChangeFiat,
+                                                'currency' => $currencyCookie,
+                                                'decimals' => 6,
+                                                'scDecimals' => 6,
+                                            ]); ?>)</span>
                                     </div>
                                 </div>
                             </div>
@@ -306,10 +349,7 @@ $intervalDefault = $resolution === 'monthly' ? 'month' : 'week';
                             renderGraph(
                                 $canvasid = "monthlyrevenue",
                                 $datasets = [
-                                    array_merge(
-                                        $graphConfigs['contract_revenue'],
-                                        ['fiatUnit' => strtoupper($currencyCookie)]
-                                    )
+                                    $graphConfigs['contract_revenue']
                                 ],
                                 $dateKey = "date",
                                 $jsonUrl = '/api/v1/monthly/aggregates', // JSON URL

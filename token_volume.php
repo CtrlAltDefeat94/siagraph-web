@@ -5,10 +5,11 @@ require_once 'include/components/range_controls.php';
 require_once 'include/components/stat_card.php';
 include_once 'include/graph.php';
 $graphConfigs = require 'include/graph_configs.php';
-$currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
+$currencyCookie = \Siagraph\Utils\CurrencyDisplay::selectedCurrency();
 
 use Siagraph\Utils\ApiClient;
 use Siagraph\Utils\Locale;
+use Siagraph\Utils\CurrencyDisplay;
 
 $months = 12; // default visible range; slider covers all data
 $aggEndpoint = '/api/v1/monthly/aggregates';
@@ -17,6 +18,7 @@ $latestData = ApiClient::fetchJson($aggEndpoint);
 $dataError = !is_array($latestData);
 $latest = $dataError ? [] : end($latestData);
 $asOf = !$dataError && isset($latest['date']) ? $latest['date'] : null;
+$ratesByDate = $asOf ? CurrencyDisplay::loadDailyRates($asOf, $asOf) : [];
 render_header("SiaGraph - Token Volume"); ?>
 <section id="main-content" class="sg-container">
     <h1 class="sg-container__heading text-center mb-2"><i class="bi bi-bar-chart me-2"></i>Token Volume</h1>
@@ -30,7 +32,14 @@ render_header("SiaGraph - Token Volume"); ?>
             render_stat_card([
                 'icon' => 'bi bi-currency-bitcoin',
                 'label' => 'Siacoin Volume',
-                'value' => isset($latest['siacoin_volume']) ? Locale::decimal($latest['siacoin_volume']/1e24,0).' SC' : 'N/A',
+                'value' => isset($latest['siacoin_volume']) ? CurrencyDisplay::formatMonetary([
+                    'scValue' => (float) $latest['siacoin_volume'] / 1e24,
+                    'currency' => $currencyCookie,
+                    'date' => $asOf,
+                    'ratesByDate' => $ratesByDate,
+                    'decimals' => 0,
+                    'scDecimals' => 0,
+                ]) : 'N/A',
                 'context' => $asOf ? ('Monthly total as of ' . $asOf) : 'Monthly total',
             ]);
             ?>
@@ -76,7 +85,7 @@ render_header("SiaGraph - Token Volume"); ?>
                     'true',
                     $months,
                     'false',
-                    'sc'
+                    $currencyCookie
                 );
                 ?>
             </section>

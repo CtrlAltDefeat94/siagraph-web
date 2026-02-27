@@ -1,0 +1,160 @@
+.host-benchmark-node-select {
+  width: auto;
+}
+
+.benchmark-chart-wrap {
+  position: relative;
+  height: clamp(280px, 52vh, 400px);
+  min-height: 280px;
+  width: 100%;
+}
+
+.benchmark-chart-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.table-container .overflow-x-auto {
+  max-height: none;
+  overflow-y: visible;
+  overflow-x: auto;
+  min-width: 0;
+}
+
+#hostTable {
+  width: 100%;
+  min-width: 0;
+  table-layout: auto;
+}
+
+#hostTable th,
+#hostTable td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+}
+
+#hostTable .num {
+  white-space: nowrap;
+}
+
+#hostTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: rgba(24, 24, 24, 0.96);
+}
+
+#hostTable .table-sort-btn {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+  font-weight: inherit;
+  line-height: 1.2;
+}
+
+#hostTable .table-sort-btn.num {
+  text-align: right;
+}
+
+#hostTable .table-sort-btn:hover {
+  text-decoration: underline;
+}
+
+#hostTable .timestamp-col {
+  width: 170px;
+}
+
+#hostTable .node-col {
+  width: 100px;
+}
+
+#hostTable .upload-col,
+#hostTable .download-col,
+#hostTable .ttfb-col {
+  width: 130px;
+}
+
+#hostTable .success-col {
+  width: 240px;
+}
+
+#hostTable.compact-table {
+  table-layout: fixed;
+}
+
+#hostTable.compact-table .timestamp-col {
+  width: 8.5rem;
+  max-width: 8.5rem;
+}
+
+#hostTable.compact-table .node-col {
+  width: auto;
+}
+
+#hostTable .status-pill {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+#hostTable .status-pill--ok {
+  color: #16a34a;
+  border: 1px solid rgba(22, 163, 74, 0.6);
+  background-color: rgba(22, 163, 74, 0.12);
+}
+
+#hostTable .status-pill--error {
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.6);
+  background-color: rgba(248, 113, 113, 0.12);
+}
+
+@media (max-width: 767.98px) {
+  #hostTable th,
+  #hostTable td {
+    white-space: normal;
+    vertical-align: top;
+  }
+
+  #hostTable .timestamp-col {
+    width: 124px;
+  }
+
+  #hostTable .node-col {
+    width: auto;
+  }
+
+  #hostTable .bench-detail-list {
+    display: grid;
+    gap: 0.2rem;
+    color: #d1d5db;
+  }
+
+  #hostTable .bench-detail-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: baseline;
+  }
+
+  #hostTable .bench-detail-label {
+    color: #9ca3af;
+    font-weight: 600;
+  }
+
+  #hostTable .status-pill {
+    max-width: 180px;
+  }
+}

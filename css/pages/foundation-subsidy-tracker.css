@@ -1,0 +1,80 @@
+.foundation-reports-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgb(75 85 99);
+  font-size: 0.75rem;
+  color: rgb(156 163 175);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.foundation-reports-link:hover,
+.foundation-reports-link:focus-visible {
+  color: #fff;
+  border-color: rgb(156 163 175);
+}
+
+#foundationTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: rgba(24, 24, 24, 0.96);
+}
+
+#foundationTable .table-sort-btn {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+  font-weight: inherit;
+  line-height: 1.2;
+}
+
+#foundationTable .table-sort-btn.num {
+  text-align: right;
+}
+
+#foundationTable .table-sort-btn:hover {
+  text-decoration: underline;
+}
+
+#foundationTable .num {
+  white-space: nowrap;
+}
+
+#foundationTable .timestamp-col { width: 190px; }
+#foundationTable .height-col { width: 130px; }
+#foundationTable .type-col { width: auto; }
+#foundationTable .value-col { width: 170px; }
+#foundationTable .fiat-col { width: 190px; }
+
+#foundationTable.compact-table {
+  table-layout: fixed;
+}
+
+#foundationTable.compact-table .timestamp-col {
+  width: 8.5rem;
+  max-width: 8.5rem;
+}
+
+#foundationTable .bench-detail-list {
+  display: grid;
+  gap: 0.2rem;
+  color: #d1d5db;
+}
+
+#foundationTable .bench-detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+#foundationTable .bench-detail-label {
+  color: #9ca3af;
+  font-weight: 600;
+}

@@ -10,3 +10,4 @@ OLD/*
 /vendor/
 node_modules
 .git.*
+api/v2/*

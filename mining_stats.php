@@ -7,8 +7,10 @@ require_once 'include/components/stat_card.php';
 
 use Siagraph\Utils\ApiClient;
 use Siagraph\Utils\Locale;
+use Siagraph\Utils\CurrencyDisplay;
 
 $aggData = ApiClient::fetchJson('/api/v1/daily/aggregates');
+$currencyCookie = CurrencyDisplay::selectedCurrency();
 $dataError = !is_array($aggData);
 $latestAgg = $dataError ? [] : end($aggData);
 $asOf = !$dataError && isset($latestAgg['date']) ? $latestAgg['date'] : null;
@@ -52,7 +54,12 @@ $currentBlockReward = $latestTokenomics['block_reward'] ?? null;
             render_stat_card([
                 'icon' => 'bi bi-coin',
                 'label' => 'Block Reward',
-                'value' => Locale::decimal($currentBlockReward, 0) . ' SC',
+                'value' => CurrencyDisplay::formatMonetary([
+                    'scValue' => (float) $currentBlockReward,
+                    'currency' => $currencyCookie,
+                    'decimals' => 0,
+                    'scDecimals' => 0,
+                ]),
             ]);
             ?>
             </div>
@@ -76,7 +83,7 @@ $currentBlockReward = $latestTokenomics['block_reward'] ?? null;
                     'line',
                     'week',
                     true,
-                    'true',
+                    'false',
                     12,
                     'true',
                     'difficulty',
@@ -106,7 +113,7 @@ $currentBlockReward = $latestTokenomics['block_reward'] ?? null;
                     'line',
                     'week',
                     true,
-                    'true',
+                    'false',
                     12,
                     'false',
                     null

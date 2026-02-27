@@ -16,7 +16,8 @@ function sc_value($val) {
 }
 
 use Siagraph\Utils\Cache;
-$currencyCookie = isset($_COOKIE['currency']) ? $_COOKIE['currency'] : 'eur';
+use Siagraph\Utils\CurrencyDisplay;
+$currencyCookie = CurrencyDisplay::selectedCurrency();
 $currency = strtolower($currencyCookie);
 
 $host_id = $_GET["id"] ?? '';
@@ -98,7 +99,10 @@ if (!$troubleshooterCacheResult && 1==2) {
 ?>
 
 
-<?php render_header('SiaGraph Host Explorer - ' . htmlspecialchars($hostdata['net_address'], ENT_QUOTES, 'UTF-8')); ?>
+<?php render_header('SiaGraph Host Explorer - ' . htmlspecialchars($hostdata['net_address'], ENT_QUOTES, 'UTF-8'), 'SiaGraph Host Explorer', [
+   '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />',
+   '<link rel="stylesheet" href="' . htmlspecialchars(versioned_asset_url('css/pages/host.css'), ENT_QUOTES, 'UTF-8') . '">'
+]); ?>
    <!-- Main Content Section -->
    <section id="main-content" class="sg-container">
 
@@ -136,7 +140,7 @@ if (!$troubleshooterCacheResult && 1==2) {
                <div class="sg-stack">
                <section class="card">
                   <div class="card__content">
-                     <div id="map" style="width:100%;height:18rem;"></div>
+                     <div id="map"></div>
                   </div>
                </section>
 
@@ -220,9 +224,9 @@ Each benchmark server contributes equally to the score, regardless of how many b
                      final score <?php echo (end($hostdata['node_scores']['global'])['total_score'] ?? 0); ?></h2>
                   <div class="card__content">
                      <div class="table-responsive">
-                        <table id="hostAverages" class="table table-dark table-clean text-white w-100 border-collapse" style="visibility: hidden;">
+                        <table id="hostAverages" class="table table-dark table-clean text-white w-100 border-collapse table-loading">
                            <thead></thead>
-                           <tbody id="hostAveragesBody"></tbody>
+                           <tbody id="hostAveragesBody"><tr><td colspan="3" class="px-4 py-3"><span class="skeleton-line"></span></td></tr></tbody>
                         </table>
                      </div>
                   </div>
@@ -281,9 +285,9 @@ Each benchmark server contributes equally to the score, regardless of how many b
                      renderGraph(
                         $canvasid = "dailypricestats",
                         $datasets = [
-                           array_merge($graphConfigs['storage_price'], ['fiatUnit' => strtoupper($currencyCookie)]),
-                           array_merge($graphConfigs['upload_price'], ['fiatUnit' => strtoupper($currencyCookie)]),
-                           array_merge($graphConfigs['download_price'], ['fiatUnit' => strtoupper($currencyCookie)])
+                           $graphConfigs['storage_price'],
+                           $graphConfigs['upload_price'],
+                           $graphConfigs['download_price']
                         ],
                         $dateKey = "date",
                         $jsonUrl = "/api/v1/host?id=" . $host_id, // JSON URL
@@ -316,7 +320,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
       </div>
    </section>
    <!-- Footer Section -->
-   <div id="toast" class="bg-blue-600 text-white px-4 py-2 rounded bg-gradient shadow-lg" style="display:none; position:fixed; right:1rem; bottom:1rem; z-index:1080;">
+   <div id="toast" class="sg-toast is-hidden bg-blue-600 text-white px-4 py-2 rounded bg-gradient shadow-lg">
       Copied to clipboard!
    </div>
    <!-- Subscription Modal -->
@@ -344,7 +348,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                      <input type="text" class="form-control" id="recipient" placeholder="you@example.com or user token"
                         required>
                      <!-- Telegram Instructions -->
-                     <div id="telegramInstructions" class="form-text text-muted mt-1" style="display:none;">
+                     <div id="telegramInstructions" class="form-text text-muted mt-1 is-hidden">
                         Start a chat with <a href="https://t.me/Siagraph_bot"
                            target="_blank"><strong>@Siagraph_bot</strong></a> and type <code>/start</code> to get your
                         chat ID.
@@ -363,62 +367,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
       </div>
    </div>
 
-   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<style>
-   #storageStatsTable.host-stats-table {
-      table-layout: fixed;
-      width: 100%;
-   }
-
-   #storageStatsTable.host-stats-table .host-stats-label {
-      width: 28%;
-      vertical-align: top;
-      white-space: normal;
-   }
-
-   #storageStatsTable.host-stats-table .host-stats-value {
-      width: 72%;
-      vertical-align: top;
-      min-width: 0;
-      overflow-wrap: anywhere;
-      word-break: break-word;
-   }
-
-   #storageStatsTable.host-stats-table .host-public-key-value {
-      display: block;
-      max-width: 100%;
-      white-space: normal;
-      overflow-wrap: anywhere;
-      word-break: break-word;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 0.85rem;
-      line-height: 1.35;
-   }
-
-   #storageStatsTable.host-stats-table .host-public-key-copy {
-      display: inline-flex;
-      margin-top: 0.35rem;
-   }
-
-   @media (max-width: 767.98px) {
-      #storageStatsTable.host-stats-table .host-stats-label { width: 34%; }
-      #storageStatsTable.host-stats-table .host-stats-value { width: 66%; }
-   }
-
-   @media (min-width: 1024px) {
-      .host-top-columns > .sg-container__column.sg-container__column--half:first-child {
-         width: calc(55% - 1rem);
-         flex: 0 0 calc(55% - 1rem);
-      }
-
-      .host-top-columns > .sg-container__column.sg-container__column--half:last-child {
-         width: calc(45% - 1rem);
-         flex: 0 0 calc(45% - 1rem);
-      }
-   }
-</style>
 
 <script>
    let hostdata = <?php echo json_encode($hostdata); ?>;
@@ -473,21 +422,24 @@ Each benchmark server contributes equally to the score, regardless of how many b
    }
 
    function displayHostData(data, exchangeRate = null, currency) {
-      const currencySymbols = {
-         'eur': '€',
-         'usd': '$',
-         'gbp': '£'
-      };
-      const symbol = currencySymbols[currency] || currency.toUpperCase();
-
-      function formatSCtoFiat(sc, decimals = 4) {
-         if (!exchangeRate || isNaN(exchangeRate)) return sc.toFixed(decimals) + " SC";
-         return `${symbol}${(sc * exchangeRate).toFixed(2)}`;
+      function formatSCtoFiat(sc, decimals = 4, suffix = '') {
+         if (window.currencyDisplay && typeof window.currencyDisplay.formatFiatWithScTooltip === 'function') {
+            return window.currencyDisplay.formatFiatWithScTooltip({
+               scValue: sc,
+               currency: currency,
+               rate: exchangeRate,
+               decimals: currency === 'sc' ? decimals : 2,
+               scDecimals: decimals,
+               suffix: suffix
+            });
+         }
+         const loc = (typeof window !== 'undefined' && window.APP_LOCALE) ? window.APP_LOCALE : undefined;
+         return `${Number(sc).toLocaleString(loc, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} SC${suffix}`;
       }
 
       // Responsive helpers for hostAverages table
       function isMobile() { return window.innerWidth < 768; }
-      function showTable(el){ if (el) el.style.visibility = 'visible'; }
+      function showTable(el){ if (el) el.classList.remove('table-loading'); }
       function renderAveragesHeader(){
          const thead = document.querySelector('#hostAverages thead');
          if (!thead) return;
@@ -518,22 +470,22 @@ Each benchmark server contributes equally to the score, regardless of how many b
          const lines = [
            {
              label: 'Contract price',
-             avgText: `${(sc_value(avg.contractprice) / 1e24).toFixed(2)} SC`,
+             avgText: formatSCtoFiat((sc_value(avg.contractprice) / 1e24), 2),
              pct: (sc_value(settings.contractprice) / sc_value(avg.contractprice) * 100)
            },
            {
              label: 'Storage price',
-             avgText: `${(sc_value(avg.storageprice) / 1e12 * 4320).toFixed(2)} SC/TB/Month`,
+             avgText: formatSCtoFiat((sc_value(avg.storageprice) / 1e12 * 4320), 2, '/TB/Month'),
              pct: (sc_value(settings.storageprice) / sc_value(avg.storageprice) * 100)
            },
            {
              label: 'Upload price',
-             avgText: `${(sc_value(avg.uploadprice) / 1e12).toFixed(2)} SC/TB`,
+             avgText: formatSCtoFiat((sc_value(avg.uploadprice) / 1e12), 2, '/TB'),
              pct: (sc_value(settings.ingressprice) / sc_value(avg.uploadprice) * 100)
            },
            {
              label: 'Egress price',
-             avgText: `${(sc_value(avg.downloadprice) / 1e12).toFixed(2)} SC/TB`,
+             avgText: formatSCtoFiat((sc_value(avg.downloadprice) / 1e12), 2, '/TB'),
              pct: (sc_value(settings.egressprice) / sc_value(avg.downloadprice) * 100)
            },
            {
@@ -595,7 +547,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                label: 'Accepting contracts',
                value: () => data.settings.acceptingcontracts ? 'Yes' : 'No',
                warningWhen: d => !d.settings.acceptingcontracts,
-               warningHtml: () => "When this setting is disabled, renters treat the host as retiring. They will stop using the host and may begin migrating data immediately.<br><br><strong class='text-danger'>If this is your host and you are not retiring, re-enable this setting as soon as possible!</strong>",
+               warningHtml: () => "When a host is not accepting contracts, renters treat the host as retiring. They will stop using the host and may begin migrating data immediately.<br><br><strong class='text-danger'>If this is your host and you are not retiring, re-enable this setting as soon as possible!</strong>",
                warningStyle: 'critical',
                warningIcon: 'bi bi-exclamation-triangle-fill'
             },
@@ -609,15 +561,15 @@ Each benchmark server contributes equally to the score, regardless of how many b
             {
                id: 'storage_price',
                label: 'Storage price',
-               value: () => formatSCtoFiat(((data.settings.storageprice.sc ?? data.settings.storageprice) / 1e12) * 4320, 6) + '/TB/Month',
+               value: () => formatSCtoFiat(((data.settings.storageprice.sc ?? data.settings.storageprice) / 1e12) * 4320, 6, '/TB/Month'),
                warningWhen: () => storagePriceRaw <= 0,
                warningText: () => 'Storage price should not be zero.',
                warningClass: 'text-warning'
             },
-            { id: 'ingress_price', label: 'Ingress price', value: () => formatSCtoFiat(((data.settings.ingressprice.sc ?? data.settings.ingressprice) / 1e12)) + '/TB' },
-            { id: 'egress_price', label: 'Egress price', value: () => formatSCtoFiat(((data.settings.egressprice.sc ?? data.settings.egressprice) / 1e12)) + '/TB' },
-            { id: 'contract_price', label: 'Contract price', value: () => ((data.settings.contractprice.sc ?? data.settings.contractprice) / 1e24).toFixed(4) + ' SC' },
-            { id: 'sector_access_price', label: 'Sector access price', value: () => ((data.settings.freesectorprice.sc ?? data.settings.freesectorprice) / 1e18).toFixed(4) + ' SC/million' },
+            { id: 'ingress_price', label: 'Ingress price', value: () => formatSCtoFiat(((data.settings.ingressprice.sc ?? data.settings.ingressprice) / 1e12), 4, '/TB') },
+            { id: 'egress_price', label: 'Egress price', value: () => formatSCtoFiat(((data.settings.egressprice.sc ?? data.settings.egressprice) / 1e12), 4, '/TB') },
+            { id: 'contract_price', label: 'Contract price', value: () => formatSCtoFiat(((data.settings.contractprice.sc ?? data.settings.contractprice) / 1e24), 4) },
+            { id: 'sector_access_price', label: 'Sector access price', value: () => formatSCtoFiat(((data.settings.freesectorprice.sc ?? data.settings.freesectorprice) / 1e18), 4, '/million') },
             {
                id: 'collateral',
                label: 'Collateral',
@@ -629,17 +581,17 @@ Each benchmark server contributes equally to the score, regardless of how many b
             {
                id: 'max_collateral',
                label: 'Max collateral',
-               value: () => ((data.settings.maxcollateral.sc ?? data.settings.maxcollateral) / 1e24).toFixed(4) + ' SC'
+               value: () => formatSCtoFiat(((data.settings.maxcollateral.sc ?? data.settings.maxcollateral) / 1e24), 4)
             },
             { id: 'max_contract_duration', label: 'Max contract duration', value: () => (data.settings.maxduration / 4320).toFixed(0) + ' Months' }
          ];
 
          if (!data.v2) {
             hostStatRows.push(
-               { id: 'base_rpc_price', label: 'Base RPC price', value: () => (data.settings.baserpcprice.sc ?? data.settings.baserpcprice) },
+               { id: 'base_rpc_price', label: 'Base RPC price', value: () => formatSCtoFiat(((data.settings.baserpcprice.sc ?? data.settings.baserpcprice) / 1e24), 8) },
                { id: 'ephemeral_account_expiry', label: 'Emperheral Account Expiry', value: () => data.settings.ephemeralaccountexpiry },
                { id: 'max_download_batch_size', label: 'Max Download Batch Size', value: () => data.settings.maxdownloadbatchsize / 1024 / 1024 + 'MB' },
-               { id: 'max_ephemeral_account_balance', label: 'Max ephemeral account balance', value: () => (data.settings.max_ephemeral_account_balance / 1e24).toFixed(4) + ' SC' },
+               { id: 'max_ephemeral_account_balance', label: 'Max ephemeral account balance', value: () => formatSCtoFiat((data.settings.max_ephemeral_account_balance / 1e24), 4) },
                { id: 'max_revise_batch_size', label: 'maxrevisebatchsize', value: () => data.settings.maxrevisebatchsize },
                { id: 'sector_size', label: 'Sector size', value: () => data.settings.sectorsize.toLocaleString(window.APP_LOCALE || undefined) + ' bytes' },
                { id: 'siamux_port', label: 'siamuxport', value: () => data.settings.siamuxport },
@@ -708,12 +660,12 @@ Each benchmark server contributes equally to the score, regardless of how many b
   function showToast(message) {
      const toast = document.getElementById("toast");
      toast.textContent = message;
-     toast.style.display = "block";
+     toast.classList.remove("is-hidden");
 
       // Hide after 2 seconds
      if (toastTimer) clearTimeout(toastTimer);
      toastTimer = setTimeout(() => {
-        toast.style.display = "none";
+        toast.classList.add("is-hidden");
      }, 2000);
   }
 
@@ -766,13 +718,13 @@ Each benchmark server contributes equally to the score, regardless of how many b
 
          // Toggle Telegram instructions
          if (selectedService === "telegram") {
-            telegramInstructions.style.display = "block";
+            telegramInstructions.classList.remove("is-hidden");
             recipientInput.placeholder = "Telegram Chat ID (e.g. 12345678)";
          } else if (selectedService === "pushover") {
-            telegramInstructions.style.display = "none";
+            telegramInstructions.classList.add("is-hidden");
             recipientInput.placeholder = "Pushover user token";
          } else {
-            telegramInstructions.style.display = "none";
+            telegramInstructions.classList.add("is-hidden");
             recipientInput.placeholder = "you@example.com";
          }
       }

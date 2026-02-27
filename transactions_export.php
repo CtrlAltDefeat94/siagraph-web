@@ -2,7 +2,10 @@
 require_once 'include/layout.php';
 render_header(
     'SiaGraph - Transaction Export',
-    'Download or view transaction history for specific addresses.'
+    'Download or view transaction history for specific addresses.',
+    [
+        '<link rel="stylesheet" href="' . htmlspecialchars(versioned_asset_url('css/pages/transactions-export.css'), ENT_QUOTES, 'UTF-8') . '">'
+    ]
 );
 ?>
 <section id="main-content" class="sg-container">
@@ -15,7 +18,7 @@ render_header(
 
     <div class="sg-container__row">
         <div class="sg-container__row-content sg-container__row-content--center">
-            <section class="card" style="max-width: 640px; width: 100%;">
+            <section class="card tx-export-card">
                 <h2 class="card__heading">Export Parameters</h2>
                 <div class="card__content">
                     <form id="tx-export-form" class="d-flex flex-column gap-3" autocomplete="off" novalidate>

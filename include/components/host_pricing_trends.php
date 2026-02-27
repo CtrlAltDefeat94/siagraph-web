@@ -28,9 +28,9 @@ if (!function_exists('render_host_pricing_trends')) {
         $interval = isset($options['interval']) ? (string)$options['interval'] : 'week';
 
         $datasets = [
-            array_merge($graphConfigs['avg_storage_price'], ['fiatUnit' => strtoupper($currencyCookie)]),
-            array_merge($graphConfigs['avg_upload_price'], ['fiatUnit' => strtoupper($currencyCookie)]),
-            array_merge($graphConfigs['avg_download_price'], ['fiatUnit' => strtoupper($currencyCookie), 'hidden' => $hideDownload])
+            $graphConfigs['avg_storage_price'],
+            $graphConfigs['avg_upload_price'],
+            array_merge($graphConfigs['avg_download_price'], ['hidden' => $hideDownload])
         ];
 
         // Render the graph. If cookie is fiat, defer init until rates are ready

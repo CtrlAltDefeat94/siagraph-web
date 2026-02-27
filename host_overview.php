@@ -7,7 +7,8 @@ require_once 'include/layout.php';
 use Siagraph\Services\HostOverviewService;
 use Siagraph\Utils\Formatter;
 use Siagraph\Utils\ApiClient;
-$currencyCookie = isset($_COOKIE['currency']) ? strtolower($_COOKIE['currency']) : 'eur';
+use Siagraph\Utils\CurrencyDisplay;
+$currencyCookie = CurrencyDisplay::selectedCurrency();
 
 // Assuming hostdata.json is in the same directory as this PHP file
 //$json_data = file_get_contents('../rawdata/hostdata.json');
@@ -94,7 +95,13 @@ $stats6b_value = 0;
                                 <div class="p-2">
                                     <span class="fs-6"><i class="bi bi-hdd-fill me-1"></i>Average Storage Price</span>
                                     <br><span id="stats1a"
-                                        class="glanceNumber fs-4"><?php echo \Siagraph\Utils\Formatter::formatSiacoins($stats1a_value); ?></span>
+                                        class="glanceNumber fs-4"><?php echo CurrencyDisplay::formatMonetary([
+                                            'scValue' => (float) $stats1a_value,
+                                            'currency' => $currencyCookie,
+                                            'decimals' => 2,
+                                            'scDecimals' => 2,
+                                            'suffix' => '/TB/Month',
+                                        ]); ?></span>
                                     <span id="stats1b" class="fs-6"> (<?php echo $stats1b_value; ?>)</span>
                                 </div>
                             </div>
@@ -103,7 +110,13 @@ $stats6b_value = 0;
                                 <div class="p-2">
                                     <span class="fs-6"><i class="bi bi-upload me-1"></i>Average Upload Price</span>
                                     <br><span id="stats2a"
-                                        class="glanceNumber fs-4"><?php echo \Siagraph\Utils\Formatter::formatSiacoins($stats2a_value); ?></span>
+                                        class="glanceNumber fs-4"><?php echo CurrencyDisplay::formatMonetary([
+                                            'scValue' => (float) $stats2a_value,
+                                            'currency' => $currencyCookie,
+                                            'decimals' => 2,
+                                            'scDecimals' => 2,
+                                            'suffix' => '/TB',
+                                        ]); ?></span>
                                     <span id="stats2b" class="fs-6">(<?php echo $stats2b_value; ?>)</span>
                                 </div>
                             </div>
@@ -112,7 +125,13 @@ $stats6b_value = 0;
                                 <div class="p-2">
                                     <span class="fs-6"><i class="bi bi-download me-1"></i>Average Download Price</span>
                                     <br><span id="stats3a"
-                                        class="glanceNumber fs-4"><?php echo \Siagraph\Utils\Formatter::formatSiacoins($stats3a_value); ?></span>
+                                        class="glanceNumber fs-4"><?php echo CurrencyDisplay::formatMonetary([
+                                            'scValue' => (float) $stats3a_value,
+                                            'currency' => $currencyCookie,
+                                            'decimals' => 2,
+                                            'scDecimals' => 2,
+                                            'suffix' => '/TB',
+                                        ]); ?></span>
                                     <span id="stats3b" class="fs-6">(<?php echo $stats3b_value; ?>)</span>
                                 </div>
                             </div>

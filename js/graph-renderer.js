@@ -1,14 +1,23 @@
 class GraphRenderer {
     constructor(options) {
+        const toBool = (value) => {
+            if (typeof value === 'boolean') return value;
+            if (typeof value === 'string') {
+                const normalized = value.trim().toLowerCase();
+                return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on';
+            }
+            return !!value;
+        };
+
         this.canvasId = options.canvasId;
         this.jsonData = options.jsonData;
         this.jsonUrl = options.jsonUrl;
         this.unitType = options.unitType;
         this.datasets = options.datasets;
         this.interval = options.interval;
-        this.displaylegend = options.displaylegend;
+        this.displaylegend = toBool(options.displaylegend);
         this.charttype = options.charttype;
-        this.displayYAxis = options.displayYAxis;
+        this.displayYAxis = toBool(options.displayYAxis);
         this.defaultrangeinmonths = options.defaultrangeinmonths;
         this.rangeslider = options.rangeslider;
         this.dateKey = options.dateKey;
@@ -116,7 +125,10 @@ class GraphRenderer {
                 const rawValues = this.monthlyData.map(entry => transformFunc ? transformFunc(entry, this.useFiat, this.currency) : entry[dataset.key]);
 
                 // Determine effective unit + divisor for current currency mode
-                const effUnit = this.useFiat ? (dataset.fiatUnit || dataset.unit) : (dataset.scUnit || dataset.unit);
+                let effUnit = this.useFiat ? (dataset.fiatUnit || dataset.unit) : (dataset.scUnit || dataset.unit);
+                if (this.useFiat && effUnit === '__CURRENCY__') {
+                    effUnit = String(this.currency || '').toUpperCase();
+                }
                 let effDivisor = this.useFiat ? (dataset.fiatUnitDivisor ?? dataset.unitDivisor) : (dataset.scUnitDivisor ?? dataset.unitDivisor);
 
                 let dataValues = rawValues;

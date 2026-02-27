@@ -23,7 +23,7 @@ render_header(
                         <div class="row g-3 align-items-start">
                             <div class="col-12 col-lg-6">
                                 <div id="renterChartContainer" class="graph-container">
-                                    <canvas id="renterDistributionChart" height="420" style="max-height:70vh;width:100%;"></canvas>
+                                    <canvas id="renterDistributionChart" class="sg-chart-canvas sg-chart-canvas--compact"></canvas>
                                 </div>
                             </div>
                             <div class="col-12 col-lg-6">
@@ -43,7 +43,7 @@ render_header(
                                 </div>
                             </div>
                         </div>
-                        <p class="mb-0 mt-3 pt-2 text-end" style="font-size:0.9rem; opacity:0.9; border-top:1px solid rgba(255,255,255,0.12);">
+                        <p class="mb-0 mt-3 pt-2 text-end renter-distribution-note">
                             <sup>*</sup> Based on blockchain contract data; values are estimates.
                         </p>
                     </div>

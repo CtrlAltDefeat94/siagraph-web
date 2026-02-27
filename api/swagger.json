@@ -8,6 +8,10 @@
       "Discord": "_ctrlaltdefeat"
     }
   },
+  "externalDocs": {
+    "description": "Canonical V2 API specification",
+    "url": "/api/v2/swagger.json"
+  },
   "servers": [
     {
       "url": "http://siagraph.info/api/v1",

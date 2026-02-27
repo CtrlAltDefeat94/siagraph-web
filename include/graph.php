@@ -28,8 +28,10 @@ function renderGraph(
         : (isset($currencyCookie) && strtolower($currencyCookie) !== 'sc');
     ?>
     <div id="canvasContainer-<?php echo htmlspecialchars($canvasid, ENT_QUOTES, 'UTF-8'); ?>">
-        <canvas id="<?php echo htmlspecialchars($canvasid, ENT_QUOTES, 'UTF-8'); ?>"
-            style="height:<?php echo $height; ?>px !important;width: 100% !important;"></canvas>
+        <canvas
+            id="<?php echo htmlspecialchars($canvasid, ENT_QUOTES, 'UTF-8'); ?>"
+            class="sg-chart-canvas"
+            style="height:<?php echo (int) $height; ?>px !important; width:100% !important;"></canvas>
 
         <?php if ($rangeslider && $charttype !== 'pie'): ?>
             <div id="dateRangeSlider-<?php echo htmlspecialchars($canvasid, ENT_QUOTES, 'UTF-8'); ?>"></div>
@@ -45,9 +47,9 @@ function renderGraph(
                         unitType: "<?php echo $unitType; ?>",
                         datasets: <?php echo $encodedDatasets; ?>,
                         interval: "<?php echo $interval; ?>",
-                        displaylegend: "<?php echo $displaylegend; ?>",
+                        displaylegend: <?php echo filter_var($displaylegend, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false'; ?>,
                         charttype: "<?php echo $charttype; ?>",
-                        displayYAxis: "<?php echo $displayYAxis; ?>",
+                        displayYAxis: <?php echo filter_var($displayYAxis, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false'; ?>,
                         defaultrangeinmonths: <?php echo $defaultrangeinmonths; ?>,
                         rangeslider: <?php echo $rangeslider ? 'true' : 'false'; ?>,
                         dateKey: "<?php echo $dateKey; ?>",

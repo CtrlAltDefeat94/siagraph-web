@@ -1,11 +1,40 @@
 /* Local overrides and helpers */
 
-/* Center children inside sg row-content when the row isn't full */
 .sg-container__row-content--center {
   justify-content: center;
 }
 
-/* Troubleshooter: equal-sized status tiles */
+/* Shared chart behavior */
+.sg-chart-canvas {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100%;
+}
+
+.sg-chart-canvas--compact {
+  height: auto !important;
+}
+
+/* Shared loading + visibility patterns */
+.table-loading {
+  opacity: 0.72;
+}
+
+.table-loading td {
+  pointer-events: none;
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+.renter-distribution-note {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+
 .status-grid .status-tile {
   display: flex;
   align-items: center;
@@ -13,29 +42,29 @@
   min-height: 42px;
   padding: .5rem .75rem;
 }
+
 .status-grid .status-label {
   white-space: nowrap;
 }
 
-/* Troubleshooter: settings readability */
 .settings-label {
-  color: #fff; /* stronger contrast than text-muted */
+  color: #fff;
   font-weight: 600;
   font-size: 0.9rem;
 }
+
 .settings-value {
   color: #f0f0f0;
 }
+
 .settings-value .fiat-value {
   opacity: .8;
 }
 
-/* Consistent vertical spacing for stacked cards on host page right column */
 .sg-stack > .card + .card {
   margin-top: 2rem;
 }
 
-/* Improve contrast for helper text inside cards */
 .card .form-text {
   color: rgba(255, 255, 255, 0.75);
 }
@@ -48,7 +77,6 @@
   color: rgba(255, 255, 255, 0.65) !important;
 }
 
-/* Brand-colored Bootstrap-compatible button */
 .btn-brand {
   background-color: var(--brand) !important;
   border-color: var(--brand) !important;
@@ -63,7 +91,6 @@
   color: var(--brand-contrast) !important;
 }
 
-/* Subscribe modal brand accents */
 .subscribe-modal-content {
   border: 1px solid var(--brand-border);
 }
@@ -82,7 +109,6 @@
   box-shadow: 0 0 0 0.2rem rgba(192, 57, 43, 0.25);
 }
 
-/* Ensure Bootstrap tooltip text is readable in dark theme */
 .sg-tooltip {
   opacity: 1 !important;
 }
@@ -101,7 +127,6 @@
   border-bottom-color: #0f1115 !important;
 }
 
-/* HostScore action row layout */
 .hostscore-actions {
   display: flex;
   justify-content: space-between;
@@ -110,12 +135,10 @@
   flex-wrap: nowrap;
 }
 
-/* Keep HostScore footer actions aligned within the row */
 .hostscore-actions .button {
   align-self: auto;
 }
 
-/* Prevent long host values from forcing horizontal overflow */
 #storageStatsTable {
   table-layout: fixed;
   width: 100% !important;
@@ -125,6 +148,17 @@
 #storageStatsTable td {
   word-break: break-word;
   overflow-wrap: anywhere;
+}
+
+/* Keyboard focus consistency */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid rgba(192, 57, 43, 0.9);
+  outline-offset: 2px;
 }
 
 @media (max-width: 767.98px) {
@@ -140,7 +174,6 @@
     text-align: center;
   }
 
-  /* Host stats: force a stacked row layout to avoid horizontal overflow */
   #storageStatsTable,
   #storageStatsTable tbody,
   #storageStatsTable tr,

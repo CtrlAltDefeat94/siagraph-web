@@ -6,6 +6,30 @@ include_once "../../bootstrap.php";
 use Siagraph\Utils\Cache;
 use Siagraph\Utils\Formatter;
 
+function normalizeProtocolVersion($value): string
+{
+    $raw = trim((string) ($value ?? ''));
+    if ($raw === '') {
+        return '';
+    }
+    $compact = preg_replace('/\s+/', '', $raw);
+    if (!is_string($compact) || $compact === '') {
+        return $raw;
+    }
+    $hasVPrefix = preg_match('/^v/i', $compact) === 1;
+    $core = preg_replace('/^v\.?/i', '', $compact);
+    if (!is_string($core)) {
+        return $raw;
+    }
+    $core = preg_replace('/[^0-9.]/', '.', $core);
+    $core = preg_replace('/\.+/', '.', (string) $core);
+    $core = trim((string) $core, '.');
+    if ($core === '') {
+        return $raw;
+    }
+    return ($hasVPrefix ? 'v' : '') . $core;
+}
+
 function priceDict($value, $usdRate = null, $eurRate = null): array {
     return [
         'sc'  => $value,
@@ -45,6 +69,15 @@ $public_key = $settings['public_key'];
 $cacheKey = 'host' . http_build_query($_GET);
 $cacheresult = Cache::getCache($cacheKey);
 if ($cacheresult) {
+    $cachedPayload = json_decode($cacheresult, true);
+    if (is_array($cachedPayload) && isset($cachedPayload['protocol_version'])) {
+        $cachedPayload['protocol_version'] = normalizeProtocolVersion($cachedPayload['protocol_version']);
+        $normalizedCached = json_encode($cachedPayload);
+        if (is_string($normalizedCached)) {
+            echo $normalizedCached;
+            die;
+        }
+    }
     echo $cacheresult;
     die;
 }
@@ -113,7 +146,7 @@ if ($settings) {
         "used_storage" => $settings['used_storage'],
         "total_storage" => $settings['total_storage'],
         "software_version" => $settings['software_version'],
-        "protocol_version" => $settings['protocol_version'],
+        "protocol_version" => normalizeProtocolVersion($settings['protocol_version']),
         "resolved_ipv4" => $settings['resolved_ipv4'],
         "hosts_in_subnetv4" => [],
         "resolved_ipv6" => $settings['resolved_ipv6'],

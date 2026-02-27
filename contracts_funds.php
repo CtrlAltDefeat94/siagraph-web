@@ -7,6 +7,7 @@ $graphConfigs = require 'include/graph_configs.php';
 
 use Siagraph\Utils\ApiClient;
 use Siagraph\Utils\Locale;
+use Siagraph\Utils\CurrencyDisplay;
 
 $months = 12; // default visible range; slider covers all data
 $dailyMetricsEndpoint = '/api/v1/daily/metrics';
@@ -16,6 +17,8 @@ $dataError = !is_array($latestData);
 $latest = $dataError ? [] : end($latestData);
 $asOf = !$dataError && isset($latest['date']) ? $latest['date'] : null;
 $asOfText = $asOf ? ('Daily snapshot as of ' . \Siagraph\Utils\Locale::date($asOf)) : 'Daily snapshot';
+$currencyCookie = CurrencyDisplay::selectedCurrency();
+$ratesByDate = $asOf ? CurrencyDisplay::loadDailyRates($asOf, $asOf) : [];
 ?>
 <?php render_header("SiaGraph - Contracts & Collateral"); ?>
 <section id="main-content" class="sg-container">
@@ -41,7 +44,16 @@ $asOfText = $asOf ? ('Daily snapshot as of ' . \Siagraph\Utils\Locale::date($asO
             render_stat_card([
                 'icon' => 'bi bi-wallet',
                 'label' => 'Renter Balance',
-                'value' => isset($latest['renter_collateral_locked']) ? Locale::decimal($latest['renter_collateral_locked']/1e24,0).' SC' : 'N/A',
+                'value' => isset($latest['renter_collateral_locked'])
+                    ? CurrencyDisplay::formatMonetary([
+                        'scValue' => (float) $latest['renter_collateral_locked'] / 1e24,
+                        'currency' => $currencyCookie,
+                        'date' => $asOf,
+                        'ratesByDate' => $ratesByDate,
+                        'decimals' => 0,
+                        'scDecimals' => 0,
+                    ])
+                    : 'N/A',
                 'context' => $asOfText,
             ]);
             ?>
@@ -51,7 +63,16 @@ $asOfText = $asOf ? ('Daily snapshot as of ' . \Siagraph\Utils\Locale::date($asO
             render_stat_card([
                 'icon' => 'bi bi-shield-lock',
                 'label' => 'Host Collateral',
-                'value' => isset($latest['host_collateral_locked']) ? Locale::decimal($latest['host_collateral_locked']/1e24,0).' SC' : 'N/A',
+                'value' => isset($latest['host_collateral_locked'])
+                    ? CurrencyDisplay::formatMonetary([
+                        'scValue' => (float) $latest['host_collateral_locked'] / 1e24,
+                        'currency' => $currencyCookie,
+                        'date' => $asOf,
+                        'ratesByDate' => $ratesByDate,
+                        'decimals' => 0,
+                        'scDecimals' => 0,
+                    ])
+                    : 'N/A',
                 'context' => $asOfText,
             ]);
             ?>
@@ -137,7 +158,7 @@ $asOfText = $asOf ? ('Daily snapshot as of ' . \Siagraph\Utils\Locale::date($asO
                     'true',
                     $months,
                     'false',
-                    'sc',
+                    $currencyCookie,
                     null,
                     500,
                     null,
