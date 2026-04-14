@@ -492,6 +492,11 @@ class GraphRenderer {
             };
 
             if (this.charttype !== 'pie') {
+                const rootStyle = getComputedStyle(document.documentElement);
+                const axisTextColor =
+                    rootStyle.getPropertyValue('--chart-axis-text').trim() ||
+                    rootStyle.getPropertyValue('--bs-body-color').trim() ||
+                    '#f8f9fa';
                 options.options.scales = {
                     x: {
                         type: "time",
@@ -505,7 +510,11 @@ class GraphRenderer {
                         },
                         title: {
                             display: false,
-                            text: "Date"
+                            text: "Date",
+                            color: axisTextColor
+                        },
+                        ticks: {
+                            color: axisTextColor
                         },
                         stacked: this.stacked === true
                     },
@@ -514,9 +523,11 @@ class GraphRenderer {
                         beginAtZero: yBeginAtZero,
                         title: {
                             display: this.displayYAxis === 'true',
-                            text: this.yAxisTitle || "Value"
+                            text: this.yAxisTitle || "Value",
+                            color: axisTextColor
                         },
                         ticks: {
+                            color: axisTextColor,
                             callback: value => this.formatValue(value)
                         },
                         suggestedMax: suggestedMax,
