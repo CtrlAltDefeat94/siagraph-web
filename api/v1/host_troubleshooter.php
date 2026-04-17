@@ -15,8 +15,8 @@ $lookupNetAddress = isset($_GET['net_address']) ? trim((string) $_GET['net_addre
 $lookupPublicKey = isset($_GET['public_key']) ? trim((string) $_GET['public_key']) : '';
 $cacheLookup = $lookupPublicKey !== '' ? $lookupPublicKey : $lookupNetAddress;
 $cacheKey = 'host_troubleshooter:' . $cacheLookup;
-#$cacheresult = Cache::getCache($cacheKey);
-if (!$scan == true && !empty($cacheresult)) {
+$cacheresult = Cache::getCache($cacheKey);
+if ($scan === false && !empty($cacheresult)) {
     echo $cacheresult;
     die;
 }
@@ -87,6 +87,82 @@ function fetchJsonPost($url, $postData = [])
     curl_close($ch);
 
     return ($httpCode >= 200 && $httpCode < 300) ? json_decode($response, true, 512, JSON_BIGINT_AS_STRING) : null;
+}
+
+function postJsonRaw($url, $postData = [])
+{
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+    $body = curl_exec($ch);
+    $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr = curl_error($ch);
+    curl_close($ch);
+
+    return [
+        'body' => is_string($body) ? $body : '',
+        'http_code' => $httpCode,
+        'curl_error' => $curlErr,
+    ];
+}
+
+function isTroubleshootRateLimitedResponse(int $httpCode, string $body): bool
+{
+    $text = strtolower(trim($body));
+    if ($httpCode === 429) {
+        return true;
+    }
+    return (strpos($text, 'cooldown') !== false)
+        || (strpos($text, 'rate limit') !== false)
+        || (strpos($text, 'too many requests') !== false);
+}
+
+function extractCooldownWaitSeconds(string $body, int $defaultSeconds = 3): int
+{
+    $waitSeconds = $defaultSeconds;
+    if (preg_match('/try again in\s*([0-9]+(?:\.[0-9]+)?)s/i', $body, $matches) === 1) {
+        $parsed = (float) ($matches[1] ?? 0);
+        if ($parsed > 0) {
+            $waitSeconds = (int) ceil($parsed);
+        }
+    }
+    return max(1, min(60, $waitSeconds));
+}
+
+function fetchTroubleshootdWithRetry($url, $postData, $retryDelaySeconds = 3)
+{
+    $attempt = postJsonRaw($url, $postData);
+    $decoded = json_decode($attempt['body'], true, 512, JSON_BIGINT_AS_STRING);
+    if ($attempt['http_code'] >= 200 && $attempt['http_code'] < 300 && is_array($decoded)) {
+        return ['ok' => true, 'status' => 200, 'data' => $decoded, 'error' => null];
+    }
+
+    if (isTroubleshootRateLimitedResponse($attempt['http_code'], $attempt['body'])) {
+        $waitSeconds = extractCooldownWaitSeconds($attempt['body'], (int) $retryDelaySeconds);
+        sleep($waitSeconds);
+        $retry = postJsonRaw($url, $postData);
+        $retryDecoded = json_decode($retry['body'], true, 512, JSON_BIGINT_AS_STRING);
+        if ($retry['http_code'] >= 200 && $retry['http_code'] < 300 && is_array($retryDecoded)) {
+            return ['ok' => true, 'status' => 200, 'data' => $retryDecoded, 'error' => null];
+        }
+        if (isTroubleshootRateLimitedResponse($retry['http_code'], $retry['body'])) {
+            return [
+                'ok' => false,
+                'status' => 429,
+                'data' => null,
+                'error' => 'Please try again later.',
+            ];
+        }
+    }
+
+    return [
+        'ok' => false,
+        'status' => 502,
+        'data' => null,
+        'error' => 'Please try again later.',
+    ];
 }
 
 // Check if a given port is open
@@ -206,7 +282,16 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
                 ]
             ];
         }
-        $troubleshootdData = fetchJsonPost($troubleshootdURL, $postTroubleshootdData);
+        $troubleshootdData = null;
+        if ($scan) {
+            $troubleshootResult = fetchTroubleshootdWithRetry($troubleshootdURL, $postTroubleshootdData, 3);
+            if (!$troubleshootResult['ok']) {
+                http_response_code((int) ($troubleshootResult['status'] ?? 502));
+                echo json_encode(['error' => $troubleshootResult['error']]);
+                exit;
+            }
+            $troubleshootdData = $troubleshootResult['data'];
+        }
 
         if ($host_info_data['successfulInteractions'] > 0 && $host_info_data['totalScans'] > 0) {
             $response['uptime'] = round($host_info_data['successfulInteractions'] / $host_info_data['totalScans'], 2);
@@ -255,6 +340,7 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
             $response['settings']["freesectorprice"] = $host_info_data['v2Settings']['prices']['freeSectorPrice'];
         }
 
+        $ports = [];
         # todo revisit after fork
         if ($scan) {
             if ($response['v2']) {
@@ -351,9 +437,9 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
         }
         if (!empty($response['remaining_capacity_percentage'])) {
             if ($response['remaining_capacity_percentage'] == 0) {
-                $response['errors'][] = "Host is full.";
+                $response['errors'][] = "Host has no free storage capacity remaining.";
             } elseif ($response['remaining_capacity_percentage'] <= 5) {
-                $response['warnings'][] = "Host has less than 5% capacity remaining.";
+                $response['warnings'][] = "Host has less than 5% storage capacity remaining.";
             }
         }
         if ($response['settings']['contractprice'] / 1e24 > 0.2) {
@@ -369,5 +455,5 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
 //////////////////////////////
 // Output
 //////////////////////////////
-#Cache::setCache(json_encode($response), $cacheKey, 'hour');
+Cache::setCache(json_encode($response), $cacheKey, 'hour');
 echo json_encode($response);
