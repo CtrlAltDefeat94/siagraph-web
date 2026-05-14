@@ -50,7 +50,13 @@ if (!$hostCacheResult) {
       $hostdata = json_decode($response, true);
       curl_close($ch);
       try {
-         Cache::setCache(json_encode($hostdata), $hostCacheKey, 'hour');
+         $shouldCacheHost = is_array($hostdata) && (
+            (isset($hostdata['known']) && $hostdata['known'] === true)
+            || ((int) ($hostdata['host_id'] ?? 0) > 0)
+         );
+         if ($shouldCacheHost) {
+            Cache::setCache(json_encode($hostdata), $hostCacheKey, 'hour');
+         }
       } catch (Exception $e) {
          // ignore cache errors
       }
@@ -60,11 +66,34 @@ if (!$hostCacheResult) {
 } else {
    $hostdata = $hostCacheResult;
 }
-$parts = explode(':', $hostdata['net_address']);
-$assumed_rhp4_port = end($parts) + 2;
-$hostscorePublicKeyId = preg_replace('/^ed25519:/', '', $hostdata['public_key'] ?? '');
+if (!is_array($hostdata)) {
+   $hostdata = [];
+}
+$isKnownHost = isset($hostdata['known']) ? ((bool) $hostdata['known']) : (((int) ($hostdata['host_id'] ?? 0)) > 0);
+$hostPublicKey = (string) ($hostdata['public_key'] ?? $public_key);
+$hostNetAddress = (string) ($hostdata['net_address'] ?? '');
+$hostDisplayName = $isKnownHost ? ($hostNetAddress !== '' ? $hostNetAddress : $hostPublicKey) : $hostPublicKey;
+$hostDisplayName = $hostDisplayName !== '' ? $hostDisplayName : 'Unknown host';
+
+$parts = explode(':', $hostNetAddress);
+$lastPart = end($parts);
+$assumed_rhp4_port = is_numeric($lastPart) ? ((int) $lastPart + 2) : null;
+$hostscorePublicKeyId = preg_replace('/^ed25519:/', '', $hostPublicKey);
+$hostJsonUrl = $hostPublicKey !== ''
+   ? '/api/v1/host?public_key=' . rawurlencode($hostPublicKey)
+   : '/api/v1/host?id=' . rawurlencode((string) $host_id);
+$globalScores = $hostdata['node_scores']['global'] ?? [];
+$latestGlobalScore = (is_array($globalScores) && !empty($globalScores)) ? end($globalScores) : [];
+$totalScore = (float) ($latestGlobalScore['total_score'] ?? 0);
+$ttfbScore = (float) ($latestGlobalScore['ttfb_score'] ?? 0);
+$uploadScore = (float) ($latestGlobalScore['upload_score'] ?? 0);
+$downloadScore = (float) ($latestGlobalScore['download_score'] ?? 0);
+$benchmark = is_array($hostdata['benchmark'] ?? null) ? $hostdata['benchmark'] : [];
+$ttfbMs = round(((float) ($benchmark['ttfb'] ?? 0)) / 1000 / 1000, 1);
+$uploadMBs = round(((float) ($benchmark['upload_speed'] ?? 0)) / 1000 / 1000, 2);
+$downloadMBs = round(((float) ($benchmark['download_speed'] ?? 0)) / 1000 / 1000, 2);
 // Troubleshooter cache key (based on net address)
-$troubleshooterCacheKey = 'host_troubleshooter:' . $hostdata['net_address'];
+$troubleshooterCacheKey = 'host_troubleshooter:' . $hostNetAddress;
 $troubleshooterCacheResult = json_decode(Cache::getCache($troubleshooterCacheKey), true);
 
 // Try to get troubleshooter data from cache, else fetch it
@@ -99,7 +128,7 @@ if (!$troubleshooterCacheResult && 1==2) {
 ?>
 
 
-<?php render_header('SiaGraph Host Explorer - ' . htmlspecialchars($hostdata['net_address'], ENT_QUOTES, 'UTF-8'), 'SiaGraph Host Explorer', [
+<?php render_header('SiaGraph Host Explorer - ' . htmlspecialchars($hostDisplayName, ENT_QUOTES, 'UTF-8'), 'SiaGraph Host Explorer', [
    '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />',
    '<link rel="stylesheet" href="' . htmlspecialchars(versioned_asset_url('css/pages/host.css'), ENT_QUOTES, 'UTF-8') . '">'
 ]); ?>
@@ -111,15 +140,31 @@ if (!$troubleshooterCacheResult && 1==2) {
             <a class="hover:underline cursor-pointer flex items-center font-medium text-lg" href='/host_explorer'>Top
                Hosts</a>
             <span class="flex items-center font-medium text-lg ">/</span>
-            <span class="flex items-center font-bold text-xl"><?php echo htmlspecialchars($hostdata['net_address'], ENT_QUOTES, 'UTF-8'); ?></span>
+            <span class="flex items-center font-bold text-xl"><?php echo htmlspecialchars($hostDisplayName, ENT_QUOTES, 'UTF-8'); ?></span>
          </div>
          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto sm:justify-end">
             <span class="text-xs sm:text-sm text-gray-300">Subscribe to receive alerts about this host</span>
-            <a class="btn btn-sm btn-brand flex items-center" data-bs-toggle="modal" data-bs-target="#subscribeModal">
+            <a class="btn btn-sm btn-brand flex items-center" href="/host_alerts?public_key=<?php echo rawurlencode($hostPublicKey); ?>">
                🔔 Subscribe
             </a>
          </div>
       </div>
+
+      <?php if (!$isKnownHost): ?>
+      <div class="sg-container__row mt-3">
+         <div class="sg-container__row-content">
+            <section class="card">
+               <h2 class="card__heading">Host Pending Indexing</h2>
+               <div class="card__content">
+                  <div class="alert alert-warning mb-0" role="alert">
+                     This public key is valid but not indexed in SiaGraph yet. Try again in a few minutes.
+                     <div class="mt-2"><code><?php echo htmlspecialchars($hostPublicKey, ENT_QUOTES, 'UTF-8'); ?></code></div>
+                  </div>
+               </div>
+            </section>
+         </div>
+      </div>
+      <?php endif; ?>
 
       <div class="sg-container__row">
          <div class="sg-container__row-content host-top-columns">
@@ -171,7 +216,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                            <tr class="bg-gray-700">
                               <td class="px-4 py-2 font-semibold">Final score</td>
                               <td class="px-4 py-2 text-right text-lg">
-                                 <span class="inline-flex items-center"><?php echo render_score(end($hostdata['node_scores']['global'])['total_score'] ?? 0); ?></span>
+                                 <span class="inline-flex items-center"><?php echo render_score($totalScore); ?></span>
                               </td>
                            </tr>
                            <tr class="bg-gray-900">
@@ -180,8 +225,8 @@ Each benchmark server contributes equally to the score, regardless of how many b
                               </td>
                               <td class="px-4 py-2 text-right">
                                  <span class="inline-flex items-center gap-1 justify-end">
-                                    <span><?php echo round($hostdata['benchmark']['ttfb'] / 1000 / 1000, 1) . " ms"; ?></span>
-                                    <span><?php echo render_score(end($hostdata['node_scores']['global'])['ttfb_score'] ?? 0); ?></span>
+                                    <span><?php echo $ttfbMs . " ms"; ?></span>
+                                    <span><?php echo render_score($ttfbScore); ?></span>
                                  </span>
                               </td>
                            </tr>
@@ -191,8 +236,8 @@ Each benchmark server contributes equally to the score, regardless of how many b
                               </td>
                               <td class="px-4 py-2 text-right">
                                  <span class="inline-flex items-center gap-1 justify-end">
-                                    <span><?php echo round($hostdata['benchmark']['upload_speed'] / 1000 / 1000, 2) . " MB/s"; ?></span>
-                                    <span><?php echo render_score(end($hostdata['node_scores']['global'])['upload_score'] ?? 0); ?></span>
+                                    <span><?php echo $uploadMBs . " MB/s"; ?></span>
+                                    <span><?php echo render_score($uploadScore); ?></span>
                                  </span>
                               </td>
                            </tr>
@@ -202,26 +247,27 @@ Each benchmark server contributes equally to the score, regardless of how many b
                               </td>
                               <td class="px-4 py-2 text-right">
                                  <span class="inline-flex items-center gap-1 justify-end">
-                                    <span><?php echo round($hostdata['benchmark']['download_speed'] / 1000 / 1000, 2) . " MB/s"; ?></span>
-                                    <span><?php echo render_score(end($hostdata['node_scores']['global'])['download_score'] ?? 0); ?></span>
+                                    <span><?php echo $downloadMBs . " MB/s"; ?></span>
+                                    <span><?php echo render_score($downloadScore); ?></span>
                                  </span>
                               </td>
                            </tr>
                            </tbody>
                         </table>
                      </div>
-                     <div class="hostscore-actions mt-3 pt-2 border-t border-gray-700 w-full">
-                        <a id='recentbenchmarks' class="button text-sm"
-                           href='/host_benchmarks?id=<?php echo $host_id; ?>'>View recent benchmarks</a>
+                     <div class="hostscore-actions mt-2 pt-1 border-t border-gray-700 w-full d-flex justify-content-between align-items-center gap-2">
                         <a class="button text-sm" target="_blank" rel="noopener noreferrer"
                            href='https://hostscore.info/host/<?php echo rawurlencode($hostscorePublicKeyId); ?>'>View on HostScore</a>
+                        <a id='recentbenchmarks' class="button text-sm"
+                           href='/host_benchmarks?id=<?php echo $host_id; ?>'>View recent benchmarks</a>
                      </div>
+                       
                   </div>
                </section>
 
                <section class="card">
                   <h2 class="card__heading">Averages of hosts with
-                     final score <?php echo (end($hostdata['node_scores']['global'])['total_score'] ?? 0); ?></h2>
+                     final score <?php echo $totalScore; ?></h2>
                   <div class="card__content">
                      <div class="table-responsive">
                         <table id="hostAverages" class="table table-dark table-clean text-white w-100 border-collapse table-loading">
@@ -253,7 +299,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                            array_merge($graphConfigs['total_storage'], ['unit' => 'TB', 'unitDivisor' => 1e12])
                         ],
                         $dateKey = "date",
-                        $jsonUrl = "/api/v1/host?id=" . $host_id, // JSON URL
+                        $jsonUrl = $hostJsonUrl, // JSON URL
                         $jsonData = $hostdata,
                         $charttype = 'line',
 
@@ -290,7 +336,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                            $graphConfigs['download_price']
                         ],
                         $dateKey = "date",
-                        $jsonUrl = "/api/v1/host?id=" . $host_id, // JSON URL
+                        $jsonUrl = $hostJsonUrl, // JSON URL
                         $jsonData = $hostdata,
 
                         $charttype = 'line',
@@ -323,49 +369,6 @@ Each benchmark server contributes equally to the score, regardless of how many b
    <div id="toast" class="sg-toast is-hidden bg-blue-600 text-white px-4 py-2 rounded bg-gradient shadow-lg">
       Copied to clipboard!
    </div>
-   <!-- Subscription Modal -->
-   <div class="modal fade" id="subscribeModal" tabindex="-1" aria-labelledby="subscribeModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-sm modal-dialog-centered">
-         <div class="modal-content bg-dark text-white subscribe-modal-content">
-            <div class="modal-header">
-               <h5 class="modal-title" id="subscribeModalLabel">Subscribe to Alerts</h5>
-               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="subscribeForm"> <!-- ✅ Proper form opening -->
-               <div class="modal-body">
-                  <div class="mb-3">
-                     <label for="service" class="form-label">Delivery Method</label>
-                     <select class="form-select" id="service" required>
-   <option value="email">Email</option>
-   <option value="pushover">Pushover</option>
-   <option value="telegram">Telegram</option>
-</select>
-                  </div>
-
-                  <!-- Recipient Input -->
-                  <div class="mb-3">
-                     <label for="recipient" class="form-label">Recipient</label>
-                     <input type="text" class="form-control" id="recipient" placeholder="you@example.com or user token"
-                        required>
-                     <!-- Telegram Instructions -->
-                     <div id="telegramInstructions" class="form-text text-muted mt-1 is-hidden">
-                        Start a chat with <a href="https://t.me/Siagraph_bot"
-                           target="_blank"><strong>@Siagraph_bot</strong></a> and type <code>/start</code> to get your
-                        chat ID.
-                     </div>
-
-                  </div>
-                  <div id="subscriptionStatus" class="mt-2 text-center small"></div>
-               </div>
-               <div class="modal-footer px-3 py-2 justify-content-between">
-                  <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-sm btn-brand" id="submitSubscriptionBtn">Subscribe</button>
-
-               </div>
-            </form> <!-- ✅ Proper form closing -->
-         </div>
-      </div>
-   </div>
 
    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -378,14 +381,20 @@ Each benchmark server contributes equally to the score, regardless of how many b
    window.hostEndIso = null;
    // Function to initialize the map
    function initMap() {
-      var locationString = "<?php echo htmlspecialchars($hostdata['location'], ENT_QUOTES, 'UTF-8'); ?>"; // Get the location string from PHP
+      const mapEl = document.getElementById('map');
+      if (!mapEl) return;
+      var locationString = "<?php echo htmlspecialchars($hostdata['location'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"; // Get the location string from PHP
 
       // Split the location string by comma
       var coordinates = locationString.split(',');
 
       // Assign latitude and longitude
-      var latitude = coordinates[0];
-      var longitude = coordinates[1];
+      var latitude = Number.parseFloat(coordinates[0]);
+      var longitude = Number.parseFloat(coordinates[1]);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+         mapEl.innerHTML = '<div class="px-3 py-2 text-sm text-gray-400">Location unavailable.</div>';
+         return;
+      }
       var map = L.map('map', {
          center: [latitude, longitude],
          zoom: 4,
@@ -466,44 +475,51 @@ Each benchmark server contributes equally to the score, regardless of how many b
          renderAveragesHeader();
          const avg = data.segment_averages || {};
          const settings = data.settings || {};
+         const ratioPercent = (num, den) => {
+            const n = Number(num);
+            const d = Number(den);
+            if (!Number.isFinite(n) || !Number.isFinite(d) || d === 0) return null;
+            return (n / d) * 100;
+         };
          const rows = [];
          const lines = [
            {
              label: 'Contract price',
              avgText: formatSCtoFiat((sc_value(avg.contractprice) / 1e24), 2),
-             pct: (sc_value(settings.contractprice) / sc_value(avg.contractprice) * 100)
+             pct: ratioPercent(sc_value(settings.contractprice), sc_value(avg.contractprice))
            },
            {
              label: 'Storage price',
              avgText: formatSCtoFiat((sc_value(avg.storageprice) / 1e12 * 4320), 2, '/TB/Month'),
-             pct: (sc_value(settings.storageprice) / sc_value(avg.storageprice) * 100)
+             pct: ratioPercent(sc_value(settings.storageprice), sc_value(avg.storageprice))
            },
            {
              label: 'Upload price',
              avgText: formatSCtoFiat((sc_value(avg.uploadprice) / 1e12), 2, '/TB'),
-             pct: (sc_value(settings.ingressprice) / sc_value(avg.uploadprice) * 100)
+             pct: ratioPercent(sc_value(settings.ingressprice), sc_value(avg.uploadprice))
            },
            {
              label: 'Egress price',
              avgText: formatSCtoFiat((sc_value(avg.downloadprice) / 1e12), 2, '/TB'),
-             pct: (sc_value(settings.egressprice) / sc_value(avg.downloadprice) * 100)
+             pct: ratioPercent(sc_value(settings.egressprice), sc_value(avg.downloadprice))
            },
            {
              label: 'Stored data',
              avgText: `${(avg.used_storage / 1e12).toFixed(2)} TB`,
-             pct: (data.used_storage / avg.used_storage * 100)
+             pct: ratioPercent(data.used_storage, avg.used_storage)
            }
          ];
          const mobile = isMobile();
          lines.forEach((l, idx) => {
             const zebra = idx % 2 === 0 ? 'bg-gray-800' : 'bg-gray-900';
+            const pctText = (l.pct === null) ? 'N/A' : `${l.pct.toFixed(0)}%`;
             if (mobile) {
                rows.push(`
                  <tr class="${zebra}">
                    <td class="px-4 py-2 font-semibold">${l.label}</td>
                    <td class="px-4 py-2">
                      ${l.avgText}
-                     <div class="text-xs text-gray-300 mt-1">This host: ${l.pct.toFixed(0)}%</div>
+                     <div class="text-xs text-gray-300 mt-1">This host: ${pctText}</div>
                    </td>
                  </tr>`);
             } else {
@@ -511,7 +527,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                  <tr class="${zebra}">
                    <td class="px-4 py-2 font-semibold">${l.label}</td>
                    <td class="px-4 py-2">${l.avgText}</td>
-                   <td class="px-4 py-2 text-right">${l.pct.toFixed(0)}%</td>
+                   <td class="px-4 py-2 text-right">${pctText}</td>
                  </tr>`);
             }
          });
@@ -700,94 +716,9 @@ Each benchmark server contributes equally to the score, regardless of how many b
       }
       window.hostExchangeRate = exchangeRate;
    }
-  document.addEventListener("DOMContentLoaded", function () {
-      const subscribeForm = document.getElementById("subscribeModal");
-      const submitBtn = document.getElementById("submitSubscriptionBtn");
-
-      const serviceInput = document.getElementById("service");
-      const recipientInput = document.getElementById("recipient");
-      const statusDiv = document.getElementById("subscriptionStatus");
-      const telegramInstructions = document.getElementById("telegramInstructions");
-
-      const publicKey = "<?php echo htmlspecialchars($hostdata['public_key'], ENT_QUOTES, 'UTF-8'); ?>";
-
-      initTooltips(document);
-
-      function updateFormFields() {
-         const selectedService = serviceInput.value.trim();
-
-         // Toggle Telegram instructions
-         if (selectedService === "telegram") {
-            telegramInstructions.classList.remove("is-hidden");
-            recipientInput.placeholder = "Telegram Chat ID (e.g. 12345678)";
-         } else if (selectedService === "pushover") {
-            telegramInstructions.classList.add("is-hidden");
-            recipientInput.placeholder = "Pushover user token";
-         } else {
-            telegramInstructions.classList.add("is-hidden");
-            recipientInput.placeholder = "you@example.com";
-         }
-      }
-
-      // Run on load and on service change
-      updateFormFields();
-      serviceInput.addEventListener("change", updateFormFields);
-
-      submitBtn.addEventListener("click", async function () {
-         const service = serviceInput.value.trim();
-         const recipient = recipientInput.value.trim();
-
-         // Basic validation
-         if (!service || !recipient) {
-            statusDiv.textContent = "Please complete all fields.";
-            statusDiv.classList.remove("text-success");
-            statusDiv.classList.add("text-danger");
-            return;
-         }
-
-         // Clear status
-         statusDiv.textContent = "Submitting...";
-         statusDiv.classList.remove("text-danger", "text-success");
-
-         try {
-            const response = await fetch("<?php echo $SETTINGS['siagraph_base_url']; ?>/api/v1/alerts/subscribe", {
-               method: "POST",
-               headers: {
-                  "Content-Type": "application/json",
-               },
-               body: JSON.stringify({
-                  public_key: publicKey,
-                  service: service,
-                  recipient: recipient,
-               }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-               statusDiv.textContent = "Successfully subscribed!";
-               statusDiv.classList.remove("text-danger");
-               statusDiv.classList.add("text-success");
-               recipientInput.value = "";
-               setTimeout(() => {
-                  const modal = bootstrap.Modal.getInstance(document.getElementById('subscribeModal'));
-                  if (modal) modal.hide();
-               }, 1500);
-            } else {
-               statusDiv.textContent = data.error || "Subscription failed.";
-               statusDiv.classList.remove("text-success");
-               statusDiv.classList.add("text-danger");
-            }
-         } catch (err) {
-            statusDiv.textContent = "An error occurred. Please try again.";
-            statusDiv.classList.remove("text-success");
-            statusDiv.classList.add("text-danger");
-            console.error("Subscription error:", err);
-         }
-      });
-   });
    // Call the initMap function when the page has finished loading
    document.addEventListener("DOMContentLoaded", async function () {
+      initTooltips(document);
       const pageCurrency = "<?php echo strtolower($currencyCookie); ?>";
       const daily = hostdata.dailydata || [];
       if (daily.length) {

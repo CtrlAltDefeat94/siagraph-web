@@ -1,12 +1,12 @@
 <footer class="text-white py-6 mt-5 sg-site-footer">
     <div class="container text-center">
         <div class="d-inline-flex align-items-center mb-1 mt-2">
-            <img src="img/siagraph_banner_white.png" alt="SiaGraph" class="sg-site-footer-logo">
+            <img src="/img/siagraph_banner_white.png" alt="SiaGraph" class="sg-site-footer-logo">
             <span class="align-middle">
                 &copy; 2024-<?php echo date("Y"); ?>.
             </span>
         </div>
-        <p class="mb-1">Metrics for the Sia network.</p>
+        <p class="mb-1">Unofficial metrics for the Sia network.</p>
         <p class="mb-0">
             <a class="text-white text-decoration-none" href="/swagger">SiaGraph API docs</a>
             <span class="mx-2">|</span>
