@@ -165,6 +165,11 @@ if (isset($_GET['acceptingContracts']) && $_GET['acceptingContracts'] === 'true'
     $wherePartsForRank[] = 'h3.accepting_contracts = 1';
 }
 
+if (isset($_GET['ipv6']) && $_GET['ipv6'] === 'true') {
+    $whereParts[] = 'h.resolved_ipv6 IS NOT NULL';
+    $wherePartsForRank[] = 'h3.resolved_ipv6 IS NOT NULL';
+}
+
 if (isset($_GET['query']) && $_GET['query'] !== '') {
     $query = trim($_GET['query']);
     $queryLooksLikePublicKey = stripos($query, 'ed25519:') === 0;

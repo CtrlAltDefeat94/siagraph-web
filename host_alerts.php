@@ -66,7 +66,7 @@ render_header('SiaGraph - Host Alerts', 'SiaGraph - Host Alerts');
                         <ul class="alerts-copy alerts-list">
                             <li><strong>Connectivity issues:</strong> when a host fails to respond in time or is getting out of sync.</li>
                             <li><strong>Low wallet balance:</strong> when the wallet balance is insufficient to handle new or existing contracts.</li>
-                            <li><strong>Low capacity:</strong> when free space is running low. A warning is sent once, and if it later escalates to an error, that error is also sent once.</li>
+                            <li><strong>Low capacity:</strong> when the host is running low on free space.</li>
                         </ul>
                         <p class="alerts-copy mb-3">
                             Most critical errors are repeated at 4-hour intervals until resolved, while warnings are reported once. Low-capacity alerts are sent once per severity level.

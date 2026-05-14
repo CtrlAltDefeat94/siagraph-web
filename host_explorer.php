@@ -24,6 +24,9 @@ render_header('SiaGraph - Host Explorer', 'SiaGraph - Host Explorer', [
                         <label for="acceptingContractsFilter" class="flex items-center text-sm">
                             <input type="checkbox" id="acceptingContractsFilter" class="h-4 w-4 me-2">Accepting contracts
                         </label>
+                        <label for="ipv6OnlyFilter" class="flex items-center text-sm">
+                            <input type="checkbox" id="ipv6OnlyFilter" class="h-4 w-4 me-2">IPv6 supported only
+                        </label>
                         <label for="activeOnly" class="flex items-center text-sm">
                             <input type="checkbox" id="activeOnly" class="h-4 w-4 me-2" onchange="handleShowInactiveChange()">Include inactive
                         </label>
@@ -167,6 +170,9 @@ render_header('SiaGraph - Host Explorer', 'SiaGraph - Host Explorer', [
             const acceptingContractsParam = urlParams.get('acceptingContracts');
             const acceptingContractsCheckbox = document.getElementById('acceptingContractsFilter');
             acceptingContractsCheckbox.checked = acceptingContractsParam === 'true';
+            const ipv6Param = urlParams.get('ipv6');
+            const ipv6OnlyCheckbox = document.getElementById('ipv6OnlyFilter');
+            ipv6OnlyCheckbox.checked = ipv6Param === 'true';
 
             // Restore numeric inputs from URL
             ['maxContractPrice', 'maxStoragePrice', 'maxUploadPrice', 'maxDownloadPrice'].forEach((key) => {
@@ -192,6 +198,7 @@ render_header('SiaGraph - Host Explorer', 'SiaGraph - Host Explorer', [
             document.getElementById('versionFilter').addEventListener('change', applyFilters);
             document.getElementById('countryFilter').addEventListener('change', applyFilters);
             document.getElementById('acceptingContractsFilter').addEventListener('change', applyFilters);
+            document.getElementById('ipv6OnlyFilter').addEventListener('change', applyFilters);
             document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
             document.getElementById('filtersToggle').addEventListener('click', toggleFiltersPanel);
             document.addEventListener('currencyChange', function (e) {
@@ -313,6 +320,7 @@ render_header('SiaGraph - Host Explorer', 'SiaGraph - Host Explorer', [
             const version = document.getElementById('versionFilter').value;
             const country = document.getElementById('countryFilter').value;
             const acceptingContracts = document.getElementById('acceptingContractsFilter').checked;
+            const ipv6Only = document.getElementById('ipv6OnlyFilter').checked;
             const showInactive = document.getElementById('activeOnly').checked;
 
             if (version) {
@@ -331,6 +339,12 @@ render_header('SiaGraph - Host Explorer', 'SiaGraph - Host Explorer', [
                 ajaxParams['acceptingContracts'] = true;
             } else {
                 delete ajaxParams['acceptingContracts'];
+            }
+
+            if (ipv6Only) {
+                ajaxParams['ipv6'] = true;
+            } else {
+                delete ajaxParams['ipv6'];
             }
 
             if (showInactive) {
@@ -687,6 +701,8 @@ render_header('SiaGraph - Host Explorer', 'SiaGraph - Host Explorer', [
             });
             const acceptingContractsCheckbox = document.getElementById('acceptingContractsFilter');
             if (acceptingContractsCheckbox) acceptingContractsCheckbox.checked = false;
+            const ipv6OnlyCheckbox = document.getElementById('ipv6OnlyFilter');
+            if (ipv6OnlyCheckbox) ipv6OnlyCheckbox.checked = false;
             const inactiveCheckbox = document.getElementById('activeOnly');
             if (inactiveCheckbox) inactiveCheckbox.checked = false;
 
@@ -697,6 +713,7 @@ render_header('SiaGraph - Host Explorer', 'SiaGraph - Host Explorer', [
             delete ajaxParams['maxUploadPrice'];
             delete ajaxParams['maxDownloadPrice'];
             delete ajaxParams['acceptingContracts'];
+            delete ajaxParams['ipv6'];
             delete ajaxParams['showinactive'];
             delete ajaxParams['query'];
             ajaxParams['page'] = 1;
