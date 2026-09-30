@@ -1,0 +1,160 @@
+.renter-distribution-page {
+  max-width: 1180px;
+  gap: 1.25rem;
+  padding-top: 1.35rem;
+}
+
+.renter-distribution-page .card {
+  background: var(--sg-card-bg);
+  border: 1px solid var(--sg-card-border);
+  border-radius: 1.05rem;
+  box-shadow: var(--sg-card-shadow);
+}
+
+.renter-distribution-page .card__heading {
+  margin: 0;
+  color: var(--sg-heading-accent-strong);
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
+.renter-distribution-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+.renter-distribution-hero__kicker {
+  color: var(--sg-heading-accent);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.renter-distribution-hero__title {
+  margin: 0.18rem 0 0;
+  color: var(--sg-text-strong);
+  font-size: clamp(1.8rem, 3vw, 2.45rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.renter-distribution-hero__copy,
+.renter-distribution-hero__note,
+.renter-distribution-section-copy {
+  max-width: 64rem;
+  margin: 0.75rem 0 0;
+  color: var(--sg-text-muted);
+  line-height: 1.55;
+}
+
+.renter-distribution-hero__note {
+  margin-top: 0.45rem;
+  color: var(--sg-text-faint);
+  font-size: 0.84rem;
+}
+
+.renter-distribution-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.renter-distribution-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.renter-distribution-status {
+  color: var(--sg-text-faint);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.renter-distribution-status.text-danger {
+  color: #ff9c9c !important;
+}
+
+.renter-distribution-chart-card .card__content,
+.renter-distribution-table-card .card__content {
+  margin-top: 1rem;
+}
+
+.renter-distribution-chart-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 420px;
+}
+
+.renter-distribution-chart-wrap canvas {
+  max-width: 390px;
+  max-height: 390px;
+}
+
+.renter-distribution-table-wrap {
+  overflow-x: auto;
+}
+
+.renter-distribution-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #d8d3dd;
+}
+
+.renter-distribution-table th,
+.renter-distribution-table td {
+  padding: 0.72rem 0.85rem;
+  border-bottom: 1px solid var(--sg-border-subtle);
+}
+
+.renter-distribution-table th {
+  color: #e6dfe8;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.renter-distribution-table tbody tr:hover {
+  background: rgba(192, 57, 43, 0.08);
+}
+
+.renter-slice-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.renter-slice-swatch {
+  display: inline-block;
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 991.98px) {
+  .renter-distribution-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .renter-distribution-page {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .renter-distribution-card-head {
+    display: grid;
+  }
+
+  .renter-distribution-chart-wrap {
+    min-height: 320px;
+  }
+}

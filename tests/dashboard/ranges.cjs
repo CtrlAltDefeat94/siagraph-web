@@ -1,0 +1,25 @@
+const assert = require('node:assert/strict');
+const ranges = require('../../js/dashboard/ranges.js');
+const rows = [{ date: '2020-01-01' }, { date: '2024-05-31' }];
+assert.deepEqual(ranges.bounds(rows, { range: '30d' }), { start: '2024-05-02', end: '2024-05-31' });
+assert.deepEqual(ranges.bounds(rows, { range: '3m' }), { start: '2024-02-29', end: '2024-05-31' });
+assert.deepEqual(ranges.bounds(rows, { range: '1y' }), { start: '2023-05-31', end: '2024-05-31' });
+assert.deepEqual(ranges.bounds(rows, { range: 'all' }), { start: '2020-01-01', end: '2024-05-31' });
+assert.deepEqual(ranges.bounds(rows, { range: 'custom', from: '2024-01-01', through: '2024-12-31' }), { start: '2024-01-01', end: '2024-12-31' });
+assert.equal(ranges.read('').range, '3m');
+assert.equal(ranges.validDate('2024-02-29'), true);
+assert.equal(ranges.validDate('2023-02-29'), false);
+assert.equal(ranges.validDate('2024-13-01'), false);
+assert.equal(ranges.read('?range=custom&from=2024-12-31&through=2024-01-01').range, '3m');
+assert.equal(ranges.read('?range=custom&from=2024-01-01&through=2024-12-31').range, 'custom');
+assert.equal(ranges.bounds([], { range: '3m' }), null);
+console.log('PASS range boundaries, leap years, invalid dates, custom URL selection, and 3M default');
+
+const september = [{date: '2020-01-01'}, {date: '2026-09-22'}];
+assert.deepEqual(ranges.monthlyBounds(september, {range:'1y'}), {start:'2025-10-01',end:'2026-09-30'});
+assert.deepEqual(ranges.monthlyBounds(september, {range:'3m'}), {start:'2026-07-01',end:'2026-09-30'});
+assert.deepEqual(ranges.monthlyBounds(september, {range:'30d'}), {start:'2026-09-01',end:'2026-09-30'});
+assert.deepEqual(ranges.monthlyBounds(september, {range:'custom',from:'2024-01-15',through:'2024-02-10'}), {start:'2024-01-01',end:'2024-02-29'});
+assert.deepEqual(ranges.monthlyBounds([{date:'2026-01-01'}], {range:'1y'}), {start:'2025-02-01',end:'2026-01-31'});
+assert.equal(ranges.monthlyBounds([], {range:'1y'}), null);
+console.log('PASS whole-month presets and partial custom-month boundaries');

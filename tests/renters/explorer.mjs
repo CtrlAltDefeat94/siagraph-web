@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const source = fs.readFileSync(new URL('../../js/explorer-v2/components/renter.js', import.meta.url), 'utf8');
+const formatters = fs.readFileSync(new URL('../../js/explorer-v2/formatters/index.js', import.meta.url), 'utf8');
+const module = await import(`data:text/javascript;base64,${Buffer.from(source.replace("'../formatters/index.js'", `'data:text/javascript;base64,${Buffer.from(formatters).toString('base64')}'`)).toString('base64')}`);
+const wallet = 'a'.repeat(76), key = '1'.repeat(64);
+assert.match(module.renterLink({ v2FileContract: { renterPublicKey: key, renterOutput: { address: wallet } } }), /public_key=1+&amp;address=a+/);
+assert.equal(module.renterLink({ hostPublicKey: key }), '');
+assert.equal(module.transactionRenterLinks({ siacoinOutputs: [{ address: wallet }] }).length, 0);
+assert.equal(module.transactionRenterLinks({ fileContracts: [{ renterPublicKey: key }, { renterPublicKey: key }] }).length, 1);
+assert.equal(module.transactionRenterLinks({ fileContractRevisions: [{ parent: { v2FileContract: { renterPublicKey: key } } }] }).length, 1);
+assert.ok(!module.renterLink({ renterPublicKey: '<script>' }).includes('<script>'));
+console.log('PASS explorer key links, nested contracts, deduplication, context, and escaping');

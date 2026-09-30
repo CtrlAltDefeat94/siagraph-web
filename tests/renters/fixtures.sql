@@ -1,0 +1,66 @@
+-- Connection-local fixtures based on inspected DDL. Temporary tables cannot carry foreign keys.
+CREATE TEMPORARY TABLE Renters (
+  renter_wallet_address VARCHAR(78) NOT NULL,
+  first_seen_height INT NOT NULL,
+  first_seen DATETIME NOT NULL,
+  last_active_height INT NOT NULL,
+  last_active DATETIME NOT NULL,
+  active_contracts BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  active_hosts BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  active_public_keys BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  contracted_filesize BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  active_renewed_contracts BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  expiring_within_1_day BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  expiring_within_1_week BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  expiring_within_30_days BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  refundable_allowance DECIMAL(50,0) NOT NULL DEFAULT 0,
+  host_revenue_committed DECIMAL(50,0) NOT NULL DEFAULT 0,
+  average_contract_duration DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  updated_height INT NOT NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (renter_wallet_address),
+  KEY idx_renters_updated_height (updated_height)
+) ENGINE=InnoDB;
+
+CREATE TEMPORARY TABLE RenterPublicKeys (
+  renter_wallet_address VARCHAR(78) NOT NULL,
+  renter_public_key VARCHAR(72) NOT NULL,
+  first_seen_height INT NOT NULL,
+  first_seen DATETIME NOT NULL,
+  last_seen_height INT NOT NULL,
+  last_seen DATETIME NOT NULL,
+  PRIMARY KEY (renter_wallet_address,renter_public_key),
+  KEY idx_renter_public_keys_public_key (renter_public_key)
+) ENGINE=InnoDB;
+
+CREATE TEMPORARY TABLE RentersDailyStats (
+  renter_wallet_address VARCHAR(78) NOT NULL,
+  date DATE NOT NULL,
+  snapshot_height INT NOT NULL,
+  active_contracts BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  active_hosts BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  active_public_keys BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  contracted_filesize BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  active_renewed_contracts BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  expiring_within_1_day BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  expiring_within_1_week BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  expiring_within_30_days BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  refundable_allowance DECIMAL(50,0) NOT NULL DEFAULT 0,
+  host_revenue_committed DECIMAL(50,0) NOT NULL DEFAULT 0,
+  average_contract_duration DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  contracts_formed BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  contract_revisions BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  contracts_resolved_storage_proof BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  contracts_resolved_expiration BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  contracts_resolved_renewal BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  bytes_uploaded BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  bytes_removed BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  spending DECIMAL(50,0) NOT NULL DEFAULT 0,
+  funds_returned DECIMAL(50,0) NOT NULL DEFAULT 0,
+  renewal_funds_rolled DECIMAL(50,0) DEFAULT NULL,
+  additional_renewal_funds DECIMAL(50,0) DEFAULT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (renter_wallet_address,date),
+  KEY idx_renters_daily_date (date)
+) ENGINE=InnoDB;

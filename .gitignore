@@ -3,6 +3,7 @@ OLD/*
 *.svg
 !img/*.svg
 *.json
+!docs/contract-tax-example.json
 !composer.json
 !package.json
 !package-lock.json
@@ -11,3 +12,18 @@ OLD/*
 node_modules
 .git.*
 api/v2/*
+!api/v2/contracts/
+!api/v2/contracts/*.php
+!api/v2/swagger.json
+local/*
+explorer/*
+!explorer/
+!explorer/*.php
+!explorer/*/
+!explorer/*/*.php
+js/explorer/*
+!js/explorer-v2/
+!js/explorer-v2/**
+local/
+AGENTS.md
+.codex

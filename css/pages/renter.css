@@ -1,0 +1,97 @@
+/* Renter detail follows the host detail hierarchy without inheriting host-only selectors. */
+.renter-profile :is(h2, h3)[title] { cursor: help; }
+.renter-profile :is(h2, h3)[title]::after { content: ' ⓘ'; font-size: .72em; opacity: .65; }
+.renter-directory { max-width: 1440px; padding: 1.35rem 2rem 3rem; }
+.renter-directory .card { border: 1px solid var(--sg-card-border); background: var(--sg-card-bg); box-shadow: var(--sg-card-shadow); border-radius: 1.05rem; }
+.renter-directory .renter-table-wrap { border: 1px solid var(--sg-border-muted); border-radius: .55rem; max-height: none; }
+.renter-directory th { background: var(--sg-panel-bg-soft); color: var(--sg-text-soft); font-size: .72rem; }
+.renter-directory td { font-size: .78rem; }
+.renter-directory td:not(:first-child), .renter-directory th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.renter-directory td a { font-family: ui-monospace, monospace; }
+.renter-directory .renter-controls { padding: .85rem; background: var(--sg-panel-bg-soft); border: 1px solid var(--sg-border-muted); border-radius: .7rem; }
+.renter-directory nav.renter-controls { justify-content: flex-end; padding: 0; background: none; border: 0; }
+.renter-directory .renter-controls label { font-size: .75rem; color: var(--sg-text-muted); }
+.renter-directory #renterStatus, .renter-directory #renterOverviewStatus { color: var(--sg-text-faint); font-size: .76rem; }
+.renter-profile .ac-host .host-stat-card { padding: .8rem; background: var(--sg-panel-bg); border: 1px solid var(--sg-border-muted); border-radius: .7rem; min-width: 0; }
+.renter-profile .ac-host .host-stat-card__label { color: var(--sg-text-muted); text-transform: uppercase; letter-spacing: .06em; }
+@media(max-width:600px) { .renter-directory { padding: 1rem; } }
+#main-content.renter-profile {
+    max-width: 1440px;
+    padding: 1.35rem 2rem 3rem;
+    gap: 1.25rem;
+}
+.renter-profile .card {
+    border: 1px solid var(--sg-card-border);
+    background: var(--sg-card-bg);
+    box-shadow: var(--sg-card-shadow);
+    border-radius: 1.05rem;
+    padding: 1.2rem;
+}
+.renter-profile-top { display: grid; grid-template-columns: minmax(0, 1.85fr) minmax(300px, 1fr); gap: 1.05rem; }
+.renter-hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+.renter-kicker { color: var(--sg-heading-accent); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+.renter-profile .renter-hero h1 { font-size: clamp(1.65rem, 2.35vw, 2.25rem); line-height: 1.15; letter-spacing: -.025em; margin: .18rem 0 0; color: var(--sg-text-strong); }
+.renter-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.renter-actions .button { font-size: .75rem; padding: .45rem .7rem; }
+.renter-hero #renterIdentity { margin-top: 1.05rem; }
+.renter-profile .renter-address { display: grid; grid-template-columns: 4rem minmax(0, 1fr) auto; align-items: center; gap: .6rem; padding: .65rem .78rem; background: var(--sg-control-bg); border: 1px solid var(--sg-border-control); border-radius: .65rem; }
+.renter-wallet-label { color: var(--sg-text-muted); font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.renter-wallet-value { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: .82rem; line-height: 1.5; min-width: 0; }
+.renter-profile .renter-copy { margin: 0; padding: .35rem .65rem; font-size: .72rem; white-space: nowrap; }
+.renter-chips { display: flex; gap: .45rem; flex-wrap: wrap; }
+.renter-chip { border: 1px solid var(--sg-border-control); color: var(--sg-text-muted); background: var(--sg-control-bg); border-radius: 999px; padding: .2rem .55rem; font-size: .72rem; }
+.renter-chip.is-active { color: var(--sg-action-text); border-color: var(--sg-border-accent); background: var(--sg-action-bg); }
+.renter-profile #renterStatus { margin: .7rem 0 0; font-size: .78rem; color: var(--sg-text-muted); }
+.renter-profile #renterStatus.renter-error { color: var(--sg-heading-accent); }
+.renter-profile h2 { color: var(--sg-heading-accent); font-size: 1.12rem; line-height: 1.25; margin-bottom: .35rem; }
+.renter-section-copy { color: var(--sg-text-faint); font-size: .78rem; line-height: 1.5; margin: 0 0 1rem; }
+.renter-profile .renter-observations { display: grid; gap: .6rem; }
+.renter-profile .renter-observations div { display: grid; grid-template-columns: 1fr auto; gap: .15rem .5rem; align-items: center; min-width: 0; font-size: .78rem; }
+.renter-observations strong { font-weight: 500; color: var(--sg-text-muted); }
+.renter-observations p { margin: 0; grid-column: 1; color: var(--sg-text-strong); }
+.renter-observations a { grid-column: 2; grid-row: span 2; }
+.renter-profile #renterFreshness { margin: .85rem 0 0; padding-top: .7rem; border-top: 1px solid var(--sg-border-muted); font-size: .72rem; }
+.renter-profile .renter-summary { padding: .8rem; }
+.renter-profile .renter-summary .renter-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; gap: .8rem; }
+.renter-profile .renter-metric { margin: 0; border-radius: .7rem; background: var(--sg-panel-bg); border-color: var(--sg-border-muted); padding: .78rem .85rem; }
+.renter-profile .renter-metric dt { font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; }
+.renter-profile .renter-metric dd { font-size: 1.08rem; font-weight: 700; line-height: 1.3; color: var(--sg-text-strong); margin-top: .32rem; }
+:is(.renter-profile, .renter-directory) .renter-tabs { display: flex; gap: .35rem; align-items: center; border: 1px solid var(--sg-border-control); background: var(--sg-control-bg); border-radius: 999px; padding: .25rem; width: fit-content; max-width: 100%; overflow-x: auto; }
+:is(.renter-profile, .renter-directory) .renter-tabs button { border: 1px solid transparent; background: transparent; color: var(--sg-text-muted); border-radius: 999px; padding: .45rem .9rem; font-size: .8rem; line-height: 1.2; white-space: nowrap; }
+:is(.renter-profile, .renter-directory) .renter-tabs button[aria-selected="true"] { border-color: var(--sg-border-accent); background: var(--sg-action-bg-hover); color: var(--sg-action-text); }
+.renter-panel-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.05rem; }
+.renter-facts .renter-metric { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: baseline; border: 0; border-bottom: 1px solid var(--sg-border-muted); border-radius: 0; background: transparent; padding: .8rem 0; }
+.renter-facts .renter-metric dt { font-size: .8rem; letter-spacing: normal; text-transform: none; }
+.renter-facts .renter-metric dd { text-align: right; font-size: .88rem; margin: 0; }
+.renter-profile button.renter-section-link { border: 0; background: transparent; color: var(--sg-action-text); font-size: .8rem; padding: .75rem 0 0; }
+.renter-profile table { font-size: .8rem; }
+.renter-profile th { color: var(--sg-text-muted); font-weight: 600; }
+.renter-profile tbody tr:hover { background: var(--sg-panel-bg); }
+.renter-profile .renter-range-buttons { display: flex; justify-content: flex-end; gap: .4rem; flex-wrap: wrap; }
+.renter-profile .renter-range-buttons button { border-radius: 999px; font-size: .78rem; padding: .34rem .72rem; }
+.renter-profile .renter-range-buttons button[aria-pressed="true"] { border-color: var(--sg-border-accent); background: var(--sg-action-bg); color: var(--sg-action-text); }
+.renter-profile .renter-controls { gap: .65rem; }
+.renter-profile .renter-controls label { font-size: .75rem; color: var(--sg-text-muted); }
+.renter-profile .renter-controls input, .renter-profile .renter-controls select { min-width: 0; width: 100%; font-size: .8rem; }
+.renter-profile [role="tabpanel"] { min-width: 0; }
+.renter-profile #renterCandidates .renter-address { display: block; }
+@media (max-width: 1000px) {
+    .renter-profile-top { grid-template-columns: 1fr; }
+    .renter-profile .renter-summary .renter-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 650px) {
+    #main-content.renter-profile { padding: 1rem .85rem 2rem; }
+    .renter-panel-grid { grid-template-columns: 1fr; }
+    .renter-profile .renter-address { grid-template-columns: minmax(0, 1fr) auto; }
+    .renter-wallet-label { grid-column: 1 / -1; }
+    :is(.renter-profile, .renter-directory) .renter-tabs { width: 100%; border-radius: 1rem; }
+    :is(.renter-profile, .renter-directory) .renter-tabs button { padding: .45rem .65rem; }
+    .renter-profile .renter-summary .renter-metrics { gap: .5rem; }
+    .renter-profile .renter-metric dd { font-size: .95rem; }
+}
+
+.renter-profile .renter-wallet-value { color: var(--sg-text-strong); }
+.renter-profile .renter-observations a { color: var(--sg-action-text); }
+
+.renter-profile .renter-expiration-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 650px) { .renter-profile .renter-expiration-cards { grid-template-columns: 1fr; } }

@@ -1,0 +1,136 @@
+.siafunds-page {
+  max-width: 1320px;
+  gap: 1.25rem;
+  padding-top: 1.35rem;
+}
+
+.siafunds-page .card {
+  background: var(--sg-card-bg);
+  border: 1px solid var(--sg-card-border);
+  border-radius: 1.05rem;
+  box-shadow: var(--sg-card-shadow);
+}
+
+.siafunds-page .card__heading {
+  margin: 0;
+  color: var(--sg-heading-accent-strong);
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
+.siafunds-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+.siafunds-hero__kicker {
+  color: var(--sg-heading-accent);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.siafunds-hero__title {
+  margin: 0.18rem 0 0;
+  color: var(--sg-text-strong);
+  font-size: clamp(1.8rem, 3vw, 2.45rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.siafunds-hero__copy,
+.siafunds-hero__status,
+.siafunds-section-copy {
+  max-width: 68rem;
+  margin: 0.75rem 0 0;
+  color: var(--sg-text-muted);
+  line-height: 1.55;
+}
+
+.siafunds-hero__status {
+  color: var(--sg-status-warning);
+  font-size: 0.9rem;
+}
+
+.siafunds-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.siafunds-stat-card {
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--sg-border-muted);
+  border-radius: 0.8rem;
+  background: var(--sg-panel-bg);
+}
+
+.siafunds-stat-card__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  margin-bottom: 0.38rem;
+  color: var(--sg-text-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.siafunds-stat-card__value {
+  color: #f5efe9;
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.siafunds-stat-card__context {
+  margin-top: 0.35rem;
+  color: var(--sg-text-faint);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.siafunds-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.siafunds-chart-card,
+.siafunds-chart-card--wide {
+  min-width: 0;
+}
+
+.siafunds-chart-card--wide {
+  grid-column: 1 / -1;
+}
+
+.siafunds-chart-card .card__content {
+  margin-top: 1rem;
+}
+
+.siafunds-page .graph-container {
+  min-height: 360px;
+}
+
+.siafunds-chart-card--wide .graph-container {
+  min-height: 430px;
+}
+
+@media (max-width: 991.98px) {
+  .siafunds-stat-grid,
+  .siafunds-chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .siafunds-page {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}

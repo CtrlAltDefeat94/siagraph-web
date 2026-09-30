@@ -1,9 +1,12 @@
 <?php
 include_once "../../bootstrap.php";
+require_once __DIR__ . '/../../include/api_auth.php';
 
 use Siagraph\Utils\Cache;
 
 header('Content-Type: application/json');
+siagraph_require_api_password_auth();
+
 $url = "http://localhost:8484/benchmark";
 // Fetch host ID from URL
 if (isset($_GET['public_key'])) {

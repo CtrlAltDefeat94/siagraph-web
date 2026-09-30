@@ -44,3 +44,7 @@ For parity, each V2 endpoint preserves all V1 payload fields under `data.parity`
 
 ## Precision note
 Where V1 relied on string precision for large/high-precision values, V2 preserves those values in parity payloads without lossy coercion.
+
+## Renter summaries and wallet identity
+
+Renter V2 endpoints now read stored renter tables directly. The V2 distribution route reads optional producer publications and returns null with `availability: awaiting_summary` until available. Existing distribution field names are retained in published payloads, with precision-preserving numeric strings. V1 behavior is unchanged. New wallet directory, details, public-key resolver, and daily endpoints are documented in [renter-data-contract.md](renter-data-contract.md).

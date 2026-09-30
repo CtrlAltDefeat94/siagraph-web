@@ -1,0 +1,148 @@
+.peers-page {
+  max-width: 1180px;
+  gap: 1.25rem;
+  padding-top: 1.35rem;
+}
+
+.peers-page .card {
+  background: var(--sg-card-bg);
+  border: 1px solid var(--sg-card-border);
+  border-radius: 1.05rem;
+  box-shadow: var(--sg-card-shadow);
+}
+
+.peers-page .card__heading {
+  margin: 0;
+  color: var(--sg-heading-accent-strong);
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
+.peers-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.peers-hero__kicker {
+  color: var(--sg-heading-accent);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.peers-hero__title {
+  margin: 0.18rem 0 0;
+  color: var(--sg-text-strong);
+  font-size: clamp(1.8rem, 3vw, 2.45rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.peers-hero__copy,
+.peers-hero__note,
+.peers-section-copy {
+  max-width: 64rem;
+  margin: 0.75rem 0 0;
+  color: var(--sg-text-muted);
+  line-height: 1.55;
+}
+
+.peers-hero__note {
+  margin-top: 0.45rem;
+  color: var(--sg-text-faint);
+  font-size: 0.84rem;
+}
+
+.peers-status {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--sg-border-muted);
+  border-radius: 999px;
+  color: var(--sg-text-faint);
+  background: var(--sg-panel-bg-soft);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.peers-status.text-danger {
+  color: #ff9c9c !important;
+  border-color: rgba(237, 93, 93, 0.4);
+}
+
+.peers-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.peers-card .card__content {
+  margin-top: 1rem;
+}
+
+.peers-table-wrap {
+  overflow-x: auto;
+}
+
+.peers-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #d8d3dd;
+}
+
+.peers-table th,
+.peers-table td {
+  padding: 0.72rem 0.85rem;
+  border-bottom: 1px solid var(--sg-border-subtle);
+  vertical-align: top;
+}
+
+.peers-table th {
+  color: #e6dfe8;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.peers-table tbody tr:hover {
+  background: rgba(192, 57, 43, 0.08);
+}
+
+.peers-table .copy-btn {
+  max-width: 18rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--sg-action-text);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.peers-table .copy-btn:hover,
+.peers-table .copy-btn:focus-visible {
+  color: var(--sg-action-text-hover);
+  text-decoration: underline;
+}
+
+@media (max-width: 991.98px) {
+  .peers-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .peers-page {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .peers-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .peers-status {
+    justify-self: start;
+  }
+}

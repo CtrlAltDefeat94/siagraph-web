@@ -88,7 +88,7 @@ class CurrencyDisplay
 
         $endpoint = '/api/v1/daily/exchange_rate?start=' . rawurlencode($start . 'T00:00:00Z')
             . '&end=' . rawurlencode($end . 'T23:59:59Z');
-        $rows = ApiClient::fetchJson($endpoint, true, 'day');
+        $rows = ApiClient::fetchJson($endpoint, true, 'hour');
         if (!is_array($rows)) {
             return [];
         }

@@ -10,7 +10,10 @@ class Database
 
     public static function initialize(array $config): void
     {
-        self::$connection = new mysqli(
+        self::$connection = mysqli_init();
+        if (isset($config['connect_timeout'])) self::$connection->options(MYSQLI_OPT_CONNECT_TIMEOUT, (int) $config['connect_timeout']);
+        if (isset($config['read_timeout'])) self::$connection->options(MYSQLI_OPT_READ_TIMEOUT, (int) $config['read_timeout']);
+        self::$connection->real_connect(
             $config['servername'],
             $config['username'],
             $config['password'],

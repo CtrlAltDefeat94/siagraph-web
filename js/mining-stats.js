@@ -2,7 +2,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const dataEl = document.getElementById('mining-data');
     const tokenomics = JSON.parse(dataEl?.dataset.tokenomics || 'null');
     if (tokenomics && tokenomics.length) {
-        const ctx = document.getElementById('blockRewardChart').getContext('2d');
+        const canvas = document.getElementById('blockRewardChart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
         const labels = tokenomics.map(t => t.date);
         const rewards = tokenomics.map(t => t.cumulative_reward);
         new Chart(ctx, {
@@ -12,13 +15,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasets: [{
                     label: 'Block Reward (Cumulative)',
                     data: rewards,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(45, 212, 191, 0.16)',
+                    borderColor: 'rgba(45, 212, 191, 0.95)',
                     borderWidth: 2,
                     fill: true
                 }]
             },
             options: {
+                maintainAspectRatio: false,
                 plugins: {
                     tooltip: {
                         callbacks: {
@@ -30,13 +34,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 },
                 scales: {
-                    x: { type: 'time', time: { unit: 'year' } },
+                    x: {
+                        type: 'time',
+                        time: { unit: 'year' },
+                        grid: { color: 'rgba(148, 163, 184, 0.08)' },
+                        ticks: { color: '#8f7f7a' }
+                    },
                     y: {
                         beginAtZero: true,
+                        grid: { color: 'rgba(148, 163, 184, 0.08)' },
                         ticks: {
+                            color: '#8f7f7a',
                             callback: (value) => formatSC(value)
                         },
-                        title: { display: true, text: 'Block Reward (SC)' }
+                        title: { display: true, text: 'Block Reward (SC)', color: '#b8aaa6' }
                     }
                 }
             }

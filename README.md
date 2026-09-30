@@ -30,7 +30,12 @@ Notes:
 
 Install PHP dependencies from the repository root:
 ```sh
-composer install --no-dev
+docker run --rm \
+  -u "$(id -u):$(id -g)" \
+  -v "$PWD":/app \
+  -w /app \
+  composer:2 \
+  composer install --no-dev
 ```
 This generates the `vendor/` directory (do not commit it).
 
@@ -50,9 +55,20 @@ The SCSS sources live in the `scss/` directory. Card styles are defined in
 dependencies and run the Mix build:
 
 ```sh
-npm install
-npm run prod       # one-time build
-# or `npm run dev` to watch during development
+docker run --rm \
+  -u "$(id -u):$(id -g)" \
+  -v "$PWD":/app \
+  -w /app \
+  node:20 \
+  sh -lc "npm install && npm run prod"  # one-time build
+
+# or:
+docker run --rm \
+  -u "$(id -u):$(id -g)" \
+  -v "$PWD":/app \
+  -w /app \
+  node:20 \
+  sh -lc "npm install && npm run dev"   # watch during development
 ```
 
 ## Folder Structure
@@ -76,7 +92,8 @@ Major pages in the project include:
 - `network_storage.php` – storage usage and host totals
 - `network_aggregates.php` – aggregated metrics over time
 - `peers.php` – map of peers currently online
-- `token_volume.php` – network volume information
+- `token_transfer_volume.php` – token transfer volume information
+- `contracts_collateral.php` – contract and collateral metrics
 - `tokenomics.php` – token supply and economics overview
 - `revenue.php` – contract revenue and burned funds
 - `hosting.php` – overview of hosting pages
@@ -132,3 +149,9 @@ Avoid defining multiple `location ~ \.php$` blocks with different PHP versions; 
     - Debian/Ubuntu CLI: `apt-get install php8.4-mysql`
     - Debian/Ubuntu FPM: `apt-get install php8.4-mysql && systemctl restart php8.4-fpm`
   - Ensure Nginx points to the same PHP version you installed the module for.
+
+## Renter information
+
+`/renters` provides wallet search and `/renter?address=...` provides stored current state, observed public keys, and daily history. Explorer renter-key links resolve to wallet addresses before displaying metrics. APIs read precomputed database values without aggregating contract data.
+
+See [the renter data contract](docs/renter-data-contract.md) for endpoints, precision guarantees, validation, fixture tests, and optional producer-summary setup. Network totals and distribution require published summaries; the wallet features work independently.

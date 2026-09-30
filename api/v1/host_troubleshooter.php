@@ -14,7 +14,7 @@ if (isset($_GET['scan'])) {
 $lookupNetAddress = isset($_GET['net_address']) ? trim((string) $_GET['net_address']) : '';
 $lookupPublicKey = isset($_GET['public_key']) ? trim((string) $_GET['public_key']) : '';
 $cacheLookup = $lookupPublicKey !== '' ? $lookupPublicKey : $lookupNetAddress;
-$cacheKey = 'host_troubleshooter:' . $cacheLookup;
+$cacheKey = 'host_troubleshooter:v3:' . $cacheLookup;
 $cacheresult = Cache::getCache($cacheKey);
 if ($scan === false && !empty($cacheresult)) {
     echo $cacheresult;
@@ -211,47 +211,61 @@ if ($lookupNetAddress === '' && $lookupPublicKey === '') {
 
 $net_address = $lookupNetAddress;
 
-if ($net_address === '' && $lookupPublicKey !== '') {
-    $stmt = $mysqli->prepare("SELECT net_address FROM Hosts WHERE public_key = ? LIMIT 1");
-    if (!$stmt) {
-        echo json_encode(['error' => 'Unable to resolve public_key']);
-        exit;
-    }
-    $stmt->bind_param('s', $lookupPublicKey);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $hostRow = $result ? $result->fetch_assoc() : null;
-    $stmt->close();
-
-    if (!$hostRow || empty($hostRow['net_address'])) {
-        echo json_encode(['error' => 'public_key not found']);
-        exit;
-    }
-    $net_address = $hostRow['net_address'];
-}
-
-// Validate net_address format (host:port)
-if (!preg_match('/^([\w\.-]+):(\d+)$/', $net_address, $matches)) {
-    echo json_encode(['error' => 'Invalid net_address format']);
-    exit;
-}
-
-$host = $matches[1];
-$main_port = (int) $matches[2];
-
 // Fetch host info from explorer API
 $public_key_url = $SETTINGS['explorer'] . "/hosts";
-$postData = ["netAddresses" => [$net_address]];
+if ($lookupPublicKey !== '') {
+    $postData = ["publicKeys" => [$lookupPublicKey]];
+} else {
+    $postData = ["netAddresses" => [$net_address]];
+}
 
 $hostsdata = fetchJsonPost($public_key_url, $postData);
 
+if ($lookupPublicKey !== '' && is_array($hostsdata)) {
+    $hostsdata = array_values(array_filter(
+        $hostsdata,
+        static fn($candidate) => is_array($candidate)
+            && isset($candidate['publicKey'])
+            && $candidate['publicKey'] === $lookupPublicKey
+    ));
+}
+
+if (is_array($hostsdata)) {
+    usort(
+        $hostsdata,
+        static fn($a, $b) => strcmp(
+            (string) ($b['lastAnnouncement'] ?? ''),
+            (string) ($a['lastAnnouncement'] ?? '')
+        )
+    );
+}
 
 if (!empty($hostsdata) && is_array($hostsdata)) {
+    $host_info_data = $hostsdata[0];
+
+    if ($net_address === '') {
+        if (!empty($host_info_data['v2'])) {
+            foreach (($host_info_data['v2NetAddresses'] ?? []) as $advertisedAddress) {
+                if (($advertisedAddress['protocol'] ?? '') === 'siamux') {
+                    $net_address = trim((string) ($advertisedAddress['address'] ?? ''));
+                    break;
+                }
+            }
+        } else {
+            $net_address = trim((string) ($host_info_data['netAddress'] ?? ''));
+        }
+    }
+
+    if (!preg_match('/^([\w\.-]+):(\d+)$/', $net_address, $matches)) {
+        echo json_encode(['error' => 'Host has no valid advertised net address']);
+        exit;
+    }
+
+    $host = $matches[1];
+    $main_port = (int) $matches[2];
     $ip_versions = checkIPVersion($host);
     $response['ipv4_enabled'] = $ip_versions['ipv4'];
     $response['ipv6_enabled'] = $ip_versions['ipv6'];
-
-    $host_info_data = end($hostsdata);
 
     // Populate response from host info
     if (isset($host_info_data['publicKey'])) {
@@ -449,7 +463,11 @@ if (!empty($hostsdata) && is_array($hostsdata)) {
     }
 
 } else {
-    $response['errors'][] = "Netaddress not found. Verify the net address, or try (re)announcing the host.";
+    if ($lookupPublicKey !== '') {
+        $response['errors'][] = "Public key not found. Verify the public key, or try (re)announcing the host.";
+    } else {
+        $response['errors'][] = "Netaddress not found. Verify the net address, or try (re)announcing the host.";
+    }
 }
 
 //////////////////////////////

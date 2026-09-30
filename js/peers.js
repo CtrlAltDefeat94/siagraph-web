@@ -1,25 +1,51 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    const statusEl = document.getElementById('peersStatus');
+    const mainTbody = document.querySelector('#mainnetTable tbody');
+    const zenTbody = document.querySelector('#zenTable tbody');
+
+    const setStatus = (message, isError = false) => {
+        if (!statusEl) return;
+        statusEl.textContent = message;
+        statusEl.classList.toggle('text-danger', !!isError);
+    };
+
+    const escapeHtml = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
     try {
         const data = await fetchWithCache('/api/v1/peers', {}, 300000);
-        const mainnetPeers = data.mainnet.slice(0, 5);
-        const zenPeers = data.zen.slice(0, 5);
-
-        const mainTbody = document.querySelector('#mainnetTable tbody');
-        const zenTbody = document.querySelector('#zenTable tbody');
+        const mainnetPeers = Array.isArray(data?.mainnet) ? data.mainnet.slice(0, 5) : [];
+        const zenPeers = Array.isArray(data?.zen) ? data.zen.slice(0, 5) : [];
 
         const createRow = (peer) => {
             const tr = document.createElement('tr');
+            const address = escapeHtml(peer.address);
+            const version = escapeHtml(peer.version || 'N/A');
+            const lastScanned = escapeHtml(peer.last_scanned || 'N/A');
             tr.innerHTML = `
-                <td class="px-4 py-2">
-                    <button class="copy-btn text-left hover:underline" data-text="${peer.address}">${peer.address}</button>
+                <td>
+                    <button class="copy-btn" data-text="${address}">${address}</button>
                 </td>
-                <td class="px-4 py-2 text-right">${peer.version}</td>
-                <td class="px-4 py-2 text-right">${peer.last_scanned}</td>`;
+                <td class="text-end">${version}</td>
+                <td class="text-end">${lastScanned}</td>`;
             return tr;
         };
 
+        if (mainTbody) mainTbody.innerHTML = '';
+        if (zenTbody) zenTbody.innerHTML = '';
         mainnetPeers.forEach(p => mainTbody.appendChild(createRow(p)));
         zenPeers.forEach(p => zenTbody.appendChild(createRow(p)));
+        if (!mainnetPeers.length && mainTbody) {
+            mainTbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No recent mainnet peers found.</td></tr>';
+        }
+        if (!zenPeers.length && zenTbody) {
+            zenTbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No recent Zen peers found.</td></tr>';
+        }
+        setStatus(`${mainnetPeers.length + zenPeers.length} peers shown`);
 
         document.querySelectorAll('.copy-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
@@ -30,6 +56,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     } catch (err) {
         console.error('Error fetching data', err);
+        setStatus('Failed to load peers.', true);
+        if (mainTbody) mainTbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Peer data unavailable.</td></tr>';
+        if (zenTbody) zenTbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Peer data unavailable.</td></tr>';
     }
 });
 

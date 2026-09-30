@@ -1041,6 +1041,15 @@
             }
           },
           {
+            "name": "ipv6",
+            "in": "query",
+            "description": "Only include hosts with a resolved IPv6 address if set to `true`.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "query",
             "in": "query",
             "description": "Filter hosts by their net address. Case-insensitive partial match.",
@@ -1070,43 +1079,33 @@
             }
           },
           {
-            "name": "maxContractPrice",
-            "in": "query",
-            "description": "Return hosts with a contract price less than or equal to this value (hastings).",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "example": 1000000000000000000000
-            }
-          },
-          {
             "name": "maxStoragePrice",
             "in": "query",
-            "description": "Return hosts with a storage price less than or equal to this value (hastings per byte per block).",
+            "description": "Return hosts with a storage price less than or equal to this value in the selected currency per TB per month.",
             "required": false,
             "schema": {
-              "type": "integer",
-              "example": 5000000000000
+              "type": "number",
+              "example": 2
             }
           },
           {
             "name": "maxUploadPrice",
             "in": "query",
-            "description": "Return hosts with an upload price below this value (hastings per byte).",
+            "description": "Return hosts with an upload price below this value in the selected currency per TB.",
             "required": false,
             "schema": {
-              "type": "integer",
-              "example": 1000000000000
+              "type": "number",
+              "example": 1
             }
           },
           {
             "name": "maxDownloadPrice",
             "in": "query",
-            "description": "Return hosts with a download price below this value (hastings per byte).",
+            "description": "Return hosts with a download price below this value in the selected currency per TB.",
             "required": false,
             "schema": {
-              "type": "integer",
-              "example": 2000000000000
+              "type": "number",
+              "example": 5
             }
           }
         ],
