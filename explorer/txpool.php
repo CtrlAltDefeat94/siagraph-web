@@ -1,4 +1,4 @@
 <?php
 $pageTitle = 'Transaction Pool';
 $pageKey = 'txpool';
-require dirname(__DIR__) . '/explorer/_page.php';
+require __DIR__ . '/_page.php';
