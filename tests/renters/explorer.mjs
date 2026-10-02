@@ -6,8 +6,9 @@ const module = await import(`data:text/javascript;base64,${Buffer.from(source.re
 const wallet = 'a'.repeat(76), key = '1'.repeat(64);
 assert.match(module.renterLink({ v2FileContract: { renterPublicKey: key, renterOutput: { address: wallet } } }), /public_key=1+&amp;address=a+/);
 assert.equal(module.renterLink({ hostPublicKey: key }), '');
-assert.equal(module.transactionRenterLinks({ siacoinOutputs: [{ address: wallet }] }).length, 0);
-assert.equal(module.transactionRenterLinks({ fileContracts: [{ renterPublicKey: key }, { renterPublicKey: key }] }).length, 1);
-assert.equal(module.transactionRenterLinks({ fileContractRevisions: [{ parent: { v2FileContract: { renterPublicKey: key } } }] }).length, 1);
+assert.equal(module.transactionRenterEntries({ siacoinOutputs: [{ address: wallet }] }).length, 0);
+assert.equal(module.transactionRenterEntries({ fileContracts: [{ renterPublicKey: key }, { renterPublicKey: key }] }).length, 1);
+assert.equal(module.transactionRenterEntries({ fileContractRevisions: [{ parent: { v2FileContract: { renterPublicKey: key } } }] }).length, 1);
+assert.equal(module.transactionRenterEntries({ fileContracts: [{ renterPublicKey: key }] })[0].raw, key);
 assert.ok(!module.renterLink({ renterPublicKey: '<script>' }).includes('<script>'));
 console.log('PASS explorer key links, nested contracts, deduplication, context, and escaping');

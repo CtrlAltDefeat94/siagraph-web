@@ -15,3 +15,7 @@ local/*
 local/
 AGENTS.md
 .codex
+.clinerules/
+.cursor/
+.github/
+.windsurf/

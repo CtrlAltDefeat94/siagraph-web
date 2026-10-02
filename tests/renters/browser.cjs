@@ -18,20 +18,24 @@ try {
       const NativeParams=URLSearchParams;
       window.URLSearchParams=class extends NativeParams {constructor(value){super(value === location.search ? '${identity}' : value)}};
       window.charts={};window.historyFetches=0;window.Chart=class {constructor(canvas,config){window.lastChart=config;const card=canvas.closest('[data-history-fields]');if(card)window.charts[card.id]=config;}destroy(){}resize(){}};
-      window.fetch=async url=>{const route=String(url).split('?')[0].split('/').pop(); const r=${JSON.stringify(record)}; let data;window.requests.push(String(url)); if(route==='daily.php')window.historyFetches++;
+      window.fetch=async url=>{const route=String(url).split('?')[0].split('/').pop(); const r=${JSON.stringify(record)}; let data; let metaExtra={};window.requests.push(String(url)); if(route==='daily.php')window.historyFetches++;
         if(url.includes('/api/v1/exchange_rate.php'))return {ok:true,json:async()=>({date:new Date().toISOString(),eur:3})};
         if(route==='exchange_rate.php') {const start=new Date();start.setUTCDate(start.getUTCDate()-29);return {ok:true,json:async()=>[{date:start.toISOString().slice(0,10),eur:2},{date:new Date().toISOString().slice(0,10),eur:3}]};}
         if(route==='details.php' && ['ambiguous','unmapped'].includes('${name}'))return {ok:false,json:async()=>({errors:[{code:'${name}'==='ambiguous'?'ambiguous_key':'not_found',message:'${name}'==='ambiguous'?'Select the relevant wallet.':'No renter wallet association is available for this public key.',details:{items:[{renter_wallet_address:'${wallet}'},{renter_wallet_address:'${'b'.repeat(76)}'}]}}]})};
         if(route==='daily.php' && String(url).includes('all=1')) {const more=!String(url).includes('after=');return {ok:true,json:async()=>({data:[{...r,date:more?'2020-01-01':'2026-01-01',snapshot_height:'1'}],meta:{units:{},pagination:{has_more:more,next_after:more?'2020-01-01':null}},errors:[]})};}
         if(route==='details.php')data=r;
-        else if(route==='index.php')data={items:[r],pagination:{has_more:false}};
+        else if(route==='index.php') {
+          if(['distribution','distribution-empty'].includes('${name}')) {
+            data = '${name}'==='distribution-empty' ? {items:[],pagination:{has_more:false}} : {items:[{renter_wallet_address:'${wallet}',contracted_filesize:'1000'}],pagination:{has_more:false}};
+            metaExtra = {totals:{total_filesize:'${name}'==='distribution-empty'?'0':'1200',renter_count:'2'}};
+          } else data={items:[r],pagination:{has_more:false}};
+        }
         else if(route==='overview.php')data=null;
         else if(route==='resolve.php')data={status:'${name}',renter_wallet_address:null,items:${name==='ambiguous'?JSON.stringify([{renter_wallet_address:wallet},{renter_wallet_address:'b'.repeat(76)}]):'[]'}};
         else if(route==='public-keys.php')data={items:[{renter_public_key:'${key}',first_seen:'2026-01-01',first_seen_height:'1',last_seen:'2026-01-03',last_seen_height:'3'}],pagination:{has_more:false}};
-        else if(route==='renter-distribution.php')data=${name==='distribution-empty'?'null':JSON.stringify({total_filesize:'1200',total_renters:'2',renters:[{rank:'1',renter_wallet_address:wallet,contracted_filesize:'1000',share_percent:'83.333333'}],others:{renter_wallet_address:null,contracted_filesize:'200',share_percent:'16.666667'}})};
         else if(['detail','tabs','all','public-key'].includes('${name}')) {const end=new Date(),start=new Date();start.setUTCDate(end.getUTCDate()-29);const flow={contracts_formed:'1',contract_revisions:'2',contracts_resolved_storage_proof:'1',contracts_resolved_expiration:'0',contracts_resolved_renewal:'1',bytes_uploaded:'1000000000',bytes_removed:'1000',spending:'1000000000000000000000000',funds_returned:'0',renewal_funds_rolled:null,additional_renewal_funds:null};data=[{...r,...flow,date:start.toISOString().slice(0,10),snapshot_height:'1'},{...r,...flow,date:end.toISOString().slice(0,10),snapshot_height:'3',contracted_filesize:'0',renewal_funds_rolled:'0'}];}
         else data=[];
-        return {ok:true,json:async()=>({data,meta:{units:{},snapshot_date:'2026-01-01',snapshot_height:'3'},errors:[]})};};
+        return {ok:true,json:async()=>({data,meta:{units:{},snapshot_date:'2026-01-01',snapshot_height:'3',...metaExtra},errors:[]})};};
       window.addEventListener('error',e=>{document.body.dataset.error=e.message});
     </script>`;
     const assertions = {

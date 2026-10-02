@@ -41,9 +41,4 @@ class NetworkService
     {
         return V1BridgeService::request('storage/ath');
     }
-
-    public static function renterDistribution(array $query): array
-    {
-        return V1BridgeService::request('storage/renter_distribution', $query);
-    }
 }

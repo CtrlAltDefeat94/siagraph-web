@@ -217,7 +217,7 @@
 
 .sg-site-footer__nav {
   display: grid;
-  grid-template-columns: minmax(140px, 1fr) minmax(160px, 1fr) minmax(130px, 0.7fr);
+  grid-template-columns: minmax(160px, 1fr) minmax(130px, 0.7fr);
   gap: 1rem;
 }
 

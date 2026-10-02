@@ -1315,6 +1315,7 @@
 
 /* Shared ledger-feed row component (used by address, block, transaction, and contract pages). */
 .ldgr-id-cell{display:inline-flex;align-items:center;gap:2px;min-width:0}
+.txx-id-cell{max-width:min(100%, 620px)}
 .ldgr-id-cell a{min-width:0;overflow:hidden}
 .ldgr-id-cell .ldgr-id-text{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
 .ldgr-id-cell .ldgr-inline-copy{opacity:.5;transition:opacity 120ms ease}
@@ -1339,8 +1340,14 @@
 .ldgr-state-stack small{color:var(--sg-text-muted);font-size:.72rem;white-space:nowrap}
 .ldgr-empty{padding:.7rem .8rem;border:1px dashed rgba(225,120,100,.35);border-radius:10px;color:var(--sg-text-muted);background:var(--sg-panel-bg-soft);font-size:.88rem}
 .ldgr-feed{border-top:1px solid rgba(255,255,255,.06)}
-.ldgr-feed .ldgr-item{min-width:0;display:grid;grid-template-columns:38px minmax(0,1fr) 190px 170px;grid-template-areas:"type main amount status";gap:1rem;align-items:center;min-height:64px;box-sizing:border-box;border:0;border-bottom:1px solid rgba(255,255,255,.06);border-radius:0;background:transparent;padding:10px .35rem}
+.ldgr-feed .ldgr-item{position:relative;min-width:0;display:grid;grid-template-columns:38px minmax(0,1fr) 190px 170px;grid-template-areas:"type main amount status";gap:1rem;align-items:center;min-height:64px;box-sizing:border-box;border:0;border-bottom:1px solid rgba(255,255,255,.06);border-radius:0;background:transparent;padding:10px .35rem}
 .ldgr-feed .ldgr-item:hover{background:rgba(192,57,43,.08)}
+/* Whole-row navigation: the link sits above the row's plain content but below any nested
+   interactive control (e.g. the inline copy button), which must opt back in with z-index. */
+.ldgr-feed .ldgr-item--linked{cursor:pointer}
+.ldgr-feed .ldgr-row-link{position:absolute;inset:0;z-index:1;border-radius:inherit}
+.ldgr-feed .ldgr-row-link:focus-visible{outline:2px solid var(--sg-border-accent);outline-offset:-2px}
+.ldgr-feed .ldgr-item--linked .ldgr-inline-copy{position:relative;z-index:2}
 .ldgr-feed .ldgr-main{grid-area:main;min-width:0}
 .ldgr-feed .ldgr-lead{min-width:0}
 .ldgr-feed .ldgr-copy{min-width:0}
@@ -1370,6 +1377,11 @@
 .entx-nav a,.entx-nav span{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--sg-border-control);border-radius:999px;padding:.4rem .75rem;font-size:.78rem;text-decoration:none;color:var(--sg-text-strong);background:transparent;font-weight:600}
 .entx-nav a:hover{border-color:var(--sg-border-accent);color:var(--sg-heading-accent)}
 .entx-nav .is-disabled{opacity:.4;pointer-events:none}
+.entx-compact-id{display:inline-flex;align-items:center;gap:4px;min-width:0;max-width:min(100%, 620px);color:var(--sg-text-muted);font-size:.85rem}
+.entx-compact-id-label{flex:0 0 auto}
+.entx-compact-id-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entx-compact-id .entx-copy{opacity:.55}
+.entx-compact-id:hover .entx-copy,.entx-compact-id:focus-within .entx-copy{opacity:1}
 .entx-id{padding:.4rem .55rem;border:1px solid var(--sg-border-control);border-radius:8px;background:var(--sg-control-bg);margin-top:.35rem}
 .entx-id-label{display:block;color:var(--sg-text-faint);font-size:.72rem;margin-bottom:.2rem}
 .entx-id-row{display:flex;justify-content:space-between;align-items:center;gap:10px}

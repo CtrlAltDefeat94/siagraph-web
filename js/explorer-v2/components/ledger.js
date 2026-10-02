@@ -21,11 +21,12 @@ export function ledgerStateStack(label, variant, small) {
 }
 
 // One self-contained grid row: type badge | title + meta | amount | status. Same geometry for every row.
-export function ledgerRow({ kind, title, meta = [], amount = '', status = '', pending = false, immature = false }) {
+export function ledgerRow({ kind, title, meta = [], amount = '', status = '', pending = false, immature = false, href = '' }) {
   const metaHtml = meta.filter(Boolean).join('<span class="ldgr-meta-separator" aria-hidden="true">·</span>')
-  const classes = ['ldgr-item', pending ? 'ldgr-item--pending' : '', immature ? 'ldgr-item--immature' : ''].filter(Boolean).join(' ')
+  const classes = ['ldgr-item', href ? 'ldgr-item--linked' : '', pending ? 'ldgr-item--pending' : '', immature ? 'ldgr-item--immature' : ''].filter(Boolean).join(' ')
   return `
     <article class="${classes}">
+      ${href ? `<a class="ldgr-row-link" href="${esc(href)}" aria-label="Open"></a>` : ''}
       <div class="ldgr-kind" aria-hidden="true">${esc(kind)}</div>
       <div class="ldgr-main">
         <div class="ldgr-lead">
@@ -41,26 +42,51 @@ export function ledgerRow({ kind, title, meta = [], amount = '', status = '', pe
   `
 }
 
-// Classifies a raw v1/v2 transaction body by its most significant effect, matching how
-// other Sia explorers describe transactions (siacoin transfer, contract revision, etc).
-export function classifyTransactionKind(tx) {
-  if (!tx || typeof tx !== 'object') return 'Transaction'
-  if (Array.isArray(tx.fileContractResolutions) && tx.fileContractResolutions.length) {
-    // A "renewal" resolution refreshes an existing contract rather than settling it.
-    return tx.fileContractResolutions.some((r) => r?.type === 'renewal') ? 'Contract refresh' : 'Contract resolution'
-  }
-  if (Array.isArray(tx.fileContractRevisions) && tx.fileContractRevisions.length) return 'Contract revision'
-  if (Array.isArray(tx.fileContracts) && tx.fileContracts.length) return 'Contract formation'
-  const hasSc = (Array.isArray(tx.siacoinInputs) && tx.siacoinInputs.length) || (Array.isArray(tx.siacoinOutputs) && tx.siacoinOutputs.length)
-  const hasSf = (Array.isArray(tx.siafundInputs) && tx.siafundInputs.length) || (Array.isArray(tx.siafundOutputs) && tx.siafundOutputs.length)
-  if (hasSc && hasSf) return 'Siacoin & siafund transfer'
-  if (hasSc) return 'Siacoin transfer'
-  if (hasSf) return 'Siafund transfer'
-  if (tx.arbitraryData !== undefined && tx.arbitraryData !== null) return 'Arbitrary data'
-  return 'Transaction'
+export function ledgerFeed(rows, ariaLabel, emptyMessage = 'No rows.', className = '') {
+  if (!rows.length) return `<div class="ldgr-empty">${esc(emptyMessage)}</div>`
+  return `<div class="ldgr-feed${className ? ` ${esc(className)}` : ''}" aria-label="${esc(ariaLabel)}">${rows.map(ledgerRow).join('')}</div>`
 }
 
-export function ledgerFeed(rows, ariaLabel, emptyMessage = 'No rows.') {
-  if (!rows.length) return `<div class="ldgr-empty">${esc(emptyMessage)}</div>`
-  return `<div class="ldgr-feed" aria-label="${esc(ariaLabel)}">${rows.map(ledgerRow).join('')}</div>`
+export const RESOLUTION_OPERATION_LABELS = { storage_proof: 'Storage proof submitted', renewal: 'Contract renewed', expiration: 'Contract expired' }
+
+function resolutionOperationLabels(resolutions) {
+  const labels = []
+  resolutions.forEach((r) => {
+    const type = r?.type || r?.parent?.resolutionType || ''
+    const label = RESOLUTION_OPERATION_LABELS[type] || 'Contract resolution'
+    if (!labels.includes(label)) labels.push(label)
+  })
+  return labels
+}
+
+// Returns every meaningful protocol operation a transaction performs, most significant
+// first, so a page can show a primary label plus secondary tags instead of collapsing
+// everything into one generic bucket. Host announcements and contract lifecycle events are
+// "operations" in their own right even when the same transaction also happens to move
+// SC/SF (e.g. to pay the miner fee) — that incidental fund movement isn't a separate
+// operation worth its own label once a more specific one is found.
+export function classifyTransactionOperations(tx) {
+  if (!tx || typeof tx !== 'object') return ['Transaction']
+  const ops = []
+  const resolutions = Array.isArray(tx.fileContractResolutions) ? tx.fileContractResolutions : []
+  const revisions = Array.isArray(tx.fileContractRevisions) ? tx.fileContractRevisions : []
+  const formations = Array.isArray(tx.fileContracts) ? tx.fileContracts : []
+  const announcements = Array.isArray(tx.hostAnnouncements) ? tx.hostAnnouncements : []
+  if (resolutions.length) ops.push(...resolutionOperationLabels(resolutions))
+  if (revisions.length) ops.push('Contract revision')
+  if (formations.length) ops.push('Contract formation')
+  if (announcements.length) ops.push('Host announcement')
+  if (ops.length) return ops
+  const hasSc = (Array.isArray(tx.siacoinInputs) && tx.siacoinInputs.length) || (Array.isArray(tx.siacoinOutputs) && tx.siacoinOutputs.length)
+  const hasSf = (Array.isArray(tx.siafundInputs) && tx.siafundInputs.length) || (Array.isArray(tx.siafundOutputs) && tx.siafundOutputs.length)
+  if (hasSc && hasSf) return ['Siacoin & siafund transfer']
+  if (hasSc) return ['Siacoin transfer']
+  if (hasSf) return ['Siafund transfer']
+  if (tx.arbitraryData !== undefined && tx.arbitraryData !== null) return ['Arbitrary data']
+  return ['Transaction']
+}
+
+export function operationTitle(tx) {
+  const [primaryOp, ...secondaryOps] = classifyTransactionOperations(tx)
+  return `${esc(primaryOp)}${secondaryOps.map((op) => ` <span class="ldgr-pill">${esc(op)}</span>`).join('')}`
 }

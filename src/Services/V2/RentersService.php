@@ -71,6 +71,14 @@ class RentersService
         return ['items' => array_slice($rows, 0, $size), 'pagination' => ['page' => $page, 'per_page' => $size, 'has_more' => $more]];
     }
 
+    // Cheap aggregate over the already-summarized Renters table (not raw contracts).
+    public static function directoryTotals(bool $active): array
+    {
+        $where = $active ? 'active_contracts > 0' : '1=1';
+        return self::rows("SELECT COUNT(*) AS renter_count, COALESCE(SUM(contracted_filesize), 0) AS total_filesize FROM Renters WHERE $where")[0]
+            ?? ['renter_count' => '0', 'total_filesize' => '0'];
+    }
+
     public static function keys(string $address, int $page, int $size): array
     {
         return self::page(self::rows('SELECT * FROM RenterPublicKeys WHERE renter_wallet_address = ? ORDER BY renter_public_key LIMIT ? OFFSET ?', [$address, $size + 1, ($page - 1) * $size]), $page, $size);

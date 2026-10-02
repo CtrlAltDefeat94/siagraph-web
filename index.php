@@ -334,11 +334,6 @@ render_header('SiaGraph - Sia Storage Network Dashboard', 'SiaGraph storage netw
                                                 <p id="exp-avg-block-time" class="exp-stat-value"><?php echo htmlspecialchars($explorerAvgBlockTime, ENT_QUOTES, 'UTF-8'); ?></p>
                                             </article>
                                         </div>
-                                        <p class="sg-exchange-context" data-sc-rate data-currency="<?php echo htmlspecialchars($currencyCookie, ENT_QUOTES, 'UTF-8'); ?>">
-                                            Siacoin exchange rate · <span data-sc-value>Loading…</span>
-                                            <a href="/siacoin_price">Price history →</a>
-                                            <small data-sc-updated></small>
-                                        </p>
                                     </section>
 
                                     <section class="exp-summary exp-summary--chain">
@@ -397,6 +392,11 @@ render_header('SiaGraph - Sia Storage Network Dashboard', 'SiaGraph storage netw
                                                 </div>
                                             </aside>
                                         </div>
+                                        <p class="sg-exchange-context" data-sc-rate data-currency="<?php echo htmlspecialchars($currencyCookie, ENT_QUOTES, 'UTF-8'); ?>">
+                                            Siacoin exchange rate · <span data-sc-value>Loading…</span>
+                                            <a href="/siacoin_price">Price history →</a>
+                                            <small data-sc-updated></small>
+                                        </p>
                                     </section>
                                 </div>
                             </div>

@@ -11,15 +11,6 @@
 
         <nav class="sg-site-footer__nav" aria-label="Footer">
             <section class="sg-site-footer__group">
-                <h2 class="sg-site-footer__heading">Platform</h2>
-                <a href="/">Dashboard</a>
-                <a href="/network_storage">Storage Network</a>
-                <a href="/revenue">Economics</a>
-                <a href="/host_explorer">Hosting</a>
-                <a href="/explorer">Explorer</a>
-            </section>
-
-            <section class="sg-site-footer__group">
                 <h2 class="sg-site-footer__heading">Developers</h2>
                 <a href="/swagger">SiaGraph API docs</a>
                 <a href="https://api.sia.tech/explored">Explorer API docs</a>

@@ -65,6 +65,9 @@ function renter_endpoint(string $action, ?callable $initialize = null, bool $use
                 $active = renter_param('active', '1');
                 if (!in_array($active, ['0', '1'], true)) throw new InvalidArgumentException('active must be 0 or 1.');
                 $data = RentersService::directory(renter_param('search'), $active === '1', renter_param('sort', 'contracted_filesize'), renter_param('direction', 'desc'), $page, $size);
+                // Network-wide total (ignores search) so consumers like the distribution
+                // chart can compute shares/Others without a separate producer summary.
+                $meta['totals'] = RentersService::directoryTotals($active === '1');
                 break;
             case 'details': $data = $renter; break;
             case 'public-keys': $data = RentersService::keys($address, $page, $size); $meta['sources'] = ['RenterPublicKeys']; break;

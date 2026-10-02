@@ -2,7 +2,7 @@ import { getJson } from '../services/api.js'
 import { q, explorerEntityPath, entityIdFromPath } from '../state/router.js'
 import { dt, int, hastings, bytes, esc } from '../formatters/index.js'
 import { rawJson, renderNotFound } from '../components/view.js'
-import { ledgerIdCell, ledgerFeed, classifyTransactionKind } from '../components/ledger.js'
+import { ledgerIdCell, ledgerFeed, operationTitle } from '../components/ledger.js'
 import { entityHero } from '../components/entity.js'
 
 function formatMetricValue(key, value) {
@@ -47,14 +47,16 @@ export async function renderBlock() {
 
   const v1Rows = v1Tx.map((tx) => ({
     kind: 'V1',
-    title: classifyTransactionKind(tx),
-    meta: [tx?.id ? ledgerIdCell(explorerEntityPath('tx', tx.id), tx.id) : '', Array.isArray(tx?.hostAnnouncements) && tx.hostAnnouncements.length ? `${int(tx.hostAnnouncements.length)} host announcements` : ''],
+    title: operationTitle(tx),
+    meta: [tx?.id ? ledgerIdCell(explorerEntityPath('tx', tx.id), tx.id) : ''],
+    href: tx?.id ? explorerEntityPath('tx', tx.id) : '',
   }))
 
   const v2Rows = v2Tx.map((tx) => ({
     kind: 'V2',
-    title: classifyTransactionKind(tx),
-    meta: [tx?.id ? ledgerIdCell(explorerEntityPath('tx', tx.id), tx.id) : '', Array.isArray(tx?.hostAnnouncements) && tx.hostAnnouncements.length ? `${int(tx.hostAnnouncements.length)} host announcements` : ''],
+    title: operationTitle(tx),
+    meta: [tx?.id ? ledgerIdCell(explorerEntityPath('tx', tx.id), tx.id) : ''],
+    href: tx?.id ? explorerEntityPath('tx', tx.id) : '',
   }))
 
   const payoutRows = payouts.map((p, i) => {
@@ -62,7 +64,7 @@ export async function renderBlock() {
     return {
       kind: 'OUT',
       title: `Miner payout #${i + 1}`,
-      meta: [address ? ledgerIdCell(explorerEntityPath('address', address), address) : ''],
+      meta: [address ? `Recipient ${ledgerIdCell(explorerEntityPath('address', address), address)}` : 'Recipient unavailable', p?.id ? `Output ${ledgerIdCell(explorerEntityPath('output', p.id), p.id)}` : 'Output unavailable'],
       amount: `<div class="ldgr-amount-cell"><div class="ldgr-amount-primary">${hastings(p?.siacoinOutput?.value || p?.value || '0', '0 SC')}</div></div>`,
     }
   })
@@ -80,36 +82,37 @@ export async function renderBlock() {
   if (v1Rows.length) {
     transactionPanels.push(`
         <section class="entx-section">
-          <div class="entx-section-head"><h3>V1 Transactions</h3><span>${int(v1Rows.length)}</span></div>
-          ${ledgerFeed(v1Rows, 'V1 transactions')}
+          <div class="entx-section-head"><h3>Transactions (${int(v1Rows.length)})</h3><span>V1</span></div>
+          ${ledgerFeed(v1Rows, 'V1 transactions', 'No rows.', 'blx-transactions')}
         </section>
     `)
   }
   if (v2Rows.length) {
     transactionPanels.push(`
         <section class="entx-section">
-          <div class="entx-section-head"><h3>V2 Transactions</h3><span>${int(v2Rows.length)}</span></div>
-          ${ledgerFeed(v2Rows, 'V2 transactions')}
+          <div class="entx-section-head"><h3>Transactions (${int(v2Rows.length)})</h3><span>V2</span></div>
+          ${ledgerFeed(v2Rows, 'V2 transactions', 'No rows.', 'blx-transactions')}
         </section>
     `)
   }
 
   const nav = `<div class="entx-nav">
-    ${hasPrev ? `<a href="${prevHref}">Previous</a>` : `<span class="is-disabled">Previous</span>`}
-    ${hasNext ? `<a href="${nextHref}">Next</a>` : `<span class="is-disabled">Next</span>`}
+    ${hasPrev ? `<a href="${prevHref}">&larr; Previous block</a>` : `<span class="is-disabled">&larr; Previous block</span>`}
+    ${hasNext ? `<a href="${nextHref}">Next block &rarr;</a>` : `<span class="is-disabled">Next block &rarr;</span>`}
   </div>`
 
   return `
     <style>
-      .blx-wrap{display:grid;gap:1.15rem}
-      .blx-panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem}
+      .blx-wrap{display:grid;gap:1rem}
+      .blx-panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.25rem}
       .blx-panel--wide{grid-column:1 / -1}
       .blx-empty{border:1px dashed rgba(225,120,100,.28);border-radius:.85rem;padding:.85rem;color:var(--sg-text-muted);background:rgba(76,53,53,.40)}
       .blx-metric-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.75rem}
-      .blx-kv{display:grid;gap:.32rem;padding:.75rem;border:1px solid var(--sg-border-subtle);border-radius:.5rem;background:transparent}
+      .blx-kv{display:grid;gap:.32rem;padding:.55rem .7rem;border:0;border-left:2px solid var(--sg-border-subtle);background:transparent}
       .blx-kv .k{color:var(--sg-text-muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
       .blx-kv .v{color:var(--sg-text-strong);word-break:break-word}
-      .blx-raw{margin-top:1.5rem}
+      .blx-transactions .ldgr-item{grid-template-columns:38px minmax(0,1fr) 0 0;gap:.75rem}
+      .blx-raw{margin-top:.25rem}
       .blx-raw summary{cursor:pointer;color:var(--sg-text-muted)}
       .blx-raw pre{margin-top:.75rem;max-height:420px;overflow:auto;border:1px solid var(--sg-border-subtle);border-radius:.5rem;padding:.85rem;background:var(--sg-control-bg-strong);color:var(--sg-text-muted)}
       @media (max-width: 1200px){.blx-panels{grid-template-columns:1fr}.blx-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -121,6 +124,7 @@ export async function renderBlock() {
         title: 'Block',
         idLabel: 'Block ID',
         idValue: blockId,
+        compactId: true,
         nav,
         kpis: [['Height', int(height)], ['Timestamp', dt(block?.timestamp)], ['Transactions', int(txCount)]],
       })}
@@ -134,7 +138,8 @@ export async function renderBlock() {
         </section>
 
         <section class="entx-section blx-panel--wide">
-          <div class="entx-section-head"><h3>Block Metrics</h3><span>${keyMetrics.length ? 'Available' : 'N/A'}</span></div>
+          <div class="entx-section-head"><h3>Network State at Block</h3><span>${keyMetrics.length ? 'Available' : 'N/A'}</span></div>
+          <p class="blx-metric-note">Storage-network state at height ${int(height)}.</p>
           ${keyMetrics.length
             ? `<div class="blx-metric-grid">${keyMetrics.map(([k, v]) => `<div class="blx-kv"><span class="k">${esc(k)}</span><span class="v">${v}</span></div>`).join('')}</div>`
             : '<div class="blx-empty">No metrics found for this block ID.</div>'}
