@@ -18,7 +18,8 @@ function renderGraph(
     $yScale = 'linear',
     $stacked = false,
     $useFiatInitial = null,
-    $initAfterEvent = null
+    $initAfterEvent = null,
+    $maintainAspectRatio = true
 ) {
     global $currencyCookie;
     $encodedDatasets = json_encode($datasets);
@@ -28,10 +29,14 @@ function renderGraph(
         : (isset($currencyCookie) && strtolower($currencyCookie) !== 'sc');
     ?>
     <div id="canvasContainer-<?php echo htmlspecialchars($canvasid, ENT_QUOTES, 'UTF-8'); ?>">
+        <?php if (!$maintainAspectRatio): ?>
+        <div style="position:relative; height:<?php echo (int) $height; ?>px; min-width:0;">
+        <?php endif; ?>
         <canvas
             id="<?php echo htmlspecialchars($canvasid, ENT_QUOTES, 'UTF-8'); ?>"
             class="sg-chart-canvas"
             style="height:<?php echo (int) $height; ?>px !important; width:100% !important;"></canvas>
+        <?php if (!$maintainAspectRatio): ?></div><?php endif; ?>
 
         <?php if ($rangeslider && $charttype !== 'pie'): ?>
             <div id="dateRangeSlider-<?php echo htmlspecialchars($canvasid, ENT_QUOTES, 'UTF-8'); ?>"></div>
@@ -42,8 +47,9 @@ function renderGraph(
                 (function () {
                     var options = {
                         canvasId: "<?php echo htmlspecialchars($canvasid, ENT_QUOTES, 'UTF-8'); ?>",
+                        maintainAspectRatio: <?php echo $maintainAspectRatio ? 'true' : 'false'; ?>,
                         jsonData: <?php echo json_encode(empty($jsonData) ? null : (is_string($jsonData) ? json_decode($jsonData, true) : $jsonData)); ?>,
-                        jsonUrl: "<?php echo htmlspecialchars($jsonUrl, ENT_QUOTES); ?>",
+                        jsonUrl: <?php echo json_encode((string) $jsonUrl, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
                         unitType: "<?php echo $unitType; ?>",
                         datasets: <?php echo $encodedDatasets; ?>,
                         interval: "<?php echo $interval; ?>",

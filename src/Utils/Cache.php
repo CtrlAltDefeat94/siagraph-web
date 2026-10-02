@@ -60,12 +60,18 @@ class Cache
     public static function setCache(string $data, string $cacheKey, string $cacheLifetimeOption = 'hour'): void
     {
         $cacheLifetime = self::calculateCacheLifetime($cacheLifetimeOption);
+        self::setCacheSeconds($data, $cacheKey, $cacheLifetime);
+    }
+
+    public static function setCacheSeconds(string $data, string $cacheKey, int $cacheLifetimeSeconds): void
+    {
+        $cacheLifetimeSeconds = max(1, $cacheLifetimeSeconds);
         try {
             $redis = new Client(self::$redisConfig);
             if (!$redis->ping()) {
                 throw new Exception('Redis connection failed.');
             }
-            $redis->setex($cacheKey, $cacheLifetime, $data);
+            $redis->setex($cacheKey, $cacheLifetimeSeconds, $data);
         } catch (Exception $e) {
             error_log('Error: ' . $e->getMessage());
         }

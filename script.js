@@ -11,8 +11,25 @@ function displayStorageMetric(id, actualValue, changeValue) {
     }
 }
 
+// Bare top-level paths that now serve explorer entity/tool pages directly
+// (the /explorer prefix was dropped from these; /explorer/peers is the lone
+// holdout due to a name collision with the site's own peers.php).
+const EXPLORER_BARE_SEGMENTS = new Set([
+    'address', 'tx', 'block', 'contract', 'output', 'search', 'height',
+    'v2-tx', 'v2-contract', 'event', 'transaction', 'txpool', 'consensus',
+    'metrics', 'exchange', 'block-metrics',
+]);
+
+function isExplorerPath(pathname) {
+    if (!pathname) return false;
+    if (pathname === '/explorer' || pathname.startsWith('/explorer/')) return true;
+    const first = pathname.replace(/^\/+/, '').split('/')[0] || '';
+    return EXPLORER_BARE_SEGMENTS.has(first.toLowerCase());
+}
+
 function normalizeRouteToPage(pathname) {
     if (!pathname) return 'index.php';
+    if (isExplorerPath(pathname)) return 'explorer';
     const normalizedPath = pathname.replace(/\/+$/, '');
     const last = normalizedPath.substring(normalizedPath.lastIndexOf('/') + 1);
     if (last === '' || last === 'index.php') return 'index.php';
@@ -22,8 +39,10 @@ function normalizeRouteToPage(pathname) {
 
 function normalizeHrefToPage(href) {
     if (!href || href === '#') return '';
+    const withoutQuery = href.split('?')[0];
+    if (isExplorerPath(withoutQuery)) return 'explorer';
     if (href === '/' || href === '/index.php' || href === 'index.php') return 'index.php';
-    const trimmed = href.split('?')[0].replace(/\/+$/, '');
+    const trimmed = withoutQuery.replace(/\/+$/, '');
     const last = trimmed.substring(trimmed.lastIndexOf('/') + 1);
     return (last || 'index.php').toLowerCase();
 }
@@ -56,7 +75,12 @@ document.addEventListener('DOMContentLoaded', () => {
 if (typeof window !== 'undefined' && window.__RUN_NAV_TESTS === true) {
     console.assert(normalizeRouteToPage('/') === 'index.php', 'route test: home slash');
     console.assert(normalizeRouteToPage('/index.php') === 'index.php', 'route test: home php');
+    console.assert(normalizeRouteToPage('/explorer/block/abc') === 'explorer', 'route test: legacy explorer subtree');
+    console.assert(normalizeRouteToPage('/block/abc') === 'explorer', 'route test: bare explorer entity path');
+    console.assert(normalizeRouteToPage('/explorer/peers') === 'explorer', 'route test: peers keeps its prefix');
     console.assert(normalizeRouteToPage('/host_explorer/') === 'host_explorer', 'route test: trailing slash');
+    console.assert(normalizeHrefToPage('/explorer') === 'explorer', 'href test: explorer');
+    console.assert(normalizeHrefToPage('/tx/abc') === 'explorer', 'href test: bare explorer entity path');
     console.assert(normalizeHrefToPage('/host_explorer') === 'host_explorer', 'href test: absolute path');
     console.assert(normalizeHrefToPage('host_explorer') === 'host_explorer', 'href test: bare page');
 }
@@ -251,7 +275,7 @@ window.currencyDisplay.resolveRateForEntryDate = function resolveRateForEntryDat
 async function ensureGlobalCurrencyRates() {
     try {
         if (!window.currencyDisplayState.ratesReady) {
-            const rows = await fetchWithCache('/api/v1/daily/exchange_rate', {}, 86400000);
+            const rows = await fetchWithCache('/api/v1/daily/exchange_rate', {}, 3600000);
             if (Array.isArray(rows)) {
                 rows.forEach((row) => {
                     if (!row || !row.date) return;

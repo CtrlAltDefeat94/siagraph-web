@@ -1,0 +1,36 @@
+/* Shared visual primitives for dashboards and table-based data pages. */
+.sg-data-page .sg-data-title {
+  margin: 0;
+  color: var(--sg-text-strong);
+  font-size: clamp(1.8rem, 3vw, 2.45rem);
+  line-height: 1.1;
+}
+.sg-data-page .card {
+  background: var(--sg-card-bg);
+  border: 1px solid var(--sg-card-border);
+  border-radius: 1.05rem;
+  box-shadow: var(--sg-card-shadow);
+}
+.sg-data-page select,
+.sg-data-page input:is([type="text"], [type="number"], [type="date"]) {
+  min-height: 2.45rem;
+  max-width: 100%;
+  background-color: var(--sg-control-bg) !important;
+  color: var(--sg-text-strong) !important;
+  border: 1px solid var(--sg-border-control);
+  border-radius: .7rem !important;
+}
+.sg-data-page input::placeholder { color: var(--sg-text-faint); opacity: 1; }
+.sg-data-page :is(select, input, button, summary, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--sg-heading-accent);
+  outline-offset: 3px;
+}
+.sg-data-page .sg-data-status { color: var(--sg-text-muted); }
+.sg-data-page [hidden] { display: none !important; }
+.sg-data-scroll {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  isolation: isolate;
+}

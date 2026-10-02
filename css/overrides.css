@@ -4,6 +4,49 @@
   justify-content: center;
 }
 
+.sg-container--compact-top {
+  padding-top: 1.1rem;
+}
+
+.sg-container--compact-bottom {
+  padding-bottom: 0.55rem;
+}
+
+.sg-page-title {
+  letter-spacing: 0.01em;
+  margin-bottom: 0.35rem;
+}
+
+.sg-home-shell .sg-container__row + .sg-container__row {
+  margin-top: 0.25rem;
+}
+
+.sg-home-shell .card__content > .row {
+  row-gap: 0.65rem;
+}
+
+.sg-home-shell .card__content .col-md-4 > .p-2 {
+  height: 100%;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sg-home-shell .card .card__footer {
+  padding-top: 0.35rem;
+}
+
+.sg-host-explorer-shell .host-layout > section.card {
+  border-radius: 1.1rem;
+}
+
+.sg-host-explorer-shell .hosts-toolbar {
+  margin-bottom: 0.25rem;
+}
+
+.sg-host-explorer-shell #pagination {
+  margin-top: 1rem;
+}
+
 /* Shared chart behavior */
 .sg-chart-canvas {
   display: block;
@@ -127,6 +170,45 @@
   border-bottom-color: #0f1115 !important;
 }
 
+.sg-nav-search {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  margin-left: auto;
+}
+
+.sg-nav-search input {
+  width: 240px;
+  max-width: 34vw;
+  height: 2rem;
+  padding: 0.3rem 0.55rem;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 0.5rem;
+  font-size: 0.86rem;
+}
+
+.sg-nav-search input::placeholder {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.sg-nav-search button {
+  height: 2rem;
+  padding: 0.25rem 0.6rem;
+  color: #fff;
+  background: rgba(205, 92, 72, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.sg-nav-search button:disabled {
+  opacity: 0.7;
+}
+
 .hostscore-actions {
   display: flex;
   justify-content: space-between;
@@ -162,6 +244,39 @@ textarea:focus-visible,
 }
 
 @media (max-width: 767.98px) {
+  .sg-container--compact-top {
+    padding-top: 0.7rem;
+  }
+
+  .sg-container--compact-bottom {
+    padding-bottom: 0.42rem;
+  }
+
+  .sg-nav-search {
+    width: 100%;
+    margin-top: 0.4rem;
+    margin-left: 0;
+  }
+
+  .sg-nav-search input {
+    width: 100%;
+    max-width: none;
+  }
+
+  .sg-home-shell .card__content .col-md-4 > .p-2 {
+    padding: 0.5rem !important;
+  }
+
+  .sg-home-shell .sg-container__heading {
+    font-size: 1.55rem;
+    line-height: 1.2;
+  }
+
+  .sg-host-explorer-shell .sg-container__heading {
+    font-size: 1.55rem;
+    line-height: 1.2;
+  }
+
   .hostscore-actions {
     flex-direction: column;
     align-items: stretch;
@@ -203,3 +318,8 @@ textarea:focus-visible,
     margin-top: 0.25rem;
   }
 }
+
+/* Exchange rates support the storage summary without becoming a primary KPI. */
+.sg-exchange-context { display:flex; flex-wrap:wrap; align-items:baseline; gap:.35rem .65rem; margin:1rem 0 0; padding-top:.75rem; border-top:1px solid var(--sg-card-border); color:var(--sg-text-muted); font-size:.8rem; }
+.sg-exchange-context small { flex-basis:100%; font-size:.75rem; }
+.sg-exchange-context a { color:var(--sg-heading-accent); }

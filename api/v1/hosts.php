@@ -4,7 +4,7 @@ include_once "../../bootstrap.php";
 use Siagraph\Utils\Cache;
 
 header('Content-Type: application/json');
-$cacheKey = md5(basename(__FILE__) . http_build_query($_GET));
+$cacheKey = md5('host-optional-metrics-v8:' . gmdate('Y-m-d') . ':' . basename(__FILE__) . http_build_query($_GET));
 $cacheresult = Cache::getCache($cacheKey);
 if ($cacheresult) {
     echo $cacheresult;
@@ -63,17 +63,86 @@ $sortMap = [
     "rank" => "gr.rnk",
     "used_storage" => "h.used_storage",
     "total_storage" => "h.total_storage",
+    "available_storage" => "GREATEST(CAST(h.total_storage AS DECIMAL(30,0)) - CAST(h.used_storage AS DECIMAL(30,0)), 0)",
+    "software_version" => "h.software_version",
+    "revenue_30d" => "egress.revenue_30d_sc",
     "storage_price" => "h.storage_price",
+    "upload_price" => "h.upload_price",
+    "download_price" => "h.download_price",
     "net_address" => "h.net_address",
     "age" => "h.host_id",
     "growth" => "used_storage_diff",
+    "estimated_egress" => "egress.estimated_egress_gb",
 ];
 $sortValue = isset($_GET["sort"]) ? $_GET["sort"] : "rank";
 
 // Map the sort value to the corresponding column name
 $sortColumn = isset($sortMap[$sortValue]) ? $sortMap[$sortValue] : "rank";
 // Ascending for fields where smaller is better or alphabetical
-$sortOrder = in_array($sortValue, ["age", "net_address", "rank", "storage_price"]) ? "asc" : "desc";
+$sortOrder = in_array($sortValue, ["age", "net_address", "rank", "storage_price", "upload_price", "download_price", "software_version"]) ? "asc" : "desc";
+
+function getHostsPriceFilterCurrency(): string
+{
+    $currency = strtolower(trim((string)($_GET['currency'] ?? $_COOKIE['currency'] ?? 'eur')));
+    return in_array($currency, ['eur', 'usd', 'sc'], true) ? $currency : 'eur';
+}
+
+function getLatestHostFilterRate(mysqli $mysqli, string $currency): ?float
+{
+    if ($currency === 'sc') {
+        return 1.0;
+    }
+
+    $column = $currency === 'usd' ? 'usd' : 'eur';
+    $sql = "SELECT {$column} AS rate FROM ExchangeRates WHERE currency_code = 'sc' AND {$column} IS NOT NULL ORDER BY timestamp DESC LIMIT 1";
+    $result = $mysqli->query($sql);
+    if (!$result) {
+        return null;
+    }
+    $row = $result->fetch_assoc();
+    if (!$row || !isset($row['rate']) || !is_numeric($row['rate'])) {
+        return null;
+    }
+    $rate = (float)$row['rate'];
+    return $rate > 0 ? $rate : null;
+}
+
+function hostPriceFilterToRaw(string $input, string $unit, string $currency, ?float $rate): ?string
+{
+    $value = trim($input);
+    if ($value === '' || !is_numeric($value)) {
+        return null;
+    }
+
+    $displayValue = (float)$value;
+    if (!is_finite($displayValue) || $displayValue < 0) {
+        return null;
+    }
+
+    if ($currency !== 'sc') {
+        if ($rate === null || $rate <= 0) {
+            return null;
+        }
+        $displayValue = $displayValue / $rate;
+    }
+
+    if ($unit === 'storage') {
+        $raw = ($displayValue * 1e12) / 4320;
+    } elseif ($unit === 'transfer') {
+        $raw = $displayValue * 1e12;
+    } else {
+        return null;
+    }
+
+    if (!is_finite($raw) || $raw < 0) {
+        return null;
+    }
+
+    return number_format(ceil($raw), 0, '.', '');
+}
+
+$priceFilterCurrency = getHostsPriceFilterCurrency();
+$priceFilterRate = getLatestHostFilterRate($mysqli, $priceFilterCurrency);
 
 // Build filter conditions
 $whereParts = [];
@@ -129,35 +198,33 @@ if (isset($_GET['minStorage']) && is_numeric($_GET['minStorage'])) {
 }
 
 if (isset($_GET['maxStoragePrice']) && is_numeric($_GET['maxStoragePrice'])) {
-    $whereParts[] = 'h.storage_price <= ?';
-    $value = (int)$_GET['maxStoragePrice'];
-    $params[] = $value;
-    $types .= 'i';
-    $wherePartsForRank[] = 'h3.storage_price <= ' . $value;
-}
-
-if (isset($_GET['maxContractPrice']) && is_numeric($_GET['maxContractPrice'])) {
-    $whereParts[] = 'h.contract_price <= ?';
-    $value = (int)$_GET['maxContractPrice'];
-    $params[] = $value;
-    $types .= 'i';
-    $wherePartsForRank[] = 'h3.contract_price <= ' . $value;
+    $value = hostPriceFilterToRaw((string)$_GET['maxStoragePrice'], 'storage', $priceFilterCurrency, $priceFilterRate);
+    if ($value !== null) {
+        $whereParts[] = 'h.storage_price <= ?';
+        $params[] = $value;
+        $types .= 's';
+        $wherePartsForRank[] = 'h3.storage_price <= ' . $mysqli->real_escape_string($value);
+    }
 }
 
 if (isset($_GET['maxUploadPrice']) && is_numeric($_GET['maxUploadPrice'])) {
-    $whereParts[] = 'h.upload_price <= ?';
-    $value = (int)$_GET['maxUploadPrice'];
-    $params[] = $value;
-    $types .= 'i';
-    $wherePartsForRank[] = 'h3.upload_price <= ' . $value;
+    $value = hostPriceFilterToRaw((string)$_GET['maxUploadPrice'], 'transfer', $priceFilterCurrency, $priceFilterRate);
+    if ($value !== null) {
+        $whereParts[] = 'h.upload_price <= ?';
+        $params[] = $value;
+        $types .= 's';
+        $wherePartsForRank[] = 'h3.upload_price <= ' . $mysqli->real_escape_string($value);
+    }
 }
 
 if (isset($_GET['maxDownloadPrice']) && is_numeric($_GET['maxDownloadPrice'])) {
-    $whereParts[] = 'h.download_price <= ?';
-    $value = (int)$_GET['maxDownloadPrice'];
-    $params[] = $value;
-    $types .= 'i';
-    $wherePartsForRank[] = 'h3.download_price <= ' . $value;
+    $value = hostPriceFilterToRaw((string)$_GET['maxDownloadPrice'], 'transfer', $priceFilterCurrency, $priceFilterRate);
+    if ($value !== null) {
+        $whereParts[] = 'h.download_price <= ?';
+        $params[] = $value;
+        $types .= 's';
+        $wherePartsForRank[] = 'h3.download_price <= ' . $mysqli->real_escape_string($value);
+    }
 }
 
 if (isset($_GET['acceptingContracts']) && $_GET['acceptingContracts'] === 'true') {
@@ -213,12 +280,50 @@ $totalRows = $countResult->fetch_assoc()['cnt'] ?? 0;
 $countStmt->close();
 $totalPages = ceil($totalRows / $resultsPerPage);
 
+// Sum every calculable contribution over the previous 30 complete UTC days.
+// A NULL daily estimate means that day contributes no known amount; requiring
+// all 30 days would hide otherwise useful estimates until every job catches up.
+// Convert each day's revenue using that UTC day's average hourly SC price.
+// Missing rates make the fiat total unavailable instead of understating it.
+$revenueCurrencies = ['eur', 'usd', 'cad', 'gbp'];
+$revenueTotals = [];
+$dailyRates = [];
+$revenueColumns = [];
+foreach ($revenueCurrencies as $currency) {
+    $dailyRates[] = "AVG(CASE WHEN $currency > 0 THEN $currency END) AS $currency";
+    $revenueTotals[] = "CASE WHEN SUM(CASE WHEN hds.revenue <> 0 AND rates.$currency IS NULL THEN 1 ELSE 0 END) > 0
+        THEN NULL ELSE SUM(CASE WHEN hds.revenue = 0 THEN 0 ELSE hds.revenue / 1000000000000000000000000 * rates.$currency END)
+        END AS revenue_30d_$currency";
+    $revenueColumns[] = "egress.revenue_30d_$currency";
+}
+$revenueTotalsSql = implode(', ', $revenueTotals);
+$dailyRatesSql = implode(', ', $dailyRates);
+$revenueColumnsSql = implode(', ', $revenueColumns);
+$egressTotalsSql = "SELECT hds.public_key,
+                           SUM(hds.estimated_egress_gb) AS estimated_egress_gb,
+                           SUM(hds.revenue) / 1000000000000000000000000 AS revenue_30d_sc,
+                           $revenueTotalsSql
+                    FROM HostsDailyStats hds
+                    LEFT JOIN (
+                        SELECT DATE(timestamp) AS day, $dailyRatesSql
+                        FROM ExchangeRates
+                        WHERE currency_code = 'sc'
+                          AND timestamp >= UTC_DATE() - INTERVAL 30 DAY AND timestamp < UTC_DATE()
+                        GROUP BY DATE(timestamp)
+                    ) rates ON rates.day = DATE(hds.date)
+                    WHERE hds.date >= UTC_DATE() - INTERVAL 30 DAY AND hds.date < UTC_DATE()
+                    GROUP BY hds.public_key";
+
 $sortColumnForRank = $sortColumn;
 // Map base table alias to h3 for the ranking subquery
 $sortColumnForRank = str_replace('h.', 'h3.', $sortColumnForRank);
 // Special cases for rank and growth
 if ($sortValue === 'rank') {
     $sortColumnForRank = 'gr2.rnk';
+} elseif ($sortValue === 'estimated_egress') {
+    $sortColumnForRank = 'egress_fr.estimated_egress_gb';
+} elseif ($sortValue === 'revenue_30d') {
+    $sortColumnForRank = 'egress_fr.revenue_30d_sc';
 } elseif ($sortValue === 'growth') {
     $sortColumnForRank = 'CASE WHEN latest_fr.used_storage IS NULL OR prev24_fr.used_storage IS NULL THEN NULL ELSE (CAST(latest_fr.used_storage AS SIGNED) - CAST(prev24_fr.used_storage AS SIGNED)) END';
 }
@@ -228,6 +333,10 @@ $query = "SELECT
     h.public_key,
     h.net_address,
     h.used_storage,
+    egress.estimated_egress_gb,
+    egress.revenue_30d_sc,
+    $revenueColumnsSql,
+    GREATEST(CAST(h.total_storage AS DECIMAL(30,0)) - CAST(h.used_storage AS DECIMAL(30,0)), 0) AS available_storage,
     h.contract_price,
     h.storage_price,
     h.upload_price,
@@ -259,6 +368,7 @@ $query = "SELECT
 FROM
     Hosts h
 LEFT JOIN Countries c ON h.country = c.country_code
+LEFT JOIN ($egressTotalsSql) egress ON h.public_key = egress.public_key
 LEFT JOIN (
     SELECT public_key, total_score
     FROM BenchmarkScores
@@ -317,6 +427,7 @@ LEFT JOIN (
                          h3.public_key ASC
             ) AS filtered_rnk
         FROM Hosts h3
+        LEFT JOIN ($egressTotalsSql) egress_fr ON h3.public_key = egress_fr.public_key
         LEFT JOIN (
             SELECT public_key, total_score
             FROM BenchmarkScores

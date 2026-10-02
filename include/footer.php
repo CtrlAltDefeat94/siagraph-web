@@ -1,27 +1,33 @@
-<footer class="text-white py-6 mt-5 sg-site-footer">
-    <div class="container text-center">
-        <div class="d-inline-flex align-items-center mb-1 mt-2">
-            <img src="/img/siagraph_banner_white.png" alt="SiaGraph" class="sg-site-footer-logo">
-            <span class="align-middle">
-                &copy; 2024-<?php echo date("Y"); ?>.
-            </span>
+<?php $currencyCookie = \Siagraph\Utils\CurrencyDisplay::selectedCurrency(); ?>
+<footer class="sg-site-footer">
+    <div class="container sg-site-footer__inner">
+        <div class="sg-site-footer__brand">
+            <a class="sg-site-footer__logo-link" href="/" aria-label="SiaGraph home">
+                <img src="/img/siagraph_banner_white.png" alt="SiaGraph" class="sg-site-footer-logo">
+            </a>
+            <p class="sg-site-footer__tagline">Unofficial Sia network metrics.</p>
+            <p class="sg-site-footer__copyright">&copy; 2024-<?php echo date('Y'); ?> SiaGraph.</p>
         </div>
-        <p class="mb-1">Unofficial metrics for the Sia network.</p>
-        <p class="mb-0">
-            <a class="text-white text-decoration-none" href="/swagger">SiaGraph API docs</a>
-            <span class="mx-2">|</span>
-            <a class="text-white text-decoration-none" href="https://api.sia.tech/explored">Explorer API docs</a>
-            <span class="mx-2">|</span>
-            <a class="text-white text-decoration-none" href="https://explorer.siagraph.info/api/consensus/tip">Explorer API</a>
-            <span class="mx-2">|</span>
-            <?php $currencyCookie = \Siagraph\Utils\CurrencyDisplay::selectedCurrency(); ?>
-            <label for="currency-select" class="me-1">Currency:</label>
-            <select id="currency-select" class="text-white border-0 sg-currency-select" onchange="setCurrency(this.value)">
-                <option value="eur" <?php if($currencyCookie==='eur') echo 'selected'; ?>>EUR</option>
-                <option value="usd" <?php if($currencyCookie==='usd') echo 'selected'; ?>>USD</option>
-                <option value="sc" <?php if($currencyCookie==='sc') echo 'selected'; ?>>SC</option>
-            </select>
 
-        </p>
+        <nav class="sg-site-footer__nav" aria-label="Footer">
+            <section class="sg-site-footer__group">
+                <h2 class="sg-site-footer__heading">Developers</h2>
+                <a href="/swagger">SiaGraph API docs</a>
+                <a href="https://api.sia.tech/explored">Explorer API docs</a>
+                <a href="https://explorer.siagraph.info/api/consensus/tip">Raw Explorer API</a>
+            </section>
+
+            <section class="sg-site-footer__group sg-site-footer__settings">
+                <h2 class="sg-site-footer__heading">Settings</h2>
+                <label for="currency-select">Currency</label>
+                <select id="currency-select" class="sg-currency-select" onchange="setCurrency(this.value)">
+                    <option value="eur" <?php if ($currencyCookie === 'eur') echo 'selected'; ?>>EUR</option>
+                    <option value="usd" <?php if ($currencyCookie === 'usd') echo 'selected'; ?>>USD</option>
+                    <option value="cad" <?php if ($currencyCookie === 'cad') echo 'selected'; ?>>CAD</option>
+                    <option value="gbp" <?php if ($currencyCookie === 'gbp') echo 'selected'; ?>>GBP</option>
+                </select>
+            </section>
+        </nav>
+
     </div>
 </footer>

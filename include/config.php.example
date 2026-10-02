@@ -4,14 +4,25 @@ $SETTINGS = array(
         "servername" => "",
         "username" => "",
         "password" => "",
-        "database" => ""
+        "database" => "",
+        "raw_database" => "siagraph_raw"
     ),
     // Optional: Redis host for caching (Predis)
     "redis_ip" => "127.0.0.1",
     "explorer" => "https://explorer.siagraph.info",
     "network" => "mainnet",
+    "renters" => array(
+        // Enable only after deploying docs/sql/renter-published-summaries.sql
+        // and connecting the producer. Wallet pages work without this table.
+        "published_summaries" => false,
+        // Source units for presentation conversions; APIs retain raw values.
+        "money_unit" => "hastings",
+        "duration_unit" => "blocks",
+    ),
     "last_scan_host_online" => "12 HOUR",
     "siagraph_base_url" => "https://siagraph.info",
+    // Required by protected API endpoints such as api/v1/scan_host.php.
+    "api_password" => "",
     // Optional: secret used to sign v2 alert unsubscribe tokens
     "alerts_unsubscribe_secret" => "",
     // Optional: token lifetime in seconds (default 31536000 = 365 days)

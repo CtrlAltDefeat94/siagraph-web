@@ -1,0 +1,612 @@
+<?php require_once dirname(__DIR__) . '/bootstrap.php'; ?>
+<?php require_once dirname(__DIR__) . '/include/layout.php'; ?>
+<?php render_header('SiaGraph - Host Troubleshooter', 'SiaGraph - Host Troubleshooter', [
+    '<link rel="stylesheet" href="' . htmlspecialchars(versioned_asset_url('css/pages/host-troubleshooter.css'), ENT_QUOTES, 'UTF-8') . '">'
+]); ?>
+<section id="main-content" class="sg-container host-troubleshooter-page">
+    <section class="card host-troubleshooter-hero">
+        <div>
+            <div class="host-troubleshooter-hero__kicker">Host diagnostics</div>
+            <h1 class="host-troubleshooter-hero__title">Host Troubleshooter</h1>
+            <p class="host-troubleshooter-hero__copy">
+                Check host reachability, protocol ports, announced settings, storage usage, and pricing from a net address or public key.
+            </p>
+        </div>
+    </section>
+
+    <section class="host-troubleshooter-lookup-grid">
+        <section class="card host-troubleshooter-search">
+            <h2 class="card__heading">Lookup a Host</h2>
+            <p class="host-troubleshooter-section-copy">Enter a host net address or public key to run operational diagnostics.</p>
+            <div class="card__content">
+                <form id="hostLookupForm" class="host-troubleshooter-form">
+                    <input type="text" id="hostLookupInput" class="form-control" placeholder="example.com:9984 or ed25519:...">
+                    <button type="submit" class="button">Lookup</button>
+                </form>
+                <div class="host-troubleshooter-alert-link is-hidden" id="hostAlertsLinkContainer">
+                    <a class="button" href="/host_alerts" id="hostAlertsLink">
+                        Subscribe to Host Alerts
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section id="recentHosts" class="card host-troubleshooter-recent">
+            <h2 class="card__heading">Recently Searched Hosts</h2>
+            <div class="card__content">
+                <ul id="recentHostList" class="host-troubleshooter-recent-list"></ul>
+            </div>
+        </section>
+    </section>
+
+    <div id="resultsSection" class="host-troubleshooter-results">
+        <div id="warningsErrors" class="host-troubleshooter-alerts"></div>
+
+        <section class="host-troubleshooter-result-grid">
+            <section class="card host-troubleshooter-status-card">
+                <h2 class="card__heading">Connection Status</h2>
+                <p class="host-troubleshooter-section-copy">Live reachability and protocol port checks.</p>
+                <div class="card__content" id="connectionStatus"></div>
+            </section>
+
+            <section class="card host-troubleshooter-info-card">
+                <h2 class="card__heading">Host Information</h2>
+                <p class="host-troubleshooter-section-copy">Announced identity, scan schedule, and software details.</p>
+                <div class="card__content">
+                    <table class="table table-dark table-clean" id="hostInfo"></table>
+                </div>
+            </section>
+        </section>
+
+        <section class="card host-troubleshooter-storage-card">
+            <h2 class="card__heading">Storage Usage</h2>
+            <p class="host-troubleshooter-section-copy">Advertised capacity currently used by stored data.</p>
+            <div class="card__content">
+                <div class="progress host-troubleshooter-progress">
+                    <div id="storageBar" class="progress-bar" role="progressbar">0%</div>
+                </div>
+                <div id="storageStats" class="host-troubleshooter-storage-stats"></div>
+            </div>
+        </section>
+
+        <section class="card host-troubleshooter-settings-card">
+            <h2 class="card__heading">Settings &amp; Pricing</h2>
+            <p class="host-troubleshooter-section-copy">Announced contract settings normalized into readable storage, bandwidth, collateral, and duration terms.</p>
+            <div class="card__content">
+                <div id="settingsGrid" class="settings-grid"></div>
+            </div>
+        </section>
+    </div>
+</section>
+<script>
+  const TROUBLESHOOTER_PARTIAL_WARNING = "Troubleshooter temporarily rate-limited; diagnostics may be partial.";
+
+  // Fallbacks when global helpers (from script.js) haven't executed yet
+  async function fetchCachedOrDirect(url, options = {}, ttl = 3600000, parseAs = 'json') {
+    try {
+      if (typeof fetchWithCache === 'function') {
+        return await fetchWithCache(url, options, ttl, parseAs);
+      }
+    } catch (_) { /* ignore and use direct fetch */ }
+    const res = await fetch(url, options);
+    if (!res.ok) {
+      if (parseAs === 'json') {
+        try {
+          const errData = await res.json();
+          if (errData && typeof errData === 'object') {
+            errData._httpStatus = res.status;
+            return errData;
+          }
+        } catch (_) { /* ignore parse failure */ }
+      }
+      throw new Error(`Unexpected HTTP code: ${res.status}`);
+    }
+    return parseAs === 'text' ? res.text() : res.json();
+  }
+
+  async function fetchTroubleshooterData(url, ttl = 15000) {
+    const cacheKey = `hostTroubleshooter:${url}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const cachedTtl = Number(parsed?.ttl || ttl);
+        if (parsed && Number.isFinite(parsed.timestamp) && (Date.now() - parsed.timestamp) < cachedTtl) {
+          return parsed.data;
+        }
+      }
+    } catch (_) { /* ignore cache parse errors */ }
+
+    const res = await fetch(url);
+    let data = null;
+    if (res.ok) {
+      data = await res.json();
+    } else {
+      try {
+        data = await res.json();
+      } catch (_) {
+        data = { error: `Unexpected HTTP code: ${res.status}` };
+      }
+      if (data && typeof data === 'object') {
+        data._httpStatus = res.status;
+      }
+    }
+
+    try {
+      const errorTtl = 3000;
+      const effectiveTtl = (data && data.error) ? Math.min(ttl, errorTtl) : ttl;
+      localStorage.setItem(cacheKey, JSON.stringify({
+        timestamp: Date.now(),
+        ttl: effectiveTtl,
+        data
+      }));
+    } catch (_) { /* ignore localStorage errors */ }
+
+    return data;
+  }
+  function getCookieSafe(name) {
+    if (typeof getCookie === 'function') return getCookie(name);
+    const cookieArr = document.cookie.split('; ');
+    for (let i = 0; i < cookieArr.length; i++) {
+      const cookiePair = cookieArr[i].split('=');
+      if (cookiePair[0] === name) return cookiePair[1];
+    }
+    return null;
+  }
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
+  function setHostAlertsLink(publicKey) {
+    const container = document.getElementById("hostAlertsLinkContainer");
+    const link = document.getElementById("hostAlertsLink");
+    if (!container || !link) return;
+    const key = (publicKey || '').trim();
+    if (!/^ed25519:/i.test(key)) {
+      container.classList.add("is-hidden");
+      link.href = "/host_alerts";
+      return;
+    }
+    link.href = `/host_alerts?public_key=${encodeURIComponent(key)}`;
+    container.classList.remove("is-hidden");
+  }
+
+  async function loadHostData() {
+    const netAddress = getQueryParam("net_address");
+    const publicKey = getQueryParam("public_key");
+    const lookupValue = publicKey || netAddress || '';
+    const lookupType = publicKey ? 'public_key' : 'net_address';
+
+    // Set value into search input
+    document.getElementById("hostLookupInput").value = lookupValue;
+
+    // Hide results if no net address
+    const resultsSection = document.getElementById("resultsSection");
+    if (!lookupValue) {
+      resultsSection.style.display = "none";
+      setHostAlertsLink('');
+      loadRecentHistory();
+      return;
+    } else {
+      resultsSection.style.display = "block";
+    }
+    setHostAlertsLink(publicKey || '');
+
+    // Basic validation for net_address lookups (API expects host:port)
+    const basicFormat = /^([\w\.-]+):(\d+)$/;
+    if (lookupType === 'net_address' && !basicFormat.test(netAddress)) {
+      const warningsErrors = document.getElementById('warningsErrors');
+      resultsSection.style.display = 'block';
+      warningsErrors.innerHTML = '<div class="alert alert-danger" role="alert">Invalid address. Use host:port (e.g. example.com:9984).</div>';
+      return;
+    }
+
+    try {
+      const query = lookupType === 'public_key'
+        ? `public_key=${encodeURIComponent(publicKey)}`
+        : `net_address=${encodeURIComponent(netAddress)}`;
+      const data = await fetchTroubleshooterData(`/api/v1/host_troubleshooter?${query}`, 15000);
+      if (data && data.error) {
+        const warningsErrors = document.getElementById('warningsErrors');
+        const isRateLimited = Number(data._httpStatus || 0) === 429;
+        if (isRateLimited) {
+          warningsErrors.innerHTML = '<div class="alert alert-warning" role="alert"><div class="fw-semibold mb-1"><i class="bi bi-hourglass-split me-1"></i>Troubleshooter Busy</div><div>The troubleshooter is receiving too many requests right now. Please wait a few seconds and try again.</div></div>';
+        } else {
+          warningsErrors.innerHTML = `<div class=\"alert alert-danger\" role=\"alert\">${data.error}</div>`;
+        }
+        return;
+      }
+      renderHostData(data || {});
+      addToRecentHistory(lookupType, lookupValue);
+    } catch (error) {
+      console.error("Failed to load host data", error);
+      const warningsErrors = document.getElementById('warningsErrors');
+      resultsSection.style.display = 'block';
+      warningsErrors.innerHTML = '<div class="alert alert-danger" role="alert">Failed to load host data. Please try again.</div>';
+    }
+  }
+  function renderHostData(data) {
+    setHostAlertsLink(data.public_key || '');
+    const isV2 = !!data.v2;
+    const settings = data.settings || {};
+
+    const warningsErrors = document.getElementById('warningsErrors');
+    warningsErrors.innerHTML = '';
+    const warnList = Array.isArray(data.warnings) ? data.warnings : [];
+    const errList = Array.isArray(data.errors) ? data.errors : [];
+    const partialWarnings = warnList.filter(w => String(w || '').trim() === TROUBLESHOOTER_PARTIAL_WARNING);
+    const hostWarnings = warnList.filter(w => String(w || '').trim() !== TROUBLESHOOTER_PARTIAL_WARNING);
+
+    if (partialWarnings.length || hostWarnings.length || errList.length) {
+      let html = '';
+
+      if (partialWarnings.length) {
+        html += '<div class="alert alert-info" role="alert">';
+        html += '<div class="fw-semibold mb-1"><i class="bi bi-info-circle-fill me-1"></i>Partial Diagnostics</div>';
+        html += '<div class="mb-0">Live troubleshoot checks are temporarily rate-limited. Showing the latest available diagnostics; retry in a few seconds for fresh checks.</div>';
+        html += '</div>';
+      }
+
+      if (hostWarnings.length) {
+        html += '<div class="alert alert-warning" role="alert">';
+        html += '<div class="fw-semibold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>Warnings</div><ul class="mb-0 ps-3">';
+        hostWarnings.forEach(w => html += `<li>${w}</li>`);
+        html += '</ul></div>';
+      }
+      if (errList.length) {
+        html += '<div class="alert alert-danger" role="alert">';
+        html += '<div class="fw-semibold mb-1"><i class="bi bi-x-circle-fill me-1"></i>Errors</div><ul class="mb-0 ps-3">';
+        errList.forEach(e => html += `<li>${e}</li>`);
+        html += '</ul></div>';
+      }
+      warningsErrors.innerHTML = html;
+    }
+
+    const connectionStatus = document.getElementById('connectionStatus');
+
+    const connectionChecks = {
+      'Online': !!data.online,
+      'Accepting Contracts': !!(settings.acceptingcontracts || settings.acceptingContracts),
+      'IPv4': !!data.ipv4_enabled,
+      'IPv4 RHP2': data.port_status?.ipv4_rhp2 ?? false,
+      'IPv4 RHP3': data.port_status?.ipv4_rhp3 ?? false,
+      'IPv4 RHP4': data.port_status?.ipv4_rhp4 ?? false,
+      'IPv6': !!data.ipv6_enabled,
+      'IPv6 RHP2': data.port_status?.ipv6_rhp2 ?? false,
+      'IPv6 RHP3': data.port_status?.ipv6_rhp3 ?? false,
+      'IPv6 RHP4': data.port_status?.ipv6_rhp4 ?? false
+    };
+
+    const ipv4Checks = ['IPv4'];
+    const ipv6Checks = ['IPv6'];
+
+    if (!isV2) {
+      ipv4Checks.push('IPv4 RHP2', 'IPv4 RHP3');
+      ipv6Checks.push('IPv6 RHP2', 'IPv6 RHP3');
+    }
+
+    ipv4Checks.push('IPv4 RHP4');
+    ipv6Checks.push('IPv6 RHP4');
+
+
+    const renderSection = (title, keys) => {
+      return `<div class="mb-3">
+        <h5 class='mb-2'>${title}</h5>
+        <div class="row row-cols-2 g-2 status-grid">` +
+        keys.map(k => {
+          const v = connectionChecks[k];
+          const cls = v ? 'border-success text-success' : 'border-danger text-danger';
+          const icon = v ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+          return `<div class='col'><div class='status-tile rounded border ${cls}'><i class="bi ${icon} me-1"></i><span class='status-label'>${k}</span></div></div>`;
+        }).join('') +
+        '</div></div>';
+    };
+
+    connectionStatus.innerHTML =
+      `<div class="mb-2">${renderSection('General', ['Online', 'Accepting Contracts'])}</div>
+       <div class="row g-3">
+         <div class="col-12 col-lg-6">${renderSection('IPv4 Status', ipv4Checks)}</div>
+         <div class="col-12 col-lg-6">${renderSection('IPv6 Status', ipv6Checks)}</div>
+       </div>`;
+
+    const hostInfo = document.getElementById('hostInfo');
+    const infoFields = {
+      'Public Key': data.public_key,
+      'Net Address': data.net_address,
+      'V2': isV2,
+      'Uptime': (Number(data.uptime || 0) * 100).toFixed(2) + "%",
+      'Last scan': data.last_scan ? new Date(data.last_scan).toLocaleString(window.APP_LOCALE || undefined) : '—',
+      'Next scan': data.next_scan ? new Date(data.next_scan).toLocaleString(window.APP_LOCALE || undefined) : '—',
+      'Software Version': data.software_version,
+      'Protocol Version': data.protocol_version
+    };
+    const rows = Object.entries(infoFields).map(([k, v]) => {
+      const value = (v ?? '—');
+      const extraClass = k === 'Public Key' ? 'font-monospace text-break' : '';
+      const extraStyle = k === 'Public Key' ? " style='word-break:break-all'" : '';
+      return `<tr><th class='fw-semibold'>${k}</th><td class='text-start ${extraClass}'${extraStyle}>${value}</td></tr>`;
+    }).join('');
+    hostInfo.innerHTML = `<colgroup><col style='width:30%'><col style='width:70%'></colgroup>` + rows;
+
+
+    const usedBytes = parseInt(data.used_storage || 0);
+    const totalBytes = parseInt(data.total_storage || 0);
+
+    const remainingBytes = totalBytes - usedBytes;
+
+    // Calculate % used for progress bar
+    const percentage = totalBytes > 0 ? Math.floor(((usedBytes) / totalBytes) * 100) : 0;
+    const bar = document.getElementById('storageBar');
+    bar.style.width = percentage + '%';
+    bar.textContent = percentage + '%';
+
+
+
+    document.getElementById('storageStats').innerText = `${formatDecimalBytes(usedBytes)} / ${formatDecimalBytes(totalBytes)} used`;
+    const settingsGrid = document.getElementById('settingsGrid');
+    const fieldConfig = {
+      'Collateral': {
+        value: settings.collateral,
+        type: 'sc',
+        normalize: 'monthly-tb'
+      },
+      'Contract Price': {
+        value: settings.contractprice,
+        type: 'sc'
+      },
+      'Download Bandwidth Price': {
+        value: settings.egressprice,
+        type: 'sc',
+        normalize: 'tb'
+      },
+      'Upload Bandwidth Price': {
+        value: settings.ingressprice,
+        type: 'sc',
+        normalize: 'tb'
+      },
+      'Storage Price': {
+        value: settings.storageprice,
+        type: 'sc',
+        normalize: 'monthly-tb'
+      },
+      'Free Sector Price': {
+        value: settings.freesectorprice,
+        type: 'sc'
+      },
+      'Max Collateral': {
+        value: settings.maxcollateral,
+        type: 'sc',
+      },
+      'Max Duration': {
+        value: settings.maxduration,
+        type: 'number',
+        unit: 'blocks',
+        showMonths: true
+      },
+      'Base RPC Price': {
+        value: settings.baserpcprice,
+        type: 'sc'
+      },
+      'Max Ephemeral Account Balance': {
+        value: settings.maxephemeralaccountbalance,
+        type: 'sc'
+      },
+      'Ephemeral Account Expiry': {
+        value: settings.ephemeralaccountexpiry,
+        type: 'number',
+        unit: 'blocks'
+      },
+      'Max Download Batch Size': {
+        value: settings.maxdownloadbatchsize,
+        type: 'number',
+        unit: 'bytes'
+      },
+      'Max Revise Batch Size': {
+        value: settings.maxrevisebatchsize,
+        type: 'number',
+        unit: 'bytes'
+      },
+      'Sector Access Price': {
+        value: settings.sectoraccessprice,
+        type: 'sc'
+      },
+      'Sector Size': {
+        value: settings.sectorsize,
+        type: 'number',
+        unit: 'bytes'
+      },
+      'Window Size': {
+        value: settings.windowsize,
+        type: 'number',
+        unit: 'blocks'
+      }
+    };
+
+    settingsGrid.innerHTML = Object.entries(fieldConfig).map(([key, config]) => {
+      const v = config.value;
+      let display = v ?? '—';
+      let fiatHtml = '';
+      let extraHtml = '';
+
+      if (v != null && config.type === 'sc') {
+        const normalized = normalizeSC(v, config.normalize);
+        display = `${normalized.toFixed(2)} ${getUnitLabel(config.normalize)}`;
+        fiatHtml = `<span class="text-xs text-gray-400 block fiat-value" data-sc="${normalized}"></span>`;
+      }
+
+      if (v != null && config.type === 'number' && config.unit) {
+        display = `${v} ${config.unit}`;
+        if (config.showMonths) {
+          const months = Math.round(v / 4320);
+          extraHtml = `<span class="text-xs text-gray-400 block">${months} months</span>`;
+        }
+      }
+
+      return `
+        <div class='settings-tile'>
+          <div class='settings-tile__inner'>
+            <div class='settings-label mb-1'>${key}</div>
+            <div class='settings-value font-monospace'>
+              ${display}
+              ${extraHtml || ''}
+              ${fiatHtml}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    applyFiatValues();
+  }
+
+  document.getElementById("hostLookupForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const inputValue = document.getElementById("hostLookupInput").value.trim();
+    if (inputValue) {
+      const isPublicKey = /^ed25519:/i.test(inputValue);
+      const url = new URL(window.location.href);
+      if (isPublicKey) {
+        url.searchParams.set("public_key", inputValue);
+        url.searchParams.delete("net_address");
+      } else {
+        url.searchParams.set("net_address", inputValue.toLowerCase());
+        url.searchParams.delete("public_key");
+      }
+      window.location.href = url.toString();
+    }
+  });
+
+  function addToRecentHistory(type, value) {
+    const history = JSON.parse(localStorage.getItem("recentHosts") || "[]");
+    const normalizedHistory = history.map(item => {
+      if (typeof item === 'string') {
+        return { type: 'net_address', value: item };
+      }
+      return item;
+    }).filter(item => item && item.type && item.value);
+
+    const exists = normalizedHistory.some(item => item.type === type && item.value === value);
+    if (!exists) normalizedHistory.unshift({ type, value });
+    if (normalizedHistory.length > 5) normalizedHistory.length = 5;
+    localStorage.setItem("recentHosts", JSON.stringify(normalizedHistory));
+  }
+
+  function loadRecentHistory() {
+    const list = document.getElementById("recentHostList");
+    const container = document.getElementById("recentHosts");
+    const history = JSON.parse(localStorage.getItem("recentHosts") || "[]");
+    const normalizedHistory = history.map(item => {
+      if (typeof item === 'string') {
+        return { type: 'net_address', value: item };
+      }
+      return item;
+    }).filter(item => item && item.type && item.value);
+
+    if (normalizedHistory.length === 0) return;
+
+    list.innerHTML = normalizedHistory.map(item => {
+      const param = item.type === 'public_key' ? 'public_key' : 'net_address';
+      return `<li><a href="?${param}=${encodeURIComponent(item.value)}">${item.value}</a></li>`;
+    }
+    ).join("");
+    container.style.display = 'block';
+  }
+
+  async function applyFiatValues() {
+    const currency = getCookieSafe("currency") || "eur";
+    let rate = null;
+    if (currency !== 'sc') {
+      try {
+        if (window.currencyDisplay && typeof window.currencyDisplay.getRateForDate === 'function') {
+          rate = window.currencyDisplay.getRateForDate(null, currency);
+        }
+        if (!Number.isFinite(Number(rate))) {
+          const rateText = await fetchCachedOrDirect(`https://explorer.siagraph.info/api/exchange-rate/siacoin/${currency}`, {}, 86400000, 'text');
+          rate = parseFloat(rateText);
+        }
+        if (!Number.isFinite(Number(rate))) {
+          return;
+        }
+      } catch (err) {
+        console.error("Failed to fetch exchange rate", err);
+        return;
+      }
+    }
+    document.querySelectorAll('.fiat-value').forEach(el => {
+      const scRaw = parseFloat(el.getAttribute('data-sc') || "0");
+      if (!isNaN(scRaw)) {
+        if (currency === 'sc') {
+          el.textContent = '';
+          return;
+        }
+        if (window.currencyDisplay && typeof window.currencyDisplay.formatFiatWithScTooltip === 'function') {
+          el.innerHTML = window.currencyDisplay.formatFiatWithScTooltip({
+            scValue: scRaw,
+            currency: currency,
+            rate: rate,
+            decimals: 2,
+            scDecimals: 2
+          });
+          return;
+        }
+        const fiat = scRaw * rate;
+        const text = `${currency.toUpperCase()} ${fiat >= 0.01 ? fiat.toFixed(2) : fiat.toFixed(5)}`;
+        el.textContent = text;
+        el.title = `SC value: ${scRaw.toFixed(2)} SC`;
+      }
+    });
+  }
+  // Convert to decimal GB / TB
+  function formatDecimalBytes(bytes) {
+    const tb = bytes / 1_000_000_000_000;
+    const gb = bytes / 1_000_000_000;
+    if (tb >= 1) return `${tb.toFixed(2)} TB`;
+    if (gb >= 1) return `${gb.toFixed(2)} GB`;
+    return `${(bytes / 1_000_000).toFixed(2)} MB`;
+  }
+  function normalizeSC(value, normalize) {
+    let hastings = parseFloat(value);
+    if (isNaN(hastings)) return 0;
+
+    const HASTINGS_PER_SC = 1e24;
+    const BYTES_IN_TB = 1e12;
+    const BLOCKS_PER_MONTH = 4320;
+
+    // convert to SC per byte first
+    const scPerByte = hastings / HASTINGS_PER_SC;
+
+    switch (normalize) {
+      case 'monthly':
+        return scPerByte * BLOCKS_PER_MONTH;
+      case 'tb':
+        return scPerByte * BYTES_IN_TB;
+      case 'monthly-tb':
+        return scPerByte * BYTES_IN_TB * BLOCKS_PER_MONTH;
+      default:
+        return scPerByte;
+    }
+  }
+
+  function getUnitLabel(normalize) {
+    switch (normalize) {
+      case 'monthly': return 'SC/month';
+      case 'tb': return 'SC/TB';
+      case 'monthly-tb': return 'SC/month/TB';
+      default: return 'SC';
+    }
+  }
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Copied to clipboard!");
+    }).catch(err => {
+      console.error("Error copying text: ", err);
+    });
+  }
+  // Ensure this runs after deferred global scripts (script.js) execute
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadHostData);
+  } else {
+    loadHostData();
+  }
+</script>
+
+<?php render_footer(); ?>

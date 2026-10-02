@@ -1,5 +1,5 @@
 <header class="text-white sg-site-header">
-    <nav class="navbar navbar-expand-lg navbar-dark container py-2">
+    <nav class="navbar navbar-expand-lg navbar-dark container sg-site-nav" aria-label="Primary">
         <a class="navbar-brand" href="/">
             <img src="/img/siagraph_banner_white.png" alt="SiaGraph" class="sg-site-logo">
         </a>
@@ -8,41 +8,38 @@
                 aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link text-white font-medium" href="/">Home</a>
-                        </li>
-                        <!--<li class="nav-item">
-                            <a class="nav-link text-white font-medium" href="/explorer">Blockchain Explorer</a>
-                        </li>-->
+        <div class="collapse navbar-collapse sg-site-nav__collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0 sg-site-nav__list">
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navNetworkDropdown"
                                 role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Network
+                                Storage Network
                             </a>
                             <div class="dropdown-menu" aria-labelledby="navNetworkDropdown">
                                 <!--<a class="dropdown-item text-white font-medium" href="/network_overview">Overview</a>-->
-                                <a class="dropdown-item text-white font-medium" href="/network_storage">Storage</a>
-                                <a class="dropdown-item text-white font-medium" href="/mining_stats">Mining Statistics</a>
-                                <a class="dropdown-item text-white font-medium" href="/renter_distribution">Renter Distribution</a>
+                                <!-- todo RENAME network_storage and its title to match new header title.-->
+                                <a class="dropdown-item text-white font-medium" href="/network_storage">Storage Capacity</a>
+                                <a class="dropdown-item text-white font-medium" href="/renters">Renters</a>
+                                <a class="dropdown-item text-white font-medium" href="/renter_distribution">Renter Storage Distribution</a>
+                                <a class="dropdown-item text-white font-medium" href="/contract_activity">Contract Activity</a>
+                                <a class="dropdown-item text-white font-medium" href="/contracts_collateral">Active Contracts &amp; Collateral</a>
+                                <a class="dropdown-item text-white font-medium" href="/mining_stats">Mining</a>
                                 <a class="dropdown-item text-white font-medium" href="/peers">Peer Explorer</a>
-                                <a class="dropdown-item text-white font-medium" href="/transactions_export">Transaction Export</a>
                             </div>
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle text-white font-medium" href="#" id="navFinancialsDropdown"
                                 role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Financials
+                                Economics
                             </a>
                             <div class="dropdown-menu" aria-labelledby="navFinancialsDropdown">
                                 <a class="dropdown-item text-white font-medium" href="/revenue">Revenue</a>
-                                <a class="dropdown-item text-white font-medium" href="/token_volume">Token Trade Volume</a>
-                                <!--<a class="dropdown-item text-white font-medium" href="/tokenomics">Tokenomics</a>-->
-                                <a class="dropdown-item text-white font-medium" href="/contracts_funds">Contracts &amp; Funds</a>
-                                <a class="dropdown-item text-white font-medium" href="/contract_activity">Contract Activity</a>
+                                <a class="dropdown-item text-white font-medium" href="/siacoin_price">Siacoin Price</a>
                                 <a class="dropdown-item text-white font-medium" href="/siafunds">Siafunds</a>
+                                <a class="dropdown-item text-white font-medium" href="/token_transfer_volume">Token Transfer Volume</a>
+                                <!--<a class="dropdown-item text-white font-medium" href="/tokenomics">Tokenomics</a>-->
                                 <a class="dropdown-item text-white font-medium" href="/foundation_subsidy_tracker">Foundation Subsidy Tracker</a>
+                                <a class="dropdown-item text-white font-medium" href="/transactions_export">Transaction Export</a>
                             </div>
                         </li>
                         <li class="nav-item dropdown">
@@ -60,5 +57,184 @@
                             </div>
                         </li>
                     </ul>
+                    <form id="sg-nav-explorer-search-form" class="sg-nav-search ms-lg-3" role="search" autocomplete="off">
+                        <input id="sg-nav-explorer-search-input" type="text" placeholder="Search Sia network..." aria-label="Search Sia network">
+                        <button id="sg-nav-explorer-search-submit" type="submit">Search</button>
+                    </form>
                 </div>
-        </nav></header>
+        </nav>
+</header>
+<script>
+(() => {
+    const dropdowns = Array.from(document.querySelectorAll('.sg-site-nav .nav-item.dropdown'));
+    if (!dropdowns.length) return;
+
+    const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    let pinnedDropdown = null;
+
+    function parts(dropdown) {
+        return {
+            toggle: dropdown.querySelector('[data-bs-toggle="dropdown"]'),
+            menu: dropdown.querySelector('.dropdown-menu')
+        };
+    }
+
+    function setOpen(dropdown, open, pinned = false) {
+        const { toggle, menu } = parts(dropdown);
+        if (!toggle || !menu) return;
+        dropdown.classList.toggle('show', open);
+        toggle.classList.toggle('show', open);
+        menu.classList.toggle('show', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        dropdown.dataset.pinned = open && pinned ? 'true' : 'false';
+    }
+
+    function closeDropdown(dropdown) {
+        if (!dropdown) return;
+        setOpen(dropdown, false);
+        if (pinnedDropdown === dropdown) pinnedDropdown = null;
+    }
+
+    function closeAll(except = null) {
+        dropdowns.forEach((dropdown) => {
+            if (dropdown !== except) closeDropdown(dropdown);
+        });
+    }
+
+    dropdowns.forEach((dropdown) => {
+        const { toggle } = parts(dropdown);
+        if (!toggle) return;
+
+        if (canHover) {
+            dropdown.addEventListener('mouseenter', () => {
+                if (pinnedDropdown && pinnedDropdown !== dropdown) return;
+                closeAll(dropdown);
+                setOpen(dropdown, true, pinnedDropdown === dropdown);
+            });
+
+            dropdown.addEventListener('mouseleave', () => {
+                if (pinnedDropdown !== dropdown) closeDropdown(dropdown);
+            });
+        }
+
+        toggle.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (pinnedDropdown === dropdown) {
+                closeDropdown(dropdown);
+                return;
+            }
+
+            closeAll(dropdown);
+            pinnedDropdown = dropdown;
+            setOpen(dropdown, true, true);
+        });
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!pinnedDropdown || pinnedDropdown.contains(event.target)) return;
+        closeDropdown(pinnedDropdown);
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        closeAll();
+        pinnedDropdown = null;
+    });
+})();
+
+(() => {
+    const form = document.getElementById('sg-nav-explorer-search-form');
+    const input = document.getElementById('sg-nav-explorer-search-input');
+    const submit = document.getElementById('sg-nav-explorer-search-submit');
+    if (!form || !input || !submit) return;
+
+    const explorerApiBase = <?php echo json_encode(rtrim((string) (($GLOBALS['SETTINGS']['explorer'] ?? '')), '/'), JSON_UNESCAPED_SLASHES); ?>;
+
+    function openExplorerRoute(route) {
+        const clean = String(route || '').replace(/^\/+/, '').replace(/\/+$/, '');
+        window.location.href = clean ? (`/explorer/${clean}`) : '/';
+    }
+
+    function isNetAddress(value) {
+        const v = String(value || '').trim();
+        if (!v) return false;
+        // Accept host:port / ipv4:port / localhost:port.
+        // Keep this intentionally strict to avoid colliding with normal ID lookups.
+        const m = v.match(/^([a-z0-9.-]+):(\d{2,5})$/i);
+        if (!m) return false;
+        const port = Number(m[2]);
+        return Number.isInteger(port) && port >= 1 && port <= 65535;
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const value = String(input.value || '').trim();
+        if (!value) return;
+        submit.disabled = true;
+
+        if (isNetAddress(value)) {
+            try {
+                const hostRes = await fetch('/api/v1/host_troubleshooter?net_address=' + encodeURIComponent(value), {
+                    headers: { Accept: 'application/json' }
+                });
+                if (hostRes.ok) {
+                    const hostData = await hostRes.json();
+                    const pk = String(hostData?.public_key || '').trim();
+                    if (pk) {
+                        window.location.href = '/host?public_key=' + encodeURIComponent(pk);
+                        return;
+                    }
+                }
+            } catch (_hostErr) {}
+            window.location.href = '/host?net_address=' + encodeURIComponent(value);
+            return;
+        }
+
+        if (!explorerApiBase) {
+            openExplorerRoute('search/' + encodeURIComponent(value));
+            return;
+        }
+
+        try {
+            if (/^\d+$/.test(value)) {
+                const indexRes = await fetch(explorerApiBase + '/consensus/tip/' + encodeURIComponent(value));
+                if (indexRes.ok) {
+                    const index = await indexRes.json();
+                    if (index && index.id) {
+                        openExplorerRoute('block/' + encodeURIComponent(index.id));
+                        return;
+                    }
+                }
+            }
+
+            const searchRes = await fetch(explorerApiBase + '/search/' + encodeURIComponent(value));
+            if (!searchRes.ok) throw new Error('Search request failed');
+            const searchType = await searchRes.json();
+            const routeMap = {
+                block: 'block/',
+                transaction: 'tx/',
+                v2Transaction: 'tx/',
+                address: 'address/',
+                siacoinElement: 'output/siacoin/',
+                siafundElement: 'output/siafund/',
+                contract: 'contract/',
+                v2Contract: 'contract/'
+            };
+
+            if (searchType === 'host') {
+                window.location.href = '/host?public_key=' + encodeURIComponent(value);
+                return;
+            }
+            if (routeMap[searchType]) {
+                openExplorerRoute(routeMap[searchType] + encodeURIComponent(value));
+                return;
+            }
+        } catch (_err) {
+        }
+
+        openExplorerRoute('search/' + encodeURIComponent(value));
+    });
+})();
+</script>

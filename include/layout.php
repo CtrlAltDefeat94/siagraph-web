@@ -1,4 +1,14 @@
 <?php
+function root_relative_path(string $path): string {
+    if ($path === '') {
+        return '/';
+    }
+    if (preg_match('#^(?:[a-z]+:)?//#i', $path) === 1) {
+        return $path;
+    }
+    return '/' . ltrim($path, '/');
+}
+
 function versioned_asset_url(string $path): string {
     // Leave absolute/external URLs unchanged.
     if (preg_match('#^(?:[a-z]+:)?//#i', $path) === 1) {
@@ -53,23 +63,23 @@ function render_header(
         
         <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.0/nouislider.min.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-        <link rel="stylesheet" href="<?php echo htmlspecialchars(versioned_asset_url('css/dark.css'), ENT_QUOTES, 'UTF-8'); ?>">
-        <link rel="stylesheet" href="<?php echo htmlspecialchars(versioned_asset_url('css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
-        <link rel="stylesheet" href="<?php echo htmlspecialchars(versioned_asset_url('css/theme.css'), ENT_QUOTES, 'UTF-8'); ?>">
-        <link rel="stylesheet" href="<?php echo htmlspecialchars(versioned_asset_url('css/overrides.css'), ENT_QUOTES, 'UTF-8'); ?>">
-        <link rel="icon" href="<?php echo htmlspecialchars(versioned_asset_url('img/favicon.ico'), ENT_QUOTES, 'UTF-8'); ?>" type="image/png">
+        <link rel="stylesheet" href="<?php echo htmlspecialchars(versioned_asset_url('/css/dark.css'), ENT_QUOTES, 'UTF-8'); ?>">
+        <link rel="stylesheet" href="<?php echo htmlspecialchars(versioned_asset_url('/css/style.css'), ENT_QUOTES, 'UTF-8'); ?>">
+        <link rel="stylesheet" href="<?php echo htmlspecialchars(versioned_asset_url('/css/theme.css'), ENT_QUOTES, 'UTF-8'); ?>">
+        <link rel="stylesheet" href="<?php echo htmlspecialchars(versioned_asset_url('/css/overrides.css'), ENT_QUOTES, 'UTF-8'); ?>">
+        <link rel="icon" href="<?php echo htmlspecialchars(versioned_asset_url('/img/favicon.ico'), ENT_QUOTES, 'UTF-8'); ?>" type="image/png">
         <script>
             window.APP_LOCALE = <?php echo json_encode($APP_LOCALE_BCP47); ?>;
             // Bump this to invalidate client-side cached API responses
             window.FETCH_CACHE_VERSION = '2024-01-cutoff-1';
         </script>
-        <script src="<?php echo htmlspecialchars(versioned_asset_url('script.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+        <script src="<?php echo htmlspecialchars(versioned_asset_url('/script.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
         <?php foreach ($extra_head as $tag) { echo $tag; } ?>
     </head>
-    <body class="d-flex flex-column min-vh-100">
+    <body class="d-flex flex-column min-vh-100 sg-site-body">
     <span aria-hidden="true" class="sg-page-glow"></span>
 	<?php include __DIR__ . '/header.html'; ?>
-	<main class="flex-grow-1">
+	<main class="flex-grow-1 sg-main">
 <?php }
 
 function render_footer(array $scripts = []) {
@@ -80,8 +90,8 @@ function render_footer(array $scripts = []) {
         <script src="https://cdn.jsdelivr.net/npm/chart.js@3" defer></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1" defer></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.0/nouislider.min.js" defer></script>
-        <script src="<?php echo htmlspecialchars(versioned_asset_url('js/graph-renderer.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
-        <?php foreach ($scripts as $script) { echo "<script src=\"" . htmlspecialchars(versioned_asset_url($script), ENT_QUOTES, 'UTF-8') . "\"></script>"; } ?>
+        <script src="<?php echo htmlspecialchars(versioned_asset_url('/js/graph-renderer.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+        <?php foreach ($scripts as $script) { echo "<script src=\"" . htmlspecialchars(versioned_asset_url(root_relative_path($script)), ENT_QUOTES, 'UTF-8') . "\"></script>"; } ?>
     </body>
     </html>
 <?php }

@@ -10,6 +10,7 @@ class GraphRenderer {
         };
 
         this.canvasId = options.canvasId;
+        this.maintainAspectRatio = options.maintainAspectRatio !== false;
         this.jsonData = options.jsonData;
         this.jsonUrl = options.jsonUrl;
         this.unitType = options.unitType;
@@ -353,6 +354,8 @@ class GraphRenderer {
                     datasets: filteredDatasets
                 },
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: this.maintainAspectRatio,
                     plugins: {
                         decimation: this.charttype === 'line' ? { enabled: true, algorithm: 'min-max' } : undefined,
                         legend: {

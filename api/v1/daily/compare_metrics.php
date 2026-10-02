@@ -1,5 +1,5 @@
 <?php
-include_once __DIR__ . '/../../../bootstrap.php';
+include_once __DIR__ . '/../../..//bootstrap.php';
 include_once __DIR__ . '/../../../config.php';
 
 use Siagraph\Utils\Cache;
@@ -9,6 +9,7 @@ $queryString = http_build_query($_GET);
 $combinedString = basename(__FILE__) . $queryString;
 
 $recentStatsKey = empty(http_build_query(data: $_GET)) ? Cache::RECENT_STATS_KEY : md5($combinedString);
+$recentStatsKey .= ':hourly-rates-v2';
 $cacheresult = Cache::getCache($recentStatsKey);
 
 if ($cacheresult) {
@@ -34,8 +35,8 @@ if (empty($start_date) && empty($end_date)) {
     echo json_encode(["error" => "Missing start or end date."]);
     die;
 } else {
-    $start_date_obj = !empty($start_date) ? DateTime::createFromFormat('Y-m-d', $start_date) : null;
-    $end_date_obj = !empty($end_date) ? DateTime::createFromFormat('Y-m-d', $end_date) : null;
+    $start_date_obj = !empty($start_date) ? DateTime::createFromFormat('!Y-m-d', $start_date, new DateTimeZone('UTC')) : null;
+    $end_date_obj = !empty($end_date) ? DateTime::createFromFormat('!Y-m-d', $end_date, new DateTimeZone('UTC')) : null;
 }
 
 
@@ -73,7 +74,11 @@ $prevPeriodEndStr = $prevPeriodEnd->format('Y-m-d');
 function sumRevenue(mysqli $mysqli, string $start, string $end): array {
     $query = "SELECT na.contract_revenue, er.usd, er.eur
               FROM NetworkAggregates na
-              LEFT JOIN ExchangeRates er ON DATE(na.date) = DATE(er.timestamp) AND er.currency_code = 'sc'
+              LEFT JOIN (
+                  SELECT DATE(timestamp) AS date, AVG(usd) AS usd, AVG(eur) AS eur
+                  FROM ExchangeRates WHERE currency_code = 'sc'
+                  GROUP BY DATE(timestamp)
+              ) er ON DATE(na.date) = er.date
               WHERE na.date BETWEEN ? AND ?";
 
     $stmt = $mysqli->prepare($query);
@@ -214,11 +219,11 @@ $active_hosts = (int) $actualstats['active_hosts'];
 $previous_active_hosts = (int) $comparestats['active_hosts'];
 $active_hosts_difference = $active_hosts - $previous_active_hosts;
 
-// Fetch coin price data for yesterday from the database
-$stmt = $mysqli->prepare("SELECT usd, eur FROM ExchangeRates WHERE DATE(timestamp) = ? AND currency_code = 'sc' ORDER BY timestamp DESC LIMIT 1");
+// Compare against the latest observation at or before the comparison time (24 hours ago by default).
+$stmt = $mysqli->prepare("SELECT usd, eur FROM ExchangeRates WHERE timestamp <= ? AND currency_code = 'sc' ORDER BY timestamp DESC LIMIT 1");
 $coin_price_yesterday = ['usd' => 0.0, 'eur' => 0.0, 'sc' => 1.0];
 if ($stmt) {
-    $dateStr = $start_date_obj->format('Y-m-d');
+    $dateStr = $start_date_obj->format('Y-m-d H:i:s');
     $stmt->bind_param('s', $dateStr);
     $stmt->execute();
     $res = $stmt->get_result();

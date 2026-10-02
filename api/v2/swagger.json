@@ -1,0 +1,2343 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "SiaGraph API v2",
+    "version": "2.0.0",
+    "description": "Canonical V2 API with standardized response envelopes and normalized routes."
+  },
+  "servers": [
+    {
+      "url": "https://siagraph.info/api/v2",
+      "description": "Production"
+    },
+    {
+      "url": "http://localhost:8000/api/v2",
+      "description": "Local"
+    }
+  ],
+  "tags": [
+    {
+      "name": "alerts"
+    },
+    {
+      "name": "hosts"
+    },
+    {
+      "name": "network"
+    },
+    {
+      "name": "explorer"
+    },
+    {
+      "name": "markets"
+    },
+    {
+      "name": "renters"
+    },
+    {
+      "name": "contracts"
+    }
+  ],
+  "paths": {
+    "/alerts/subscriptions": {
+      "post": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Create alert subscription",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "public_key",
+                  "service",
+                  "recipient"
+                ],
+                "properties": {
+                  "public_key": {
+                    "type": "string"
+                  },
+                  "service": {
+                    "type": "string",
+                    "enum": [
+                      "email",
+                      "pushover",
+                      "telegram"
+                    ]
+                  },
+                  "recipient": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subscription created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/EnvelopeBase"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "message": {
+                              "type": "string"
+                            },
+                            "unsubscribe_url": {
+                              "type": "string"
+                            },
+                            "expires_in_seconds": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Delete alert subscription by token",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unsubscribed or already unsubscribed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/EnvelopeBase"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "message": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "success",
+                                "already_unsubscribed"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "410": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/alerts/unsubscribe": {
+      "get": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Link-safe unsubscribe endpoint",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json"
+              ]
+            },
+            "description": "Set to json to force JSON response instead of HTML"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unsubscribe result",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/EnvelopeBase"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "message": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "success",
+                                "already_unsubscribed"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hosts": {
+      "get": {
+        "tags": [
+          "hosts"
+        ],
+        "summary": "List hosts",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "country",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include_inactive",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "accepting_contracts",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Host list with pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/EnvelopeBase"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "facets": {
+                              "type": "object",
+                              "additionalProperties": true
+                            },
+                            "parity": {
+                              "type": "object",
+                              "additionalProperties": true
+                            }
+                          }
+                        },
+                        "meta": {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/Meta"
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "pagination": {
+                                  "$ref": "#/components/schemas/Pagination"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hosts/meta": {
+      "get": {
+        "tags": [
+          "hosts"
+        ],
+        "summary": "Host filter metadata",
+        "responses": {
+          "200": {
+            "description": "Metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hosts/details": {
+      "get": {
+        "tags": [
+          "hosts"
+        ],
+        "summary": "Host details",
+        "parameters": [
+          {
+            "name": "host_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "public_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Host details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/hosts/troubleshoot": {
+      "get": {
+        "tags": [
+          "hosts"
+        ],
+        "summary": "Host troubleshooting diagnostics",
+        "parameters": [
+          {
+            "name": "host_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "public_key",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "net_address",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scan",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Troubleshooting data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hosts/scan": {
+      "post": {
+        "tags": [
+          "hosts"
+        ],
+        "summary": "Trigger host scan",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "public_key"
+                ],
+                "properties": {
+                  "public_key": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scan result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/network/metrics": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Network metrics",
+        "parameters": [
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "day",
+                "month"
+              ],
+              "default": "day"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Metrics series",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeArray"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/network/aggregates": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Network aggregates",
+        "parameters": [
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "day",
+                "month"
+              ],
+              "default": "day"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aggregate series",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeArray"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/network/growth": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Network growth",
+        "parameters": [
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "day",
+                "month"
+              ],
+              "default": "day"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Growth series",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeArray"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/network/compare-metrics": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Compare metrics snapshot",
+        "parameters": [
+          {
+            "name": "actual_date",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "compare_date",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Compared snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/network/host-prices": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Host prices",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Host prices series",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeArray"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/network/revenue/monthly": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Monthly revenue",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revenue series",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeArray"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/network/storage/ath": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Storage ATH metadata",
+        "responses": {
+          "200": {
+            "description": "ATH info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/network/storage/renter-distribution": {
+      "get": {
+        "tags": [
+          "renters"
+        ],
+        "summary": "Read published top 10 renter distribution",
+        "description": "Reads producer-calculated wallet shares and Others. Returns null with awaiting_summary while unavailable; V1 remains unchanged. Numeric values are strings.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                10
+              ],
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Published snapshot or null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "errors"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unsupported limit"
+          },
+          "503": {
+            "description": "Data unavailable"
+          }
+        }
+      }
+    },
+    "/explorer/metrics": {
+      "get": {
+        "tags": [
+          "explorer"
+        ],
+        "summary": "Explorer metrics",
+        "responses": {
+          "200": {
+            "description": "Explorer status data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/explorer/peers": {
+      "get": {
+        "tags": [
+          "explorer"
+        ],
+        "summary": "Peers grouped by network",
+        "responses": {
+          "200": {
+            "description": "Peers payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/explorer/transactions": {
+      "get": {
+        "tags": [
+          "explorer"
+        ],
+        "summary": "Address transaction export",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "usd"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "default": "json"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transactions export",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeArray"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/markets/exchange-rates": {
+      "get": {
+        "tags": [
+          "markets"
+        ],
+        "summary": "Daily average SC exchange rates",
+        "description": "Arithmetic mean of available hourly snapshots per UTC day. Today is a partial-day average. Dates label calendar days at 00:00:00Z; start and end include their full UTC calendar days. Missing days are omitted. Cached until the next hourly cache boundary.",
+        "parameters": [
+          {
+            "name": "base",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sc"
+              ],
+              "default": "sc"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exchange-rate series",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeArray"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/renters/index.php": {
+      "get": {
+        "tags": [
+          "renters"
+        ],
+        "summary": "List renter wallets",
+        "description": "Read-only stored metrics. No request-time metric aggregation. See docs/renter-data-contract.md. History is bounded to 366 inclusive days.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ],
+              "default": "1"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "contracted_filesize",
+                "active_contracts",
+                "active_hosts",
+                "last_active",
+                "renter_wallet_address"
+              ]
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored data; unknown key resolves to unmapped, absent publications to null/empty with availability metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "errors"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "description": "Stored database row. Numeric metrics and heights are decimal strings; unknown renewal funding remains null.",
+                            "additionalProperties": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer"
+                            },
+                            "per_page": {
+                              "type": "integer"
+                            },
+                            "has_more": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query"
+          },
+          "404": {
+            "description": "Wallet not found"
+          },
+          "405": {
+            "description": "GET required"
+          },
+          "503": {
+            "description": "Data unavailable"
+          }
+        }
+      }
+    },
+    "/renters/details.php": {
+      "get": {
+        "tags": [
+          "renters"
+        ],
+        "summary": "Read stored renter wallet state",
+        "description": "Read-only stored metrics. No request-time metric aggregation. See docs/renter-data-contract.md. History is bounded to 366 inclusive days. Public-key lookup is server-side. Details/keys require either address or public_key.",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{76}$"
+            }
+          },
+          {
+            "name": "public_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(ed25519:)?[a-fA-F0-9]{64}$"
+            },
+            "description": "Resolve this key to a wallet. Optional address disambiguates recorded associations."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored data; unknown key resolves to unmapped, absent publications to null/empty with availability metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "errors"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "description": "Stored database row. Numeric metrics and heights are decimal strings; unknown renewal funding remains null.",
+                      "additionalProperties": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query"
+          },
+          "404": {
+            "description": "Wallet not found"
+          },
+          "405": {
+            "description": "GET required"
+          },
+          "503": {
+            "description": "Data unavailable"
+          },
+          "409": {
+            "description": "Ambiguous public key: candidate wallets are returned in error details."
+          }
+        }
+      }
+    },
+    "/renters/public-keys.php": {
+      "get": {
+        "tags": [
+          "renters"
+        ],
+        "summary": "List observed wallet/public-key associations",
+        "description": "Read-only stored metrics. No request-time metric aggregation. See docs/renter-data-contract.md. History is bounded to 366 inclusive days. Public-key lookup is server-side. Details/keys require either address or public_key.",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{76}$"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "public_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(ed25519:)?[a-fA-F0-9]{64}$"
+            },
+            "description": "Resolve this key to a wallet. Optional address disambiguates recorded associations."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored data; unknown key resolves to unmapped, absent publications to null/empty with availability metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "errors"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "description": "Stored database row. Numeric metrics and heights are decimal strings; unknown renewal funding remains null.",
+                            "additionalProperties": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer"
+                            },
+                            "per_page": {
+                              "type": "integer"
+                            },
+                            "has_more": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query"
+          },
+          "404": {
+            "description": "Wallet not found"
+          },
+          "405": {
+            "description": "GET required"
+          },
+          "503": {
+            "description": "Data unavailable"
+          },
+          "409": {
+            "description": "Ambiguous public key: candidate wallets are returned in error details."
+          }
+        }
+      }
+    },
+    "/renters/resolve.php": {
+      "get": {
+        "tags": [
+          "renters"
+        ],
+        "summary": "Resolve renter public key to canonical wallet",
+        "description": "Read-only stored metrics. No request-time metric aggregation. See docs/renter-data-contract.md. History is bounded to 366 inclusive days.",
+        "parameters": [
+          {
+            "name": "public_key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(ed25519:)?[a-fA-F0-9]{64}$"
+            }
+          },
+          {
+            "name": "address",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{76}$"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored data; unknown key resolves to unmapped, absent publications to null/empty with availability metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "errors"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "resolved",
+                            "unmapped",
+                            "ambiguous"
+                          ]
+                        },
+                        "renter_wallet_address": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "description": "Stored database row. Numeric metrics and heights are decimal strings; unknown renewal funding remains null.",
+                            "additionalProperties": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer"
+                            },
+                            "per_page": {
+                              "type": "integer"
+                            },
+                            "has_more": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query"
+          },
+          "404": {
+            "description": "Wallet not found"
+          },
+          "405": {
+            "description": "GET required"
+          },
+          "503": {
+            "description": "Data unavailable"
+          }
+        }
+      }
+    },
+    "/renters/daily.php": {
+      "get": {
+        "tags": [
+          "renters"
+        ],
+        "summary": "Read wallet daily rows or published network history",
+        "description": "Read-only stored metrics. No request-time metric aggregation. See docs/renter-data-contract.md. History is bounded to 366 inclusive days. Normal ranges are bounded to 366 days; all=1 uses paginated stored rows without metric aggregation.",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{76}$"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "public_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(ed25519:)?[a-fA-F0-9]{64}$"
+            },
+            "description": "Resolve this key to a wallet. Optional address disambiguates recorded associations."
+          },
+          {
+            "name": "all",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ],
+              "default": "0"
+            },
+            "description": "All history in pages of up to 1000 rows; cannot combine with start/end."
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Exclusive continuation cursor for all=1; see meta.pagination.next_after."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored data; unknown key resolves to unmapped, absent publications to null/empty with availability metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "errors"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query"
+          },
+          "404": {
+            "description": "Wallet not found"
+          },
+          "405": {
+            "description": "GET required"
+          },
+          "503": {
+            "description": "Data unavailable"
+          },
+          "409": {
+            "description": "Ambiguous public key: candidate wallets are returned in error details."
+          }
+        }
+      }
+    },
+    "/renters/overview.php": {
+      "get": {
+        "tags": [
+          "renters"
+        ],
+        "summary": "Read published renter network overview",
+        "description": "Read-only stored metrics. No request-time metric aggregation. See docs/renter-data-contract.md. History is bounded to 366 inclusive days.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Stored data; unknown key resolves to unmapped, absent publications to null/empty with availability metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "errors"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query"
+          },
+          "404": {
+            "description": "Wallet not found"
+          },
+          "405": {
+            "description": "GET required"
+          },
+          "503": {
+            "description": "Data unavailable"
+          }
+        }
+      }
+    },
+    "/network/storage/renter-distribution.php": {
+      "get": {
+        "tags": [
+          "renters"
+        ],
+        "summary": "Read published top 10 renter distribution",
+        "description": "Reads producer-calculated wallet shares and Others. Returns null with awaiting_summary while unavailable; V1 remains unchanged. Numeric values are strings.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                10
+              ],
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Published snapshot or null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "errors"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unsupported limit"
+          },
+          "503": {
+            "description": "Data unavailable"
+          }
+        }
+      }
+    },
+    "/contracts/active.php": {
+      "get": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "Read current profile contracts",
+        "description": "Current state from Contracts_Active, with top eight counterparties plus Others, exact decimal-string metrics, exclusive end windows, and paginated contracts. BlockTime is a reference, not a certified contract snapshot. Null amounts remain unknown. Both contract versions are included. GET only; successful responses cached for 60 seconds. Database failures return 503, never empty success. See docs/active-contracts.md.",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{76}$"
+            },
+            "description": "Renter wallet. Supply exactly one of address and host_public_key."
+          },
+          {
+            "name": "host_public_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(ed25519:)?[a-fA-F0-9]{64}$"
+            },
+            "description": "Host key; bare and prefixed encodings are both matched."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            },
+            "description": "Fixed 25-item pages with one-row lookahead."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ending",
+                "size",
+                "newest"
+              ],
+              "default": "ending"
+            },
+            "description": ""
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{64}$"
+            },
+            "description": "Exact contract ID; lists only, summaries retain the full profile."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract data. Money is Hastings; bytes, heights, and monetary values are strings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "errors"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "summary": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "distribution": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "identity": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "others": {
+                                "type": "boolean"
+                              },
+                              "contracts": {
+                                "type": "string"
+                              },
+                              "bytes": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            }
+                          }
+                        },
+                        "expirations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          }
+                        },
+                        "reference": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "block_height": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          }
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer"
+                            },
+                            "has_more": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "405": {
+            "description": "Use GET"
+          },
+          "503": {
+            "description": "Contract data temporarily unavailable"
+          }
+        }
+      }
+    },
+    "/contracts/completed.php": {
+      "get": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "Browse completed host or renter contracts",
+        "description": "Returns up to 25 unique resolved contracts with cursor pagination. Multiple revisions are deduplicated. Newest or oldest order; exact contract-ID search remains scoped to the selected host or wallet. Pass pagination.next_after as after to continue with the same sort/search. Successful responses cache for 60 seconds. Errors return 400/405/503. See docs/active-contracts.md. Supply exactly one of host_public_key and address.",
+        "parameters": [
+          {
+            "name": "host_public_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(ed25519:)?[a-fA-F0-9]{64}$"
+            },
+            "description": "Host key; both encodings matched."
+          },
+          {
+            "name": "address",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{76}$"
+            },
+            "description": "Canonical renter wallet address. Mutually exclusive with host_public_key."
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Opaque continuation cursor from data.pagination.next_after. Omit for the first page."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "newest",
+                "oldest"
+              ],
+              "default": "newest"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{64}$"
+            },
+            "description": "Exact contract ID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract data. Money is Hastings; bytes, heights, and monetary values are strings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "errors"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "has_more": {
+                              "type": "boolean"
+                            },
+                            "next_after": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "405": {
+            "description": "Use GET"
+          },
+          "503": {
+            "description": "Contract data temporarily unavailable"
+          }
+        }
+      }
+    },
+    "/contracts/tax-export.php": {
+      "get": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "Export settled V2 contract revenue and principal losses",
+        "description": "Public read-only export. Uses authoritative resolution rows and actual maturity timestamps at resolution_height + 144. Money is returned as decimal strings. Loss amounts include only host collateral, excluding unreceived revenue. Incomplete rates make fiat values and summary totals null. Rate means are rounded half up to 24 fractional digits.",
+        "parameters": [
+          {
+            "name": "host_public_key",
+            "in": "query",
+            "required": true,
+            "description": "Host public key; matches both stored encodings.",
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:ed25519:)?[a-fA-F0-9]{64}$"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive UTC settlement date; dates before 2025-07-01 return 400.",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "default": "2025-07-01"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive UTC settlement date; defaults to yesterday UTC.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "description": "CSV streams one row per contract; JSON includes summary.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "default": "json"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "description": "Case-insensitive reporting currency. Fiat field suffixes follow the selected currency.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "EUR",
+                "BTC",
+                "CAD",
+                "CNY",
+                "ETH",
+                "GBP",
+                "JPY",
+                "RUB",
+                "USD"
+              ],
+              "default": "EUR"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract export",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "contract_id": {
+                                "type": "string",
+                                "nullable": false
+                              },
+                              "start_date_utc": {
+                                "type": "string",
+                                "format": "date",
+                                "nullable": true
+                              },
+                              "resolution_date_utc": {
+                                "type": "string",
+                                "format": "date",
+                                "nullable": true
+                              },
+                              "unlock_date_utc": {
+                                "type": "string",
+                                "format": "date",
+                                "nullable": false
+                              },
+                              "resolution_type": {
+                                "type": "string",
+                                "nullable": false
+                              },
+                              "revenue_locked_sc": {
+                                "type": "string",
+                                "description": "Nonnegative revenue_locked from the authoritative resolution row, in SC with 24 decimal places."
+                              },
+                              "revenue_unlocked_sc": {
+                                "type": "string",
+                                "description": "Exact decimal string."
+                              },
+                              "collateral_lost_sc": {
+                                "type": "string",
+                                "description": "For expirations, max(host_balance - missed_host_output, 0) / 1e24. Only host collateral is included; zero for proofs and renewals."
+                              },
+                              "average_sc_price_eur": {
+                                "type": "string",
+                                "nullable": true,
+                                "description": "Null unless the past UTC day has 24 valid observations in 24 distinct hours. Suffix changes with currency."
+                              }
+                            }
+                          }
+                        },
+                        "summary": {
+                          "type": "object",
+                          "description": "Counts by outcome, unlocked-revenue and collateral-loss SC/fiat totals, incomplete-rate count, requested period, currency, rate method, chain height and generation timestamp."
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Same nine fields as JSON items, with a header row and null prices as empty cells."
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid date, date before 2025-07-01, host key, format or currency."
+          },
+          "405": {
+            "description": "Only GET is supported."
+          },
+          "503": {
+            "description": "Database unavailable or required contract data invalid."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "ErrorResponse": {
+        "description": "Error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/EnvelopeBase"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "per_page": {
+            "type": "integer"
+          },
+          "total_items": {
+            "type": "integer"
+          },
+          "total_pages": {
+            "type": "integer"
+          }
+        }
+      },
+      "Meta": {
+        "type": "object",
+        "properties": {
+          "api_version": {
+            "type": "string",
+            "example": "v2"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "partial_data": {
+            "type": "boolean"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "api_version",
+          "generated_at",
+          "partial_data",
+          "sources"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string",
+            "nullable": true
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "field",
+          "details"
+        ]
+      },
+      "EnvelopeBase": {
+        "type": "object",
+        "properties": {
+          "data": {},
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "required": [
+          "data",
+          "meta",
+          "errors"
+        ]
+      },
+      "EnvelopeObject": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EnvelopeBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        ]
+      },
+      "EnvelopeArray": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EnvelopeBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

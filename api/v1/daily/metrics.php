@@ -50,6 +50,9 @@ if (!$result) {
     exit;
 }
 
+// Collateral charts can request the complete stored history.
+$includeAllHistory = ($_GET['history'] ?? '') === 'all';
+
 // Format results
 $data = [];
 while ($row = mysqli_fetch_assoc($result)) {
@@ -57,13 +60,13 @@ while ($row = mysqli_fetch_assoc($result)) {
     $cutoff = '2024-06-01';
     $rowDate = $row['date'] ?? null; // format YYYY-MM-DD
     if ($rowDate !== null && strcmp($rowDate, $cutoff) < 0) {
-        // Fields prior to 2024-01-01 are not reliable; return nulls
-        $row['renter_collateral_locked'] = null;
-        $row['host_collateral_locked'] = null;
         $row['contract_filesize_total'] = null;
-        // Also null out series used on Contracts & Funds so charts start from 2024
-        $row['active_contracts'] = null;
-        $row['circulating_supply'] = null;
+        if (!$includeAllHistory) {
+            $row['renter_collateral_locked'] = null;
+            $row['host_collateral_locked'] = null;
+            $row['active_contracts'] = null;
+            $row['circulating_supply'] = null;
+        }
     }
 
     $data[] = $row;

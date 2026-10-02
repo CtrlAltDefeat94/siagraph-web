@@ -1,0 +1,22 @@
+const assert = require('node:assert/strict');
+global.window = {DashboardRanges: require('../../js/dashboard/ranges.js')};
+require('../../js/dashboard/sources.js');
+const monthly = [1,2,3,4,5].map((m,i)=>({date:`2024-0${m}-01`,utilized_storage:100+i*10,total_storage:1000+i*100}));
+(async()=>{
+    let data = monthly;
+    global.fetch=async()=>({ok:true,json:async()=>data});
+    const source={kind:'storage-forecast',url:'/forecast'};
+    let result=await window.DashboardSources.load(source);
+    assert.equal(result.anchorDate,'2024-05-01');
+    assert.equal(result.rows.length,29);
+    assert.equal(result.rows.at(-1).date,'2026-05-01');
+    assert.equal(result.rows.at(-1).predicted_utilized,380);
+    assert.equal(result.rows.at(-1).predicted_total,3800);
+    assert(result.rows.at(-1).exponential_utilized>380);
+    data=monthly.slice(0,1);result=await window.DashboardSources.load(source);assert(result.warnings.length);assert.equal(result.rows.length,1);
+    data=monthly.map(row=>({...row,total_storage:null}));result=await window.DashboardSources.load(source);assert(result.warnings.length);assert.equal(result.rows.at(-1).predicted_total,undefined);
+    data=[];result=await window.DashboardSources.load(source);assert.equal(result.rows.length,0);
+    data={utilized_storage:{ath_bytes:100,ath_date:'2020-01-01',latest_date:'2024-01-01',days_since_ath:1461}};
+    result=await window.DashboardSources.load({kind:'storage-ath',url:'/ath'});assert.equal(result.rows[0].date,'2024-01-01');assert.equal(result.rows[0].ath_date,'2020-01-01');
+    console.log('PASS storage forecast calculations, short/missing histories, and ATH dates');
+})().catch(error=>{console.error(error);process.exitCode=1});

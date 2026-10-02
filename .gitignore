@@ -3,6 +3,7 @@ OLD/*
 *.svg
 !img/*.svg
 *.json
+!docs/contract-tax-example.json
 !composer.json
 !package.json
 !package-lock.json
@@ -10,4 +11,11 @@ OLD/*
 /vendor/
 node_modules
 .git.*
-api/v2/*
+local/*
+local/
+AGENTS.md
+.codex
+.clinerules/
+.cursor/
+.github/
+.windsurf/

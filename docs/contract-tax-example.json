@@ -1,0 +1,135 @@
+{
+    "data": {
+        "items": [
+            {
+                "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+                "successor_contract_id": null,
+                "start_date_utc": "2025-07-01",
+                "resolution_date_utc": "2026-09-01",
+                "payout_maturity_date_utc": "2026-09-03",
+                "resolution_type": "storage_proof",
+                "revenue_rolled_sc": "0.000000000000000000000000",
+                "revenue_unlocked_sc": "2.000000000000000000000000",
+                "revenue_forfeited_sc": "0.000000000000000000000000",
+                "collateral_lost_sc": "0.000000000000000000000000",
+                "average_sc_price_eur": "0.002",
+                "resolution_transaction_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            },
+            {
+                "contract_id": "0000000000000000000000000000000000000000000000000000000000000002",
+                "successor_contract_id": null,
+                "start_date_utc": "2025-07-01",
+                "resolution_date_utc": "2026-09-01",
+                "payout_maturity_date_utc": "2026-09-03",
+                "resolution_type": "expiration",
+                "revenue_rolled_sc": "0.000000000000000000000000",
+                "revenue_unlocked_sc": "0.000000000000000000000000",
+                "revenue_forfeited_sc": "3.000000000000000000000000",
+                "collateral_lost_sc": "2.000000000000000000000000",
+                "average_sc_price_eur": "0.002",
+                "resolution_transaction_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            },
+            {
+                "contract_id": "0000000000000000000000000000000000000000000000000000000000000003",
+                "successor_contract_id": null,
+                "start_date_utc": "2025-07-01",
+                "resolution_date_utc": "2026-09-01",
+                "payout_maturity_date_utc": "2026-09-03",
+                "resolution_type": "expiration",
+                "revenue_rolled_sc": "0.000000000000000000000000",
+                "revenue_unlocked_sc": "0.000000000000000000000000",
+                "revenue_forfeited_sc": "0.000000000000000000000000",
+                "collateral_lost_sc": "0.000000000000000000000000",
+                "average_sc_price_eur": "0.002",
+                "resolution_transaction_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            },
+            {
+                "contract_id": "0000000000000000000000000000000000000000000000000000000000000004",
+                "successor_contract_id": "0000000000000000000000000000000000000000000000000000000000000011",
+                "start_date_utc": "2025-07-01",
+                "resolution_date_utc": "2026-09-01",
+                "payout_maturity_date_utc": "2026-09-03",
+                "resolution_type": "renewal",
+                "revenue_rolled_sc": "3.000000000000000000000000",
+                "revenue_unlocked_sc": "1.000000000000000000000000",
+                "revenue_forfeited_sc": "0.000000000000000000000000",
+                "collateral_lost_sc": "0.000000000000000000000000",
+                "average_sc_price_eur": "0.002",
+                "resolution_transaction_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            },
+            {
+                "contract_id": "000000000000000000000000000000000000000000000000000000000000000e",
+                "successor_contract_id": null,
+                "start_date_utc": "2025-07-01",
+                "resolution_date_utc": "2026-09-01",
+                "payout_maturity_date_utc": "2026-09-03",
+                "resolution_type": "renewal",
+                "revenue_rolled_sc": "0.000000000000000000000000",
+                "revenue_unlocked_sc": "4.000000000000000000000000",
+                "revenue_forfeited_sc": "0.000000000000000000000000",
+                "collateral_lost_sc": "0.000000000000000000000000",
+                "average_sc_price_eur": "0.002",
+                "resolution_transaction_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            },
+            {
+                "contract_id": "000000000000000000000000000000000000000000000000000000000000000f",
+                "successor_contract_id": null,
+                "start_date_utc": "2025-07-01",
+                "resolution_date_utc": "2026-09-01",
+                "payout_maturity_date_utc": "2026-09-03",
+                "resolution_type": "expiration",
+                "revenue_rolled_sc": "0.000000000000000000000000",
+                "revenue_unlocked_sc": "0.000000000000000000000000",
+                "revenue_forfeited_sc": "3.000000000000000000000000",
+                "collateral_lost_sc": "2.000000000000000000000000",
+                "average_sc_price_eur": "0.002",
+                "resolution_transaction_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            },
+            {
+                "contract_id": "0000000000000000000000000000000000000000000000000000000000000010",
+                "successor_contract_id": null,
+                "start_date_utc": "2025-07-01",
+                "resolution_date_utc": "2026-09-01",
+                "payout_maturity_date_utc": "2026-09-03",
+                "resolution_type": "expiration",
+                "revenue_rolled_sc": "0.000000000000000000000000",
+                "revenue_unlocked_sc": "0.000000000000000000000000",
+                "revenue_forfeited_sc": "0.000000000000000000000000",
+                "collateral_lost_sc": "0.000000000000000000000001",
+                "average_sc_price_eur": "0.002",
+                "resolution_transaction_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+        ],
+        "summary": {
+            "contracts": 7,
+            "successful_contracts": 1,
+            "renewed_contracts": 2,
+            "failed_contracts": 4,
+            "rows_without_exchange_rate": 0,
+            "requested_maturity_period": {
+                "from": "2026-09-03",
+                "to": "2026-09-03"
+            },
+            "completion_cutoff": "2025-07-01",
+            "rate_method": "arithmetic mean of all valid SiaGraph price observations recorded for the UTC date",
+            "currency": "EUR",
+            "chain_height": 250,
+            "generated_at": "2026-09-23T19:56:08Z",
+            "total_revenue_sc": "7.000000000000000000000000",
+            "total_revenue_eur": "0.014000000000000000000000000000000000000000000000",
+            "total_collateral_lost_sc": "4.000000000000000000000001",
+            "total_collateral_lost_eur": "0.008000000000000000000000002000000000000000000000"
+        }
+    },
+    "meta": {
+        "api_version": "v2",
+        "generated_at": "2026-09-23T19:56:08+00:00",
+        "partial_data": false,
+        "sources": [
+            "Contracts",
+            "BlockTime",
+            "ExchangeRates"
+        ]
+    },
+    "errors": []
+}

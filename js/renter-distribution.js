@@ -1,122 +1,55 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const chartCanvas = document.getElementById('renterDistributionChart');
-    if (!chartCanvas) return;
-
-    const statusEl = document.getElementById('renterDistributionStatus');
-    const tableBody = document.getElementById('renterDistributionTableBody');
-    const apiUrl = '/api/v1/storage/renter_distribution.php';
-    let pieChart = null;
-
-    const setStatus = (message, isError = false) => {
-        if (!statusEl) return;
-        statusEl.textContent = message;
-        statusEl.classList.toggle('text-danger', !!isError);
-    };
-
-    const formatBytes = (bytes) => {
-        const isNegative = bytes < 0;
-        const absolute = Math.abs(bytes);
-        if (!Number.isFinite(absolute) || absolute === 0) return '0 B';
-        const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
-        const exponent = Math.min(Math.floor(Math.log(absolute) / Math.log(1000)), units.length - 1);
-        const scaled = absolute / Math.pow(1000, exponent);
-        const formatted = `${scaled.toFixed(2)} ${units[exponent]}`;
-        return isNegative ? `-${formatted}` : formatted;
-    };
-
-    const buildChart = (labels, data, totalBytes) => {
-        const colors = data.map((_, idx) => `hsl(${(idx * 53) % 360}, 70%, 58%)`);
-        if (pieChart) {
-            pieChart.destroy();
-        }
-        pieChart = new Chart(chartCanvas.getContext('2d'), {
-            type: 'pie',
-            data: {
-                labels,
-                datasets: [{
-                    data,
-                    backgroundColor: colors,
-                    borderColor: 'rgba(15,23,42,0.5)',
-                    borderWidth: 1,
-                    label: 'Utilized storage by renter'
-                }]
-            },
-            options: {
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => {
-                                const value = Number(context.raw) || 0;
-                                const pct = totalBytes > 0 ? (value / totalBytes) * 100 : 0;
-                                return `${context.label}: ${formatBytes(value)} (${pct.toFixed(2)}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    };
-
-    const buildTable = (labels, data, totalBytes) => {
-        if (!tableBody) return;
-        if (!data.length) {
-            tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No data available.</td></tr>';
+document.addEventListener('DOMContentLoaded', async () => {
+    const canvas = document.getElementById('renterDistributionChart');
+    const status = document.getElementById('renterDistributionStatus');
+    const body = document.getElementById('renterDistributionTableBody');
+    const empty = text => { canvas.hidden = true; status.textContent = text; body.replaceChildren(); const row = body.insertRow(), cell = row.insertCell(); cell.colSpan = 4; cell.textContent = text; };
+    try {
+        const response = await fetch('/api/v2/renters/index.php?sort=contracted_filesize&direction=desc&active=1&per_page=10&page=1', { cache: 'no-store' });
+        const { data, meta, errors } = await response.json();
+        if (!response.ok || errors?.length) throw new Error('Unable to load renter distribution.');
+        const items = Array.isArray(data?.items) ? data.items : [];
+        const totalFilesizeRaw = meta?.totals?.total_filesize;
+        if (!items.length || !/^\d+$/.test(totalFilesizeRaw) || BigInt(totalFilesizeRaw) === 0n) {
+            empty('Renter storage distribution is not available yet. Browse individual wallets below.');
             return;
         }
-
-        const rows = labels.map((label, idx) => {
-            const val = data[idx] || 0;
-            const pct = totalBytes > 0 ? (val / totalBytes) * 100 : 0;
-            const rank = idx + 1;
-            const isOthers = label === 'Others';
-            return `
-                <tr>
-                    <td>${isOthers ? '&mdash;' : `#${rank}`}</td>
-                    <td class="text-end">${formatBytes(val)}</td>
-                    <td class="text-end">${pct.toFixed(2)}%</td>
-                </tr>
-            `;
+        const totalFilesize = BigInt(totalFilesizeRaw);
+        const totalRenters = /^\d+$/.test(meta?.totals?.renter_count) ? meta.totals.renter_count : String(items.length);
+        // Round (not truncate) to 6 decimal places, matching the previous published-summary precision.
+        const sharePercent = size => (Number((size * 100000000n + totalFilesize / 2n) / totalFilesize) / 1000000).toFixed(6);
+        const topSum = items.reduce((sum, item) => sum + (/^\d+$/.test(item.contracted_filesize) ? BigInt(item.contracted_filesize) : 0n), 0n);
+        const othersSize = totalFilesize > topSum ? totalFilesize - topSum : 0n;
+        const data2 = {
+            total_filesize: totalFilesize.toString(),
+            total_renters: totalRenters,
+            renters: items.map((item, index) => ({
+                rank: String(index + 1),
+                renter_wallet_address: item.renter_wallet_address,
+                contracted_filesize: item.contracted_filesize,
+                share_percent: sharePercent(/^\d+$/.test(item.contracted_filesize) ? BigInt(item.contracted_filesize) : 0n),
+            })),
+            others: othersSize > 0n ? {
+                renter_wallet_address: null,
+                contracted_filesize: othersSize.toString(),
+                share_percent: sharePercent(othersSize),
+            } : null,
+        };
+        // Every share and the Others remainder is derived from the live renters directory above.
+        const entries = data2.renters.slice();
+        if (data2.others && BigInt(data2.others.contracted_filesize) > 0n) entries.push(data2.others);
+        body.replaceChildren();
+        const labels = entries.map(entry => entry.renter_wallet_address ? `${entry.renter_wallet_address.slice(0, 12)}…${entry.renter_wallet_address.slice(-8)}` : 'Others');
+        entries.forEach((entry, index) => {
+            const row = body.insertRow(); row.insertCell().textContent = entry.rank ?? '—';
+            const cell = row.insertCell();
+            if (entry.renter_wallet_address) {
+                const link = document.createElement('a'); link.href = `/renter?address=${encodeURIComponent(entry.renter_wallet_address)}`; link.textContent = labels[index]; link.title = entry.renter_wallet_address; cell.append(link);
+                const copy = document.createElement('button'); copy.type = 'button'; copy.textContent = 'Copy'; copy.className = 'btn btn-sm'; copy.setAttribute('aria-label', 'Copy renter wallet address'); copy.onclick = async () => { try { await navigator.clipboard.writeText(entry.renter_wallet_address); copy.textContent = 'Copied'; } catch (_) { copy.textContent = 'Unavailable'; } }; cell.append(copy);
+            } else cell.textContent = 'Others';
+            const sizeCell = row.insertCell(); sizeCell.textContent = window.renterFormat.format(entry.contracted_filesize, 'bytes'); sizeCell.title = `${entry.contracted_filesize} bytes`; row.insertCell().textContent = `${entry.share_percent}%`;
         });
-
-        tableBody.innerHTML = rows.join('');
-    };
-
-    const hydrateChart = async () => {
-        try {
-            const data = await fetchWithCache(apiUrl, {}, 30 * 60 * 1000);
-            if (!data || !Array.isArray(data.largest_sizes)) {
-                throw new Error('Unexpected renter distribution payload');
-            }
-
-            const sizes = data.largest_sizes.map(v => Number(v) || 0);
-            const totalFilesize = Number(data.total_filesize || 0);
-            const renterCount = Number(data.total_renters || 0);
-            const sizeSum = sizes.reduce((acc, val) => acc + val, 0);
-            const leftoverRaw = totalFilesize - sizeSum;
-            const leftover = Number.isFinite(leftoverRaw) ? leftoverRaw : 0;
-
-            // Always include an Others slice to satisfy the requirement
-            const chartData = sizes.concat([leftover]);
-            const labels = sizes.map((_, idx) => `Renter ${idx + 1}`).concat(['Others']);
-            const totalForChart = sizeSum + leftover;
-
-            buildChart(labels, chartData, totalForChart);
-            buildTable(labels, chartData, totalForChart);
-
-            const othersCount = renterCount && renterCount > sizes.length ? renterCount - sizes.length : 0;
-            const totalText = totalFilesize > 0 ? formatBytes(totalFilesize) : 'N/A';
-            setStatus("");
-            /*setStatus(
-                `Top ${sizes.length} renters shown out of ${renterCount || 'unknown'}. ` +
-                `Others combines ${othersCount} renter${othersCount === 1 ? '' : 's'} ` +
-                `(${formatBytes(Math.max(0, leftover))} of ${totalText}).`
-            );*/
-        } catch (err) {
-            console.error(err);
-            setStatus('Failed to load renter distribution data.', true);
-        }
-    };
-
-    hydrateChart();
+        status.textContent = `${data2.total_renters} storage participants`;
+        if (!window.Chart) { canvas.hidden = true; return; }
+        new Chart(canvas, { type: 'doughnut', data: { labels, datasets: [{ data: entries.map(e => Number(e.share_percent)), backgroundColor: ['#e84f4f','#e2d34d','#66db4d','#52d9a9','#4f93e8','#8c49df','#e65eb3','#f38b42','#34d399','#38bdf8','#94a3b8'] }] }, options: { cutout: '58%', onClick: (_event, elements) => { const address = entries[elements[0]?.index]?.renter_wallet_address; if (address) location.assign(`/renter?address=${encodeURIComponent(address)}`); }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => { const entry = entries[context.dataIndex]; return `${labels[context.dataIndex]}: ${window.renterFormat.format(entry.contracted_filesize, 'bytes')} (${entry.share_percent}%)`; } } } } } });
+    } catch (e) { empty(e.message); }
 });

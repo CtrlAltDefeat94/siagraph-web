@@ -1,5 +1,5 @@
 <?php
-include_once "../../../bootstrap.php";
+include_once __DIR__ . "/../../../bootstrap.php";
 
 use Siagraph\Utils\Cache;
 
@@ -27,14 +27,14 @@ if ($end) {
         echo json_encode(["error" => "Invalid end date format. Use ISO8601 like 2025-04-01T00:00:00Z"]);
         exit();
     }
-    $whereClauses[] = "timestamp <= '" . $endDate->format('Y-m-d') . "'";
+    $whereClauses[] = "timestamp < '" . $endDate->modify('+1 day')->format('Y-m-d') . "'";
 }
 
 $whereSQL = implode(" AND ", $whereClauses);
 
 // Create unique cache key
 $queryString = http_build_query($_GET);
-$combinedString = basename(__FILE__) . $queryString;
+$combinedString = basename(__FILE__) . ':daily-average-v2:' . $queryString;
 $cacheKey = md5($combinedString);
 
 $cacheresult = Cache::getCache($cacheKey);
@@ -45,18 +45,19 @@ if ($cacheresult) {
 
 // Build query
 $query = "
-    SELECT timestamp,
-           btc,
-           cad,
-           cny,
-           eth,
-           eur,
-           gbp,
-           jpy,
-           rub,
-           usd
+    SELECT DATE(timestamp) AS timestamp,
+           AVG(btc) AS btc,
+           AVG(cad) AS cad,
+           AVG(cny) AS cny,
+           AVG(eth) AS eth,
+           AVG(eur) AS eur,
+           AVG(gbp) AS gbp,
+           AVG(jpy) AS jpy,
+           AVG(rub) AS rub,
+           AVG(usd) AS usd
     FROM ExchangeRates
     WHERE $whereSQL
+    GROUP BY DATE(timestamp)
     ORDER BY timestamp ASC;
 ";
 $result = mysqli_query($mysqli, $query);
@@ -71,7 +72,6 @@ $jsonlist = [];
 $rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 foreach ($rows as $row) {
-    $date = new DateTime($row['timestamp']);
     $formatted_date = (new DateTime($row['timestamp'], new DateTimeZone('UTC')))
                     ->format('Y-m-d\T00:00:00\Z');
 
@@ -87,6 +87,7 @@ foreach ($rows as $row) {
 }
 
 $jsonResult = json_encode($jsonlist);
-Cache::setCache($jsonResult, $cacheKey, 'day');
+// Today's mean changes as hourly snapshots arrive.
+Cache::setCache($jsonResult, $cacheKey, 'hour');
 
 echo $jsonResult;

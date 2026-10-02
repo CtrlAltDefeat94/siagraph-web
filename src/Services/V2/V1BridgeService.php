@@ -18,7 +18,7 @@ class V1BridgeService
         return $scheme . '://' . $host;
     }
 
-    public static function request(string $v1Path, array $query = [], string $method = 'GET', ?array $jsonBody = null, bool $expectJson = true): array
+    public static function request(string $v1Path, array $query = [], string $method = 'GET', ?array $jsonBody = null, bool $expectJson = true, array $extraHeaders = []): array
     {
         $url = self::baseUrl() . '/api/v1/' . ltrim($v1Path, '/');
         if (!empty($query)) {
@@ -30,7 +30,7 @@ class V1BridgeService
         curl_setopt($ch, CURLOPT_TIMEOUT, 20);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, strtoupper($method));
 
-        $headers = [];
+        $headers = $extraHeaders;
         if ($jsonBody !== null) {
             $payload = json_encode($jsonBody);
             $headers[] = 'Content-Type: application/json';

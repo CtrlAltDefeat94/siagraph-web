@@ -1,12 +1,12 @@
 /** @type {import('tailwindcss').Config} */
-const defaultTheme = require('tailwindcss/defaultTheme')
-
 module.exports = {
   content: [
-    "./index.php",
-    // "./include/*.php",
-    // "./include/*.html",
-    // "./**/*.php",
+    "./*.php",
+    "./include/**/*.{php,html}",
+    "./api/**/*.php",
+    "./js/**/*.js",
+    "./explorer/**/*.{php,html,js}",
+    "./scss/**/*.scss",
   ],
   theme: {
     extend: {
