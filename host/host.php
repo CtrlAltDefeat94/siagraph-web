@@ -216,14 +216,14 @@ if (!$troubleshooterCacheResult && 1==2) {
                      <span class="host-hero__label">Net address</span>
                      <span class="host-hero__value"><?php echo htmlspecialchars($hostNetAddress !== '' ? $hostNetAddress : 'Unavailable', ENT_QUOTES, 'UTF-8'); ?></span>
                      <?php if ($hostNetAddress !== ''): ?>
-                     <button class="button text-sm" onclick='copyToClipboard(<?php echo json_encode($hostNetAddress, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'>Copy</button>
+                     <button class="host-copy" type="button" aria-label="Copy net address" title="Copy net address" onclick='copyToClipboard(<?php echo json_encode($hostNetAddress, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, this)'>⧉</button>
                      <?php endif; ?>
                   </div>
                   <div class="host-hero__idrow">
                      <span class="host-hero__label">Public key</span>
                      <span class="host-hero__value host-hero__value--mono"><?php echo htmlspecialchars($hostPublicKey !== '' ? $hostPublicKey : 'Unavailable', ENT_QUOTES, 'UTF-8'); ?></span>
                      <?php if ($hostPublicKey !== ''): ?>
-                     <button class="button text-sm" onclick='copyToClipboard(<?php echo json_encode($hostPublicKey, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'>Copy</button>
+                     <button class="host-copy" type="button" aria-label="Copy public key" title="Copy public key" onclick='copyToClipboard(<?php echo json_encode($hostPublicKey, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, this)'>⧉</button>
                      <?php endif; ?>
                   </div>
                </div>
@@ -283,20 +283,20 @@ if (!$troubleshooterCacheResult && 1==2) {
       </section>
 
       <div class="host-tabset" role="tablist" aria-label="Host sections">
-         <input class="host-tab-radio" type="radio" name="host-tabs" id="host-tab-overview-radio" checked>
-         <input class="host-tab-radio" type="radio" name="host-tabs" id="host-tab-contracts-radio">
-         <input class="host-tab-radio" type="radio" name="host-tabs" id="host-tab-economics-radio">
-         <input class="host-tab-radio" type="radio" name="host-tabs" id="host-tab-benchmarks-radio">
-         <input class="host-tab-radio" type="radio" name="host-tabs" id="host-tab-charts-radio">
+         <input class="host-tab-radio" type="radio" name="host-tabs" id="host-tab-overview-radio" aria-hidden="true" tabindex="-1" checked>
+         <input class="host-tab-radio" type="radio" name="host-tabs" id="host-tab-contracts-radio" aria-hidden="true" tabindex="-1">
+         <input class="host-tab-radio" type="radio" name="host-tabs" id="host-tab-economics-radio" aria-hidden="true" tabindex="-1">
+         <input class="host-tab-radio" type="radio" name="host-tabs" id="host-tab-benchmarks-radio" aria-hidden="true" tabindex="-1">
+         <input class="host-tab-radio" type="radio" name="host-tabs" id="host-tab-charts-radio" aria-hidden="true" tabindex="-1">
          <div class="host-tabs">
-            <label class="host-tab" for="host-tab-overview-radio">Overview</label>
-            <label class="host-tab" for="host-tab-contracts-radio">Contracts</label>
-            <label class="host-tab" for="host-tab-economics-radio">Economics</label>
-            <label class="host-tab" for="host-tab-benchmarks-radio">Benchmarks</label>
-            <label class="host-tab" for="host-tab-charts-radio">History</label>
+            <label id="host-tab-overview" class="host-tab" role="tab" aria-controls="host-tabpanel-overview" aria-selected="true" for="host-tab-overview-radio">Overview</label>
+            <label id="host-tab-contracts" class="host-tab" role="tab" aria-controls="host-tabpanel-contracts" aria-selected="false" for="host-tab-contracts-radio">Contracts</label>
+            <label id="host-tab-economics" class="host-tab" role="tab" aria-controls="host-tabpanel-economics" aria-selected="false" for="host-tab-economics-radio">Economics</label>
+            <label id="host-tab-benchmarks" class="host-tab" role="tab" aria-controls="host-tabpanel-benchmarks" aria-selected="false" for="host-tab-benchmarks-radio">Benchmarks</label>
+            <label id="host-tab-history" class="host-tab" role="tab" aria-controls="host-tabpanel-history" aria-selected="false" for="host-tab-charts-radio">History</label>
          </div>
          <div class="host-tab-panels">
-            <div class="host-tab-panel" data-panel="overview">
+            <div class="host-tab-panel" id="host-tabpanel-overview" role="tabpanel" aria-labelledby="host-tab-overview" data-panel="overview">
                <div class="sg-container__row">
                   <div class="sg-container__row-content host-top-columns">
                      <div class="sg-container__column sg-container__column--half">
@@ -364,7 +364,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                </div>
             </div>
 
-            <div class="host-tab-panel" data-panel="contracts">
+            <div class="host-tab-panel" id="host-tabpanel-contracts" role="tabpanel" aria-labelledby="host-tab-contracts" data-panel="contracts">
                <div class="sg-container__row">
                   <div class="sg-container__row-content">
                      <div class="sg-container__column">
@@ -378,7 +378,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                </div>
             </div>
 
-            <div class="host-tab-panel" data-panel="benchmarks">
+            <div class="host-tab-panel" id="host-tabpanel-benchmarks" role="tabpanel" aria-labelledby="host-tab-benchmarks" data-panel="benchmarks">
                <div class="sg-container__row">
                   <div class="sg-container__row-content">
                      <div class="sg-container__column">
@@ -432,7 +432,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                </div>
             </div>
 
-            <div class="host-tab-panel" data-panel="economics">
+            <div class="host-tab-panel" id="host-tabpanel-economics" role="tabpanel" aria-labelledby="host-tab-economics" data-panel="economics">
                <div class="sg-container__row">
                   <div class="sg-container__row-content">
                      <div class="sg-container__column">
@@ -456,7 +456,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                </div>
             </div>
 
-            <div class="host-tab-panel" data-panel="charts">
+            <div class="host-tab-panel" id="host-tabpanel-history" role="tabpanel" aria-labelledby="host-tab-history" data-panel="charts">
                <?php render_dashboard(host_dashboard('history', $hostDailyStatsUrl, $hostPublicKey, $currency), true); ?>
             </div>
          </div>
@@ -638,18 +638,28 @@ Each benchmark server contributes equally to the score, regardless of how many b
          Object.entries(hashToRadioId).map(([hash, id]) => [id, hash])
       );
 
+         const updateTabState = (radioId) => {
+            document.querySelectorAll('.host-tab[role="tab"]').forEach((tab) => {
+               tab.setAttribute('aria-selected', tab.getAttribute('for') === radioId ? 'true' : 'false');
+            });
+         };
+
       const applyHash = () => {
          const hash = (window.location.hash || '').toLowerCase();
          const radioId = hashToRadioId[hash];
          if (!radioId) return;
          const radio = document.getElementById(radioId);
-         if (radio) radio.checked = true;
+            if (radio) {
+               radio.checked = true;
+               updateTabState(radioId);
+            }
       };
 
       const radios = Array.from(document.querySelectorAll('.host-tab-radio'));
       radios.forEach((radio) => {
          radio.addEventListener('change', () => {
             if (!radio.checked) return;
+            updateTabState(radio.id);
             const hash = radioIdToHash[radio.id];
             if (!hash) return;
             const target = `${window.location.pathname}${window.location.search}${hash}`;
@@ -1035,31 +1045,35 @@ Each benchmark server contributes equally to the score, regardless of how many b
             if (!Number.isFinite(n) || !Number.isFinite(d) || d === 0) return null;
             return (n / d) * 100;
          };
+             const averageMoney = (value, divisor, decimals, suffix = '') => {
+                  const raw = sc_value(value);
+                  return raw == null ? 'Unavailable' : formatSCtoFiat(Number(raw) / divisor, decimals, suffix);
+             };
          const rows = [];
          const lines = [
            {
              label: 'Contract price',
-             avgText: formatSCtoFiat((sc_value(avg.contractprice) / 1e24), 2),
+                   avgText: averageMoney(avg.contractprice, 1e24, 2),
              pct: ratioPercent(sc_value(settings.contractprice), sc_value(avg.contractprice))
            },
            {
              label: 'Storage price',
-             avgText: formatSCtoFiat((sc_value(avg.storageprice) / 1e12 * 4320), 2, '/TB/Month'),
+                   avgText: averageMoney(avg.storageprice, 1e12 / 4320, 2, '/TB/Month'),
              pct: ratioPercent(sc_value(settings.storageprice), sc_value(avg.storageprice))
            },
            {
              label: 'Upload price',
-             avgText: formatSCtoFiat((sc_value(avg.uploadprice) / 1e12), 2, '/TB'),
+                   avgText: averageMoney(avg.uploadprice, 1e12, 2, '/TB'),
              pct: ratioPercent(sc_value(settings.ingressprice), sc_value(avg.uploadprice))
            },
            {
              label: 'Egress price',
-             avgText: formatSCtoFiat((sc_value(avg.downloadprice) / 1e12), 2, '/TB'),
+                   avgText: averageMoney(avg.downloadprice, 1e12, 2, '/TB'),
              pct: ratioPercent(sc_value(settings.egressprice), sc_value(avg.downloadprice))
            },
            {
              label: 'Stored data',
-             avgText: `${(avg.used_storage / 1e12).toFixed(2)} TB`,
+                   avgText: avg.used_storage == null ? 'Unavailable' : `${(avg.used_storage / 1e12).toFixed(2)} TB`,
              pct: ratioPercent(data.used_storage, avg.used_storage)
            }
          ];
@@ -1187,10 +1201,22 @@ Each benchmark server contributes equally to the score, regardless of how many b
 
 
    }
-   function copyToClipboard(text) {
+   function copyToClipboard(text, button) {
       navigator.clipboard.writeText(text).then(() => {
+         if (button) {
+            button.textContent = '✓';
+            button.dataset.state = 'done';
+            setTimeout(() => {
+               button.textContent = '⧉';
+               delete button.dataset.state;
+            }, 2000);
+         }
          showToast("Copied to clipboard!");
       }).catch(err => {
+         if (button) {
+            button.textContent = '!';
+            button.dataset.state = 'error';
+         }
          console.error("Error copying text: ", err);
       });
    }

@@ -16,7 +16,7 @@
   padding-top: 1rem;
 }
 
-.sg-host-explorer-shell .sg-data-title { font-size: 2rem; }
+.sg-host-explorer-shell .card { background: transparent; }
 .host-layout > .card { padding: 1rem; gap: .65rem; }
 .sg-host-explorer-shell :is(select, input[type="text"], input[type="number"]) {
   min-height: 2rem;
@@ -41,23 +41,15 @@
 .host-explorer-hero__link {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 0.45rem;
-  padding: 0.48rem 0.8rem;
-  border-radius: 999px;
-  border: 1px solid var(--sg-border-accent);
-  background: var(--sg-action-bg);
-  color: var(--sg-action-text);
-  font-size: 0.82rem;
-  font-weight: 700;
+  color: var(--sg-heading-accent);
+  font-size: 0.875rem;
   text-decoration: none;
-  white-space: nowrap;
 }
 
 .host-explorer-hero__link:hover,
 .host-explorer-hero__link:focus-visible {
-  color: var(--sg-action-text-hover);
-  border-color: rgba(242, 117, 93, 0.72);
+  color: var(--sg-heading-accent-strong);
 }
 
 .host-layout{ display: grid; grid-template-columns: 1fr; align-items: start; gap: 1rem; }
@@ -89,9 +81,9 @@
   min-height: 2.5rem;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--sg-border-control);
   background: var(--sg-control-bg);
-  border-radius: 999px;
+  border-radius: var(--sg-radius-md);
   color: var(--sg-text-strong);
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
