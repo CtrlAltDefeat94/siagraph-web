@@ -30,13 +30,11 @@
         const a = node('a', full ? address : `${address.slice(0, 12)}…${address.slice(-8)}`); a.href = `/renter?address=${encodeURIComponent(address)}`; a.title = address; return a;
     }
     function copy(value) {
-        const b = node('button', 'Copy', 'renter-copy'); b.type = 'button'; b.setAttribute('aria-label', `Copy ${value}`);
-        b.onclick = async () => { try { await navigator.clipboard.writeText(value); b.textContent = 'Copied'; } catch (_) { b.textContent = 'Copy unavailable'; } }; return b;
+        const b = node('button', '⧉', 'renter-copy'); b.type = 'button'; b.title = `Copy ${value}`; b.setAttribute('aria-label', `Copy ${value}`);
+        b.onclick = async () => { try { await navigator.clipboard.writeText(value); b.textContent = '✓'; } catch (_) { b.textContent = '!'; } }; return b;
     }
     function table(target, headings, rows) {
-        const t = node('table'), head = node('thead'), tr = node('tr');
-        headings.forEach(h => { const th = node('th', h); th.scope = 'col'; tr.append(th); }); head.append(tr); t.append(head);
-        const body = node('tbody'); rows.forEach(row => { const tr = node('tr'); row.forEach(value => { const td = node('td'); td.append(value instanceof Node ? value : node('span', value)); tr.append(td); }); body.append(tr); }); t.append(body); el(target).replaceChildren(t);
+        el(target).replaceChildren(...rows.map(row => { const tr = node('tr'); row.forEach(value => { const td = node('td'); td.append(value instanceof Node ? value : node('span', value)); tr.append(td); }); return tr; }));
     }
     function metrics(target, data, names) {
         el(target).replaceChildren();
@@ -46,33 +44,23 @@
             dl.append(node('dt', label), value); el(target).append(dl); });
     }
     async function directory() {
-        profileTabs();
-        const form = el('renterSearch'); let page = 1, request = 0;
-        const query = new URLSearchParams(location.search);
-        for (const key of ['search', 'active', 'sort']) if (query.has(key)) form.elements[key].value = query.get(key);
+        let page = 1, request = 0;
         async function load() {
             const token = ++request; status('renterStatus', 'Loading renters…'); el('renterPrevious').disabled = el('renterNext').disabled = true;
-            const params = Object.fromEntries(new FormData(form));
-            // An exact identity search includes inactive wallets too.
-            if (params.search.trim()) params.active = '0';
             try {
-                const { data } = await api('index', { ...params, page }); if (token !== request) return;
-                table('renterResults', ['Wallet', 'Contracted storage', 'Active contracts', 'Active hosts', 'Last activity'], data.items.map(r => [link(r.renter_wallet_address), displayed(r.contracted_filesize, 'bytes'), format(r.active_contracts), format(r.active_hosts), r.last_active]));
-                status('renterStatus', data.items.length ? 'Stored renter statistics. Select a wallet for details.' : 'No matching renter wallets available.');
+                const { data, meta } = await api('index', { active: '1', sort: 'contracted_filesize', direction: 'desc', page }); if (token !== request) return;
+                table('renterResults', ['Renter wallet address', 'Contracted storage', 'Active contracts', 'Active hosts', 'Last activity'], data.items.map(r => {
+                    const identity = node('span', undefined, 'renter-identity'); identity.append(link(r.renter_wallet_address, true));
+                    return [identity, displayed(r.contracted_filesize, 'bytes'), format(r.active_contracts), format(r.active_hosts), r.last_active];
+                }));
+                el('renterTable').classList.remove('table-loading');
+                const total = meta.totals?.renter_count;
+                status('renterStatus', data.items.length ? `Showing ${data.items.length}${total !== undefined ? ` of ${Number(total).toLocaleString()}` : ' renters'}` : 'No renters available.');
                 el('renterPage').textContent = `Page ${page}`; el('renterPrevious').disabled = page === 1; el('renterNext').disabled = !data.pagination.has_more;
-                history.replaceState(null, '', `?${new URLSearchParams(params)}${location.hash}`);
             } catch (e) { if (token === request) { el('renterResults').replaceChildren(); status('renterStatus', e.message, true); } }
         }
-        form.onsubmit = event => { event.preventDefault(); page = 1; load(); };
         el('renterPrevious').onclick = () => { page--; load(); }; el('renterNext').onclick = () => { page++; load(); };
         load();
-        historyPanel('');
-        try {
-            const { data, meta } = await api('overview');
-            if (!data) { status('renterOverviewStatus', 'Network renter summary is not available yet.'); return; }
-            units = meta.units; metrics('renterOverview', data, ['active_wallets', 'contracted_filesize', 'active_contracts', 'spending']);
-            status('renterOverviewStatus', `Snapshot ${meta.snapshot_date} · Block ${meta.snapshot_height}`);
-        } catch (e) { status('renterOverviewStatus', e.message, true); }
     }
     function profileTabs() {
         const tabs = [...document.querySelectorAll('[data-renter-tab]')];

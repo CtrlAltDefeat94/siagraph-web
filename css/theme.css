@@ -4,8 +4,6 @@
   --brand-bg-muted: rgba(192,57,43,0.08);
   --brand-border: rgba(192,57,43,0.6);
 
-  --sg-page-glow: radial-gradient(49.63% 57.02% at 58.99% -7.2%, rgba(255, 70, 46, 0.18) 39.4%, rgba(0, 0, 0, 0) 100%);
-  --sg-page-warm-gradient: linear-gradient(180deg, rgba(102, 46, 40, 0.16) 0%, rgba(78, 38, 34, 0.10) 34%, rgba(34, 27, 27, 0.03) 100%);
   --sg-card-bg: linear-gradient(180deg, rgba(64, 46, 46, 0.58), rgba(40, 31, 31, 0.72));
   --sg-card-border: rgba(225, 120, 100, 0.20);
   --sg-card-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
@@ -29,6 +27,17 @@
   --sg-action-bg-hover: rgba(192, 57, 43, 0.28);
   --sg-action-text: #ffd6c9;
   --sg-action-text-hover: #fff2ed;
+
+  /* Depth hierarchy: header → page atmosphere → primary surface → nested content. */
+  --sg-page-base: #110d0d;
+  --sg-page-atmosphere:
+    radial-gradient(ellipse 85% 46rem at 58% 0, rgba(128, 46, 34, 0.16), rgba(128, 46, 34, 0) 72%),
+    linear-gradient(180deg, rgba(76, 36, 30, 0.26) 0, rgba(62, 32, 28, 0.17) 42rem, rgba(56, 30, 26, 0.12) 100%);
+  --sg-header-bg: linear-gradient(180deg, rgba(116, 44, 34, 0.40), rgba(86, 36, 30, 0.30));
+  --sg-surface-1: rgba(84, 48, 41, 0.22);
+  --sg-surface-1-edge: inset 0 1px 0 rgba(255, 214, 201, 0.035);
+  --sg-surface-2: rgba(120, 66, 56, 0.10);
+  --sg-border-nested: rgba(225, 120, 100, 0.11);
 
   --sg-space-1: 0.25rem;
   --sg-space-2: 0.5rem;
@@ -58,25 +67,18 @@
   --sg-nav-link-padding-x: 0.65rem;
 }
 
-.sg-page-glow {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: auto;
-  height: 64rem;
-  pointer-events: none;
-  z-index: -10;
-  background: var(--sg-page-glow);
-}
-
-.sg-site-header,
-.sg-site-footer {
-  background: rgba(255,255,255,.05);
+/* Scrolls with the document so surfaces keep a stable tone while scrolling. */
+.sg-site-body {
+  background: var(--sg-page-atmosphere), var(--sg-page-base);
 }
 
 .sg-site-header {
-  border-bottom: 1px solid rgba(255,255,255,.1);
+  background: var(--sg-header-bg);
+  border-bottom: 1px solid var(--sg-border-muted);
+}
+
+.sg-site-footer {
+  background: rgba(255,255,255,.05);
 }
 
 .sg-site-footer {

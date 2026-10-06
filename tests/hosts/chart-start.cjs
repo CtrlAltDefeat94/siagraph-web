@@ -3,11 +3,19 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
-const host = fs.readFileSync(path.join(root, 'host.php'), 'utf8');
+const host = fs.readFileSync(path.join(root, 'host', 'host.php'), 'utf8');
 const tabListeners = {}, windowListeners = {};
 const radios = ['overview', 'contracts', 'economics', 'benchmarks', 'charts'].map(name => ({
     id: `host-tab-${name}-radio`, checked: false,
+    getAttribute: attribute => attribute === 'for' ? `host-tab-${name}-radio` : null,
+    setAttribute: () => {},
     addEventListener: (event, callback) => { tabListeners[name] = callback; }
+}));
+const tabs = ['overview', 'contracts', 'economics', 'benchmarks', 'history'].map(name => ({
+    getAttribute: attribute => attribute === 'for' ? `host-tab-${name === 'history' ? 'charts' : name}-radio` : null,
+    setAttribute: () => {},
+    addEventListener: () => {},
+    focus: () => {}
 }));
 const routing = vm.createContext({
     window: {
@@ -15,7 +23,7 @@ const routing = vm.createContext({
         history: { replaceState: (_, __, url) => { routing.lastUrl = url; } },
         addEventListener: (event, callback) => { windowListeners[event] = callback; }
     },
-    document: { querySelectorAll: () => radios, getElementById: id => radios.find(r => r.id === id) }
+    document: { querySelectorAll: selector => selector.includes('.host-tab[role=') ? tabs : radios, getElementById: id => radios.find(r => r.id === id) }
 });
 vm.runInContext(host.slice(host.indexOf('   function setupHostTabHashRouting('), host.indexOf('   function setupBenchmarksTab(')), routing);
 routing.setupHostTabHashRouting();

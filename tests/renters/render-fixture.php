@@ -5,7 +5,7 @@ function render_footer($scripts) { foreach ($scripts as $s) echo '<script src="/
 function versioned_asset_url($path) { return $path; }
 $root = dirname(__DIR__, 2);
 $page = $argv[1] ?? 'renter.php';
-if (!in_array($page, ['renter.php', 'renters.php', 'renter_distribution.php'], true)) exit(1);
+if (!in_array($page, ['renter.php', 'renter_explorer.php', 'renter_distribution.php'], true)) exit(1);
 $source = file_get_contents($root . '/renter/' . $page);
 // eval() resolves __DIR__ to this fixture's own folder, not the page's new folder.
 $source = str_replace("dirname(__DIR__) . '/", "'", $source);

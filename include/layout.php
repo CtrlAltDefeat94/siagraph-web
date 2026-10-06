@@ -77,7 +77,6 @@ function render_header(
         <?php foreach ($extra_head as $tag) { echo $tag; } ?>
     </head>
     <body class="d-flex flex-column min-vh-100 sg-site-body">
-    <span aria-hidden="true" class="sg-page-glow"></span>
 	<?php include __DIR__ . '/header.html'; ?>
 	<main class="flex-grow-1 sg-main">
 <?php }

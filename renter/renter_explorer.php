@@ -1,7 +1,7 @@
 <?php
 require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__) . '/include/layout.php';
-render_header('SiaGraph - Renters', 'Explore renter wallets, storage, and contract activity.', [
+render_header('SiaGraph - Renter Explorer', 'Explore renter wallets, storage, and contract activity.', [
     '<link rel="stylesheet" href="' . htmlspecialchars(versioned_asset_url('css/components/data-page.css'), ENT_QUOTES, 'UTF-8') . '">',
     '<link rel="stylesheet" href="' . htmlspecialchars(versioned_asset_url('/css/pages/renters.css'), ENT_QUOTES, 'UTF-8') . '">',
 ]);
@@ -13,12 +13,11 @@ render_header('SiaGraph - Renters', 'Explore renter wallets, storage, and contra
     </div>
     <section class="renter-results" aria-labelledby="renter-results-heading">
         <div class="renter-results-toolbar">
-            <h2 id="renter-results-heading" class="card__heading">Renters</h2>
-            <p id="renterStatus" class="renter-results__status sg-data-status" role="status" aria-live="polite">Loading renters…</p>
+            <h2 id="renter-results-heading" class="card__heading">Renters <span id="renterStatus" class="renter-results__status sg-data-status" role="status" aria-live="polite">Loading…</span></h2>
         </div>
         <div class="sg-data-scroll renter-table-scroll" role="region" aria-label="Renter results" tabindex="0">
             <table id="renterTable" class="table-clean text-white min-w-full table-loading">
-                <thead><tr><th scope="col">Renter</th><th scope="col">Contracted storage</th><th scope="col">Active contracts</th><th scope="col">Active hosts</th><th scope="col">Last activity</th></tr></thead>
+                <thead><tr><th scope="col">Renter wallet address</th><th scope="col">Contracted storage</th><th scope="col">Active contracts</th><th scope="col">Active hosts</th><th scope="col">Last activity</th></tr></thead>
                 <tbody id="renterResults"><tr><td colspan="5">Loading…</td></tr></tbody>
             </table>
         </div>

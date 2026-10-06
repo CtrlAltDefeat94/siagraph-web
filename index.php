@@ -481,9 +481,9 @@ render_header('SiaGraph - Sia Storage Network Dashboard', 'SiaGraph storage netw
 <style>
 .exp-page {
   --exp-bg-1: var(--sg-control-bg-strong);
-  --exp-bg-2: var(--sg-card-bg);
-  --exp-surface: var(--sg-panel-bg);
-  --exp-border: var(--sg-border-subtle);
+  --exp-bg-2: var(--sg-surface-1);
+  --exp-surface: var(--sg-surface-1);
+  --exp-border: var(--sg-border-nested);
   --exp-border-strong: var(--sg-border-accent);
   --exp-text: var(--sg-text);
   --exp-text-soft: var(--sg-text-muted);
@@ -506,26 +506,28 @@ render_header('SiaGraph - Sia Storage Network Dashboard', 'SiaGraph storage netw
 }
 
 .exp-card {
-  border: 0;
+  border: 1px solid var(--sg-card-border);
   border-radius: 1.25rem;
-  background-color: var(--sg-panel-bg);
+  background-color: var(--sg-surface-1);
   padding: 1.05rem;
-  box-shadow: none;
+  box-shadow: var(--sg-surface-1-edge);
 }
 .exp-card--soft {
-  border-color: var(--sg-border-subtle);
-  background-color: var(--sg-panel-bg);
-  box-shadow: none;
+  border-color: var(--sg-card-border);
+  background-color: var(--sg-surface-1);
+  box-shadow: var(--sg-surface-1-edge);
 }
 .exp-card--immersive {
-  border-color: var(--sg-border-subtle);
-  background: var(--sg-panel-bg);
-  box-shadow: none;
+  border-color: var(--sg-card-border);
+  background: var(--sg-surface-1);
+  box-shadow: var(--sg-surface-1-edge);
 }
 .exp-hero {
   padding: 0;
+  border: 0;
   background: transparent;
   border-radius: 0;
+  box-shadow: none;
 }
 .exp-hero-grid { display: grid; grid-template-columns: 1fr; gap: 0.78rem; align-items: start; }
 .exp-title { margin: 0.08rem 0 0.28rem; color: var(--sg-text-strong); font-size: clamp(1.28rem, 2.2vw, 1.72rem); line-height: 1.15; font-weight: 700; letter-spacing: 0; }
@@ -556,9 +558,10 @@ render_header('SiaGraph - Sia Storage Network Dashboard', 'SiaGraph storage netw
   overflow: visible;
 }
 .exp-summary {
-  border: 0;
+  border: 1px solid var(--sg-card-border);
   border-radius: 1.05rem;
-  background: var(--sg-panel-bg);
+  background: var(--sg-surface-1);
+  box-shadow: var(--sg-surface-1-edge);
   padding: 1rem;
   height: 100%;
 }
@@ -579,9 +582,9 @@ render_header('SiaGraph - Sia Storage Network Dashboard', 'SiaGraph storage netw
   align-items: center;
   gap: 0.18rem;
   padding: 0.16rem;
-  border: 1px solid var(--sg-border-subtle);
+  border: 1px solid var(--sg-border-control);
   border-radius: 999px;
-  background: rgba(20, 17, 17, 0.32);
+  background: var(--sg-control-bg);
   grid-column: 2;
   justify-self: start;
 }
@@ -657,7 +660,7 @@ render_header('SiaGraph - Sia Storage Network Dashboard', 'SiaGraph storage netw
 .exp-recent-box {
   grid-area: recent;
   border-radius: 0.8rem;
-  background: var(--sg-panel-bg-soft);
+  background: var(--sg-surface-2);
   padding: 0.62rem 0.72rem;
   align-self: start;
 }
@@ -678,19 +681,19 @@ render_header('SiaGraph - Sia Storage Network Dashboard', 'SiaGraph storage netw
   padding: 0.28rem 0;
   border: 0;
   background: transparent;
-  color: #cdbfbb;
+  color: var(--sg-text-soft);
   font-size: 0.86rem;
   line-height: 1.2;
   text-decoration: none;
 }
 .exp-top-block-chip:hover { color: var(--sg-text-strong); text-decoration: underline; }
-.exp-top-block-chip b { color: #fff4ef; font-weight: 700; }
-.exp-top-block-chip .exp-block-time { color: #bcaea9; font-size: 0.8rem; }
-.exp-top-block-chip .exp-block-tx { color: #dfd3cf; font-size: 0.82rem; font-weight: 600; }
+.exp-top-block-chip b { color: var(--sg-text-strong); font-weight: 700; }
+.exp-top-block-chip .exp-block-time { color: var(--sg-text-muted); font-size: 0.8rem; }
+.exp-top-block-chip .exp-block-tx { color: var(--sg-text-soft); font-size: 0.82rem; font-weight: 600; }
 .exp-section-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.72rem; }
 .exp-section-head h2 { margin: 0; color: var(--sg-heading-accent); font-size: 1.02rem; font-weight: 700; letter-spacing: 0.01em; text-transform: none; }
 .exp-section-head a { color: var(--exp-brand); text-decoration: none; font-size: 0.8rem; }
-.exp-section-head a:hover { color: #f19683; text-decoration: underline; }
+.exp-section-head a:hover { color: var(--sg-heading-accent); text-decoration: underline; }
 .exp-stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.55rem; }
 .exp-stat { border: 1px solid var(--exp-border); border-radius: 12px; background: var(--exp-surface); padding: 0.75rem; transition: border-color 130ms ease, background-color 130ms ease; }
 .exp-stat:hover { border-color: var(--exp-border-strong); background: rgba(42, 33, 33, 0.9); }
@@ -712,7 +715,7 @@ render_header('SiaGraph - Sia Storage Network Dashboard', 'SiaGraph storage netw
 }
 .exp-stat-label {
   margin: 0;
-  color: #ef7f68;
+  color: var(--sg-heading-accent-strong);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 0.7rem;
@@ -720,7 +723,7 @@ render_header('SiaGraph - Sia Storage Network Dashboard', 'SiaGraph storage netw
 }
 .exp-stat-value {
   margin: 0.3rem 0 0.18rem;
-  color: #fffaf8;
+  color: var(--sg-text-strong);
   font-size: 2.7rem;
   font-weight: 700;
   line-height: 0.98;
@@ -732,12 +735,12 @@ render_header('SiaGraph - Sia Storage Network Dashboard', 'SiaGraph storage netw
 .exp-summary-grid .exp-summary-item .exp-stat-label {
   font-size: 0.76rem;
 }
-.exp-stat-meta { margin: 0; color: #cec0bc; font-size: 0.95rem; line-height: 1.34; font-weight: 500; }
+.exp-stat-meta { margin: 0; color: var(--sg-text-soft); font-size: 0.95rem; line-height: 1.34; font-weight: 500; }
 .exp-analytics-grid { display: grid; grid-template-columns: 1.1fr 0.9fr 0.9fr; gap: 0.75rem; align-items: stretch; }
-.exp-chart-wrap { min-height: 138px; border: 0; border-radius: 0.85rem; padding: 0.2rem; background: rgba(74, 55, 55, 0.24); }
+.exp-chart-wrap { min-height: 138px; border: 0; border-radius: 0.85rem; padding: 0.2rem; background: transparent; }
 .exp-card--immersive .exp-chart-wrap {
   min-height: 206px;
-  background: rgba(74, 55, 55, 0.24);
+  background: transparent;
 }
 .exp-chart-wrap .graph-container { min-height: 138px; }
 .exp-card--immersive .exp-chart-wrap .graph-container { min-height: 206px; }

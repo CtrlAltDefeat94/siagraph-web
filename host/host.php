@@ -1,7 +1,5 @@
 <?php
 require_once dirname(__DIR__) . '/bootstrap.php';
-include_once dirname(__DIR__) . '/include/graph.php';
-$graphConfigs = require dirname(__DIR__) . '/include/graph_configs.php';
 include_once dirname(__DIR__) . '/include/config.php';
 require_once dirname(__DIR__) . '/include/layout.php';
 require_once dirname(__DIR__) . '/include/components/dashboard.php';
@@ -204,10 +202,10 @@ if (!$troubleshooterCacheResult && 1==2) {
                      <h1 class="host-hero__title"><?php echo htmlspecialchars($hostDisplayName, ENT_QUOTES, 'UTF-8'); ?></h1>
                   </div>
                   <div class="host-hero__actions">
-                     <a class="button text-sm" href="/host_explorer">Back to hosts</a>
+                     <a class="host-back-link" href="/host_explorer">← Back to hosts</a>
                      <a class="button text-sm" href="/host_revenue_export?public_key=<?php echo rawurlencode($hostPublicKey); ?>"><i class="bi bi-download me-1" aria-hidden="true"></i>Export revenue</a>
-                     <a class="btn btn-sm btn-brand flex items-center" href="/host_alerts?public_key=<?php echo rawurlencode($hostPublicKey); ?>">
-                        🔔 Subscribe
+                     <a class="button text-sm" href="/host_alerts?public_key=<?php echo rawurlencode($hostPublicKey); ?>">
+                        <i class="bi bi-bell me-1" aria-hidden="true"></i>Subscribe
                      </a>
                   </div>
                </div>
@@ -216,14 +214,14 @@ if (!$troubleshooterCacheResult && 1==2) {
                      <span class="host-hero__label">Net address</span>
                      <span class="host-hero__value"><?php echo htmlspecialchars($hostNetAddress !== '' ? $hostNetAddress : 'Unavailable', ENT_QUOTES, 'UTF-8'); ?></span>
                      <?php if ($hostNetAddress !== ''): ?>
-                     <button class="host-copy" type="button" aria-label="Copy net address" title="Copy net address" onclick='copyToClipboard(<?php echo json_encode($hostNetAddress, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, this)'>⧉</button>
+                     <button class="ldgr-inline-copy host-copy" type="button" aria-label="Copy net address" title="Copy net address" onclick='copyToClipboard(<?php echo json_encode($hostNetAddress, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, this)'>⧉</button>
                      <?php endif; ?>
                   </div>
                   <div class="host-hero__idrow">
                      <span class="host-hero__label">Public key</span>
                      <span class="host-hero__value host-hero__value--mono"><?php echo htmlspecialchars($hostPublicKey !== '' ? $hostPublicKey : 'Unavailable', ENT_QUOTES, 'UTF-8'); ?></span>
                      <?php if ($hostPublicKey !== ''): ?>
-                     <button class="host-copy" type="button" aria-label="Copy public key" title="Copy public key" onclick='copyToClipboard(<?php echo json_encode($hostPublicKey, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, this)'>⧉</button>
+                     <button class="ldgr-inline-copy host-copy" type="button" aria-label="Copy public key" title="Copy public key" onclick='copyToClipboard(<?php echo json_encode($hostPublicKey, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, this)'>⧉</button>
                      <?php endif; ?>
                   </div>
                </div>
@@ -245,8 +243,8 @@ if (!$troubleshooterCacheResult && 1==2) {
             <section class="card">
                <h2 class="card__heading">Host Pending Indexing</h2>
                <div class="card__content">
-                  <div class="alert alert-warning mb-0" role="alert">
-                     This public key is valid but not indexed in SiaGraph yet. Try again in a few minutes.
+                  <div class="alert alert-warning mb-0" role="alert" title="This public key is valid but has not been indexed by SiaGraph yet. The profile will populate after indexing completes.">
+                     Host is pending indexing.
                      <div class="mt-2"><code><?php echo htmlspecialchars($hostPublicKey, ENT_QUOTES, 'UTF-8'); ?></code></div>
                   </div>
                </div>
@@ -255,30 +253,16 @@ if (!$troubleshooterCacheResult && 1==2) {
       </div>
       <?php endif; ?>
 
-      <section class="card host-summary">
+      <section class="card host-summary" aria-labelledby="host-summary-heading">
          <div class="card__content">
-            <div class="host-summary-grid">
-               <article class="host-stat-card">
-                  <div class="host-stat-card__label">Used Storage</div>
-                  <div class="host-stat-card__value" id="hostSummaryUsed">-</div>
-               </article>
-               <article class="host-stat-card">
-                  <div class="host-stat-card__label">Total Storage</div>
-                  <div class="host-stat-card__value" id="hostSummaryTotal">-</div>
-               </article>
-               <article class="host-stat-card">
-                  <div class="host-stat-card__label">Free Storage</div>
-                  <div class="host-stat-card__value" id="hostSummaryFree">-</div>
-               </article>
-               <article class="host-stat-card">
-                  <div class="host-stat-card__label">Utilization</div>
-                  <div class="host-stat-card__value" id="hostSummaryUtilization">-</div>
-               </article>
-               <article class="host-stat-card">
-                  <div class="host-stat-card__label">Last Announced</div>
-                  <div class="host-stat-card__value host-stat-card__value--small" id="hostSummaryAnnounced">-</div>
-               </article>
-            </div>
+            <h2 id="host-summary-heading" class="visually-hidden">Host summary</h2>
+            <dl class="dashboard-stat-grid host-summary-grid" style="--dashboard-kpi-columns: 5">
+               <div class="dashboard-stat-card"><dt>Used Storage</dt><dd id="hostSummaryUsed">-</dd></div>
+               <div class="dashboard-stat-card"><dt>Total Storage</dt><dd id="hostSummaryTotal">-</dd></div>
+               <div class="dashboard-stat-card"><dt>Free Storage</dt><dd id="hostSummaryFree">-</dd></div>
+               <div class="dashboard-stat-card"><dt>Utilization</dt><dd id="hostSummaryUtilization">-</dd></div>
+               <div class="dashboard-stat-card"><dt title="Forecast revenue from unresolved contracts, grouped by expected unlock month. The current exchange rate is used for fiat display.">Anticipated revenue</dt><dd id="hostSummaryAnticipated">—</dd></div>
+            </dl>
          </div>
       </section>
 
@@ -289,11 +273,11 @@ if (!$troubleshooterCacheResult && 1==2) {
          <input class="host-tab-radio" type="radio" name="host-tabs" id="host-tab-benchmarks-radio" aria-hidden="true" tabindex="-1">
          <input class="host-tab-radio" type="radio" name="host-tabs" id="host-tab-charts-radio" aria-hidden="true" tabindex="-1">
          <div class="host-tabs">
-            <label id="host-tab-overview" class="host-tab" role="tab" aria-controls="host-tabpanel-overview" aria-selected="true" for="host-tab-overview-radio">Overview</label>
-            <label id="host-tab-contracts" class="host-tab" role="tab" aria-controls="host-tabpanel-contracts" aria-selected="false" for="host-tab-contracts-radio">Contracts</label>
-            <label id="host-tab-economics" class="host-tab" role="tab" aria-controls="host-tabpanel-economics" aria-selected="false" for="host-tab-economics-radio">Economics</label>
-            <label id="host-tab-benchmarks" class="host-tab" role="tab" aria-controls="host-tabpanel-benchmarks" aria-selected="false" for="host-tab-benchmarks-radio">Benchmarks</label>
-            <label id="host-tab-history" class="host-tab" role="tab" aria-controls="host-tabpanel-history" aria-selected="false" for="host-tab-charts-radio">History</label>
+            <label id="host-tab-overview" class="host-tab" role="tab" tabindex="0" aria-controls="host-tabpanel-overview" aria-selected="true" for="host-tab-overview-radio">Overview</label>
+            <label id="host-tab-contracts" class="host-tab" role="tab" tabindex="-1" aria-controls="host-tabpanel-contracts" aria-selected="false" for="host-tab-contracts-radio">Contracts</label>
+            <label id="host-tab-economics" class="host-tab" role="tab" tabindex="-1" aria-controls="host-tabpanel-economics" aria-selected="false" for="host-tab-economics-radio">Economics</label>
+            <label id="host-tab-benchmarks" class="host-tab" role="tab" tabindex="-1" aria-controls="host-tabpanel-benchmarks" aria-selected="false" for="host-tab-benchmarks-radio">Benchmarks</label>
+            <label id="host-tab-history" class="host-tab" role="tab" tabindex="-1" aria-controls="host-tabpanel-history" aria-selected="false" for="host-tab-charts-radio">History</label>
          </div>
          <div class="host-tab-panels">
             <div class="host-tab-panel" id="host-tabpanel-overview" role="tabpanel" aria-labelledby="host-tab-overview" data-panel="overview">
@@ -304,7 +288,7 @@ if (!$troubleshooterCacheResult && 1==2) {
                            <h2 class="card__heading">Pricing & Terms</h2>
                            <div class="card__content">
                               <div class="table-responsive">
-                                 <table class="table table-dark table-clean text-white w-100 border-collapse host-stats-table">
+                                 <table class="host-data-table host-stats-table">
                                     <tbody id="hostStatsPricing"></tbody>
                                  </table>
                               </div>
@@ -326,7 +310,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
 "></i>
                                  </h3>
                                  <div class="table-responsive">
-                                    <table id="hostscoreBenchmarks" class="table table-dark table-clean text-white w-100 border-collapse">
+                                    <table id="hostscoreBenchmarks" class="host-data-table">
                                        <tbody>
                                        <tr class="bg-gray-700">
                                           <td class="px-4 py-2 font-semibold">Final score</td>
@@ -351,7 +335,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                               <section class="host-evaluation-block">
                                  <h3 class="host-evaluation-block__heading" title="Compared with hosts having a similar final score.">Network Context</h3>
                                  <div class="table-responsive">
-                                    <table id="hostAverages" class="table table-dark table-clean text-white w-100 border-collapse table-loading">
+                                    <table id="hostAverages" class="host-data-table table-loading">
                                        <thead></thead>
                                        <tbody id="hostAveragesBody"><tr><td colspan="3" class="px-4 py-3"><span class="skeleton-line"></span></td></tr></tbody>
                                     </table>
@@ -370,7 +354,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                      <div class="sg-container__column">
                         <section class="card host-section-card">
                            <h2 class="card__heading">Contract Activity</h2>
-                           <p><a class="button text-sm" href="/host_contracts?public_key=<?php echo rawurlencode($hostPublicKey); ?>">Browse contracts →</a></p>
+                           <a class="host-inline-link" href="/host_contracts?public_key=<?php echo rawurlencode($hostPublicKey); ?>">Browse contracts →</a>
                            <div class="card__content" data-active-contracts data-kind="host" data-identity="<?php echo htmlspecialchars($hostPublicKey, ENT_QUOTES, 'UTF-8'); ?>"></div>
                         </section>
                      </div>
@@ -408,7 +392,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
                                  </div>
                               </div>
                               <div class="table-responsive mt-3">
-                                 <table id="hostBenchTable" class="table table-dark table-clean text-white min-w-full border-collapse">
+                                 <table id="hostBenchTable" class="host-data-table">
                                     <thead>
                                        <tr>
                                           <th class="px-3 py-2">Timestamp</th>
@@ -439,15 +423,6 @@ Each benchmark server contributes equally to the score, regardless of how many b
                         <section class="card host-section-card">
                            <h2 class="card__heading">Host Economics</h2>
                            <div class="card__content">
-                              <section class="host-locked-revenue" data-contract-economics data-identity="<?php echo htmlspecialchars($hostPublicKey, ENT_QUOTES, 'UTF-8'); ?>">
-                                 <div class="host-stat-card">
-                                    <div class="host-stat-card__label" title="Revenue committed in active contracts, not yet earned. Fiat uses the current available exchange rate.">Locked revenue</div>
-                                    <div class="host-stat-card__value" data-locked-revenue>—</div>
-                                 </div>
-                                 <div>
-                                    <p class="host-section-subtitle" data-locked-status role="status">Loads when Economics is opened.</p>
-                                 </div>
-                              </section>
                               <?php render_dashboard(host_dashboard('economics', $hostDailyStatsUrl, $hostPublicKey, $currency), true); ?>
                            </div>
                         </section>
@@ -463,7 +438,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
       </div>
    </section>
    <!-- Footer Section -->
-   <div id="toast" class="sg-toast is-hidden bg-blue-600 text-white px-4 py-2 rounded bg-gradient shadow-lg">
+   <div id="toast" class="sg-toast is-hidden">
       Copied to clipboard!
    </div>
 
@@ -473,6 +448,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
    let hostdata = <?php echo json_encode($hostdata); ?>;
    let groupedBenchmarks = <?php echo json_encode($groupedBenchmarks); ?>;
    let exchangeRate = null;
+   let anticipatedRevenueSc = null;
    window.hostExchangeRate = null;
    // Function to initialize the map
    function initMap() {
@@ -545,6 +521,33 @@ Each benchmark server contributes equally to the score, regardless of how many b
       return 'just now';
    }
 
+   function formatHostAnticipatedRevenue() {
+      const value = Number(anticipatedRevenueSc || 0);
+      const currency = String(window.hostCurrency || 'eur').toLowerCase();
+      if (currency === 'sc' || !(Number(exchangeRate) > 0)) return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} SC`;
+      return `${currency.toUpperCase()} ${(value * exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+   }
+
+   function renderHostAnticipatedRevenue() {
+      const el = document.getElementById('hostSummaryAnticipated');
+      if (el && anticipatedRevenueSc !== null) el.textContent = formatHostAnticipatedRevenue();
+   }
+
+   async function loadHostAnticipatedRevenue() {
+      const el = document.getElementById('hostSummaryAnticipated');
+      if (!el || <?php echo json_encode($hostPublicKey === ''); ?>) return;
+      try {
+         const response = await fetch('/api/v1/host_scheduled_revenue?public_key=<?php echo rawurlencode($hostPublicKey); ?>');
+         if (!response.ok) throw new Error('Request failed');
+         const payload = await response.json();
+         if (!Array.isArray(payload.scheduled_revenue)) throw new Error('Invalid response');
+         anticipatedRevenueSc = payload.scheduled_revenue.reduce((total, row) => total + (Number(row.revenue_sc) || 0), 0);
+         renderHostAnticipatedRevenue();
+      } catch (_) {
+         el.textContent = 'Unavailable';
+      }
+   }
+
    function renderHostStatusChips(data) {
       const chips = document.getElementById('hostStatusChips');
       if (!chips || !data) return;
@@ -553,6 +556,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
       const accepting = data?.settings?.acceptingcontracts ? 'Accepting contracts' : 'Not accepting contracts';
       const acceptingCls = data?.settings?.acceptingcontracts ? 'is-online' : 'is-warn';
       const lastSeen = formatRelativeAge(data.last_successful_scan || data.last_updated);
+      const lastAnnounced = formatRelativeAge(data.last_announced);
       const knownSince = formatRelativeAge(data.first_seen);
       const country = data.country ? String(data.country).toUpperCase() : null;
       const version = data.software_version || data.protocol_version || null;
@@ -560,6 +564,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
          { text: status, cls: statusCls },
          { text: accepting, cls: acceptingCls },
          lastSeen ? { text: `Last seen ${lastSeen}`, cls: 'is-neutral' } : null,
+         lastAnnounced ? { text: `Last announced ${lastAnnounced}`, cls: 'is-neutral' } : null,
          knownSince ? { text: `Known ${knownSince}`, cls: 'is-neutral' } : null,
          country ? { text: country, cls: 'is-neutral' } : null,
          version ? { text: version, cls: 'is-neutral' } : null
@@ -591,7 +596,6 @@ Each benchmark server contributes equally to the score, regardless of how many b
       const util = total > 0 ? (used / total) * 100 : 0;
       const loc = (typeof window !== 'undefined' && window.APP_LOCALE) ? window.APP_LOCALE : undefined;
       const fmtTb = (v) => `${(v / 1e12).toLocaleString(loc, { maximumFractionDigits: 2 })} TB`;
-      const announced = data?.last_announced ? formatRelativeAge(data.last_announced) : null;
 
       const setText = (id, value) => {
          const el = document.getElementById(id);
@@ -601,7 +605,6 @@ Each benchmark server contributes equally to the score, regardless of how many b
       setText('hostSummaryTotal', fmtTb(total));
       setText('hostSummaryFree', fmtTb(free));
       setText('hostSummaryUtilization', `${util.toFixed(2)}%`);
-      setText('hostSummaryAnnounced', announced || 'Unavailable');
    }
 
    function shortKey(value, head = 12, tail = 8) {
@@ -640,7 +643,9 @@ Each benchmark server contributes equally to the score, regardless of how many b
 
          const updateTabState = (radioId) => {
             document.querySelectorAll('.host-tab[role="tab"]').forEach((tab) => {
-               tab.setAttribute('aria-selected', tab.getAttribute('for') === radioId ? 'true' : 'false');
+               const selected = tab.getAttribute('for') === radioId;
+               tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+               tab.tabIndex = selected ? 0 : -1;
             });
          };
 
@@ -668,6 +673,21 @@ Each benchmark server contributes equally to the score, regardless of how many b
             }
          });
       });
+
+      const tabs = Array.from(document.querySelectorAll('.host-tab[role="tab"]'));
+      tabs.forEach((tab, index) => tab.addEventListener('keydown', (event) => {
+         let nextIndex;
+         if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+         if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+         if (event.key === 'Home') nextIndex = 0;
+         if (event.key === 'End') nextIndex = tabs.length - 1;
+         if (nextIndex === undefined) return;
+         event.preventDefault();
+         const next = tabs[nextIndex];
+         document.getElementById(next.getAttribute('for')).checked = true;
+         next.focus();
+         next.dispatchEvent(new Event('change', { bubbles: true }));
+      }));
 
       window.addEventListener('hashchange', applyHash);
       applyHash();
@@ -982,6 +1002,8 @@ Each benchmark server contributes equally to the score, regardless of how many b
    }
 
    function displayHostData(data, exchangeRate = null, currency) {
+      window.hostCurrency = currency;
+      renderHostAnticipatedRevenue();
       function formatSCtoFiat(sc, decimals = 4, suffix = '') {
          const loc = (typeof window !== 'undefined' && window.APP_LOCALE) ? window.APP_LOCALE : undefined;
          const scValue = Number(sc || 0);
@@ -1261,6 +1283,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
       await fetchCurrentRate(pageCurrency);
       initMap();
       displayHostData(hostdata, exchangeRate, pageCurrency);
+      loadHostAnticipatedRevenue();
 
    });
 

@@ -7,9 +7,9 @@ try {
  for (const scenario of ['host','renter','empty','failure','distribution']) {
   const isHost=scenario!=='renter';
   let markup;
-  if(isHost) markup=fs.readFileSync(root+'/host.php','utf8').match(/<div class="card__content" data-active-contracts[^\n]+/)[0].replace(/<\?php.*?\?>/,hostKey);
+  if(isHost) markup=fs.readFileSync(root+'/host/host.php','utf8').match(/<div class="card__content" data-active-contracts[^\n]+/)[0].replace(/<\?php.*?\?>/,hostKey);
   else markup=cp.execFileSync('php',[root+'/tests/renters/render-fixture.php','renter.php'],{encoding:'utf8'}).match(/<div data-active-contracts[^>]*><\/div>/)[0];
-  const economics = scenario === 'host' ? fs.readFileSync(root+'/host.php','utf8').match(/<section class="host-locked-revenue"[\s\S]*?<\/section>/)[0].replace(/<\?php.*?\?>/,hostKey) : '';
+  const economics = '';
   let html=`<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{background:#181b20;color:#eee;margin:12px} ${fs.readFileSync(root+'/css/pages/active-contracts.css','utf8')}</style></head><body><input type="radio" name="host-tabs" id="fixture-economics-tab" hidden><div id="economics" hidden>${economics}</div><div id="panel" hidden>${markup}</div><script>
   window.errors=[];window.requests=[];window.getCookie=()=> 'eur';window.Chart=class{constructor(canvas,config){window.contractChart=config;}destroy(){}resize(){}};
   addEventListener('error',e=>window.errors.push(e.message));addEventListener('unhandledrejection',e=>window.errors.push(String(e.reason)));
@@ -41,7 +41,7 @@ try {
     await pause();check(requests.length===0,'hidden tab must not fetch');
     if('${scenario}'==='host') {
       document.getElementById('economics').hidden=false;document.getElementById('fixture-economics-tab').dispatchEvent(new Event('change'));await pause();await pause();
-      check(document.querySelector('[data-locked-revenue]').textContent.includes('EUR'),'Economics loads locked revenue before Contracts: '+document.getElementById('economics').textContent+' requests: '+requests.join(','));
+      check(!document.querySelector('#economics [data-locked-revenue]'),'locked revenue is not rendered in Economics');
       document.getElementById('economics').hidden=true;
     }
     document.getElementById('panel').hidden=false;document.dispatchEvent(new Event('renter:tabchange'));await pause();await pause();
@@ -52,7 +52,8 @@ try {
     }
     const button=text=>[...widget.querySelectorAll('button')].find(b=>b.textContent===text);
     if('${scenario}'==='failure'){check(widget.textContent.includes('Test service unavailable'),'visible API error');check(!button('Refresh contracts'),'no manual refresh');document.dispatchEvent(new Event('renter:tabchange'));await pause();check(requests.filter(r=>r.includes('/active.php')).length===1,'tab changes do not retry failed data');result.textContent='PASS failure';document.body.append(result);return;}
-    check(widget.textContent.includes('Reference block 1000'),'freshness height');
+    if (${isHost}) check(widget.querySelector('.ac-freshness[title*="Reference block 1000"]')?.textContent.includes('Updated'),'freshness height is tooltip-only');
+    else check(widget.textContent.includes('Reference block 1000'),'freshness height');
     if('${scenario}'==='empty'){check(widget.textContent.includes('No active contracts.'),'empty display');check(!widget.querySelector('form'),'host summary has no list controls');}
     else{
       if ('${scenario}' !== 'distribution') check(widget.querySelector('[title="9007199254740993 bytes"]'),'exact bytes');

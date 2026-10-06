@@ -32,20 +32,19 @@
   display: flex;
   gap: 0.35rem;
   align-items: center;
-  padding: 0.25rem;
+  padding: 0 0.25rem;
   margin-bottom: 0.9rem;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 999px;
-  background: rgba(8, 13, 23, 0.42);
+  border-bottom: 1px solid var(--sg-card-border);
 }
 
 .host-tab {
-  border: 1px solid transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
   background: transparent;
-  color: #bfc7d6;
-  border-radius: 999px;
+  color: var(--sg-text-muted);
+  border-radius: 0;
   padding: 0.42rem 0.9rem;
   font-size: 0.8rem;
   line-height: 1;
@@ -59,9 +58,8 @@
 #host-tab-economics-radio:checked ~ .host-tabs label[for="host-tab-economics-radio"],
 #host-tab-benchmarks-radio:checked ~ .host-tabs label[for="host-tab-benchmarks-radio"],
 #host-tab-charts-radio:checked ~ .host-tabs label[for="host-tab-charts-radio"] {
-  border-color: rgba(251, 146, 60, 0.45);
-  background: var(--sg-action-bg-hover);
-  color: var(--sg-action-text);
+  border-bottom-color: var(--sg-heading-accent);
+  color: var(--sg-text-strong);
 }
 
 .host-tab-panel {
@@ -99,9 +97,9 @@
 }
 
 .host-econ-range-btn {
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  background: rgba(15, 23, 42, 0.26);
-  color: #dbe3ef;
+  border: 1px solid var(--sg-border-control);
+  background: var(--sg-control-bg);
+  color: var(--sg-text-soft);
   border-radius: 999px;
   padding: 0.34rem 0.72rem;
   font-size: 0.78rem;
@@ -109,7 +107,7 @@
 }
 
 .host-econ-range-btn.is-active {
-  border-color: rgba(251, 146, 60, 0.45);
+  border-color: var(--sg-border-accent);
   background: var(--sg-action-bg);
   color: var(--sg-action-text);
 }
@@ -134,6 +132,12 @@
   right: 1rem;
   bottom: 1rem;
   z-index: 1080;
+  padding: .65rem .85rem;
+  border: 1px solid var(--sg-border-control);
+  border-radius: var(--sg-radius-md);
+  background: var(--sg-control-bg-strong);
+  color: var(--sg-text-strong);
+  box-shadow: var(--sg-card-shadow);
 }
 
 .is-hidden {
@@ -144,12 +148,13 @@
 .host-summary.card,
 .host-section-card.card,
 #host-location-top-card.card,
+.host-location-top-card.card,
 #graph-section.card,
 #graph-section2.card {
-  background: transparent;
+  background: var(--sg-surface-1);
   border: 1px solid var(--sg-card-border);
   border-radius: 1.05rem;
-  box-shadow: none;
+  box-shadow: var(--sg-surface-1-edge);
 }
 
 .host-section-card.card,
@@ -209,6 +214,21 @@
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.host-back-link,
+.host-inline-link {
+  color: var(--sg-heading-accent);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.host-back-link:hover,
+.host-back-link:focus-visible,
+.host-inline-link:hover,
+.host-inline-link:focus-visible {
+  color: var(--sg-heading-accent-strong);
+  text-decoration: underline;
 }
 
 .host-hero__ids {
@@ -332,10 +352,87 @@
 }
 
 .host-stat-card {
-  border: 1px solid var(--sg-border-muted);
-  background: var(--sg-panel-bg);
-  border-radius: 0.7rem;
-  padding: 0.78rem 0.85rem;
+  min-width: 0;
+  padding: .85rem;
+  border-left: 2px solid var(--sg-border-accent);
+  background: transparent;
+}
+
+.host-stat-card dt,
+.host-stat-card__label {
+  color: var(--sg-text-muted);
+  font-size: .72rem;
+  font-weight: 600;
+}
+
+.host-stat-card dd,
+.host-stat-card__value {
+  margin: .35rem 0 0;
+  color: var(--sg-text-strong);
+  font-size: 1.45rem;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.host-summary .dashboard-stat-grid {
+  margin: 0;
+}
+
+.host-summary .dashboard-stat-card dd {
+  font-size: 1.25rem;
+}
+
+.host-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--sg-text-muted);
+  font-size: .76rem;
+}
+
+.host-data-table th,
+.host-data-table td {
+  padding: .65rem .75rem;
+  border-bottom: 1px solid var(--sg-border-control);
+  text-align: left;
+}
+
+.host-data-table th {
+  color: var(--sg-text-strong);
+  background: transparent;
+  font-size: .7rem;
+  font-weight: 600;
+}
+
+.host-data-table tbody tr {
+  background: transparent !important;
+}
+
+.host-data-table tbody tr:hover {
+  background: var(--sg-surface-2) !important;
+}
+
+.host-data-table .text-end {
+  text-align: right;
+}
+
+.host-data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.host-section-status {
+  color: var(--sg-text-faint);
+  font-size: .72rem;
+}
+
+.host-stat-card__value--small {
+  font-size: 1rem;
+}
+
+.host-stat-card__value {
+  overflow-wrap: anywhere;
+}
+
+.host-stat-card {
   min-width: 0;
 }
 
@@ -402,18 +499,18 @@
 #main-content #hostscoreBenchmarks td,
 #main-content #hostAverages th,
 #main-content #hostAverages td {
-  border-color: rgba(214, 93, 74, 0.24) !important;
+  border-color: var(--sg-border-control) !important;
   padding: 0.58rem 0.75rem !important;
   font-size: 0.76rem;
 }
 
 #main-content .host-stats-table th {
-  color: #d0cada;
+  color: var(--sg-text-strong);
   font-weight: 600;
 }
 
 #main-content .host-stats-table td {
-  color: #ece5f1;
+  color: var(--sg-text-muted);
 }
 
 #main-content .host-stats-table .value-primary {
@@ -430,9 +527,9 @@
 }
 
 #main-content .table-responsive {
-  border-radius: 0.55rem;
+  border-radius: var(--sg-radius-md);
   overflow: hidden;
-  border: 1px solid rgba(214, 93, 74, 0.16);
+  border: 1px solid var(--sg-card-border);
 }
 
 #storageStatsTable.host-stats-table .host-public-key-value {
@@ -462,9 +559,9 @@
   border: 1px dashed rgba(225, 120, 100, 0.35);
   border-radius: 0.7rem;
   padding: 0.9rem;
-  color: #c7bed1;
+  color: var(--sg-text-muted);
   font-size: 0.9rem;
-  background: rgba(13, 19, 34, 0.35);
+  background: var(--sg-surface-2);
 }
 
 .host-benchmark-node-select {
@@ -523,7 +620,7 @@
 
 .host-evaluation-block + .host-evaluation-block {
   padding-top: 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--sg-border-nested);
 }
 
 .host-evaluation-block__heading {

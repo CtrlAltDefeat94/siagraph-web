@@ -153,7 +153,7 @@
                 status.textContent = `Read ${payload.meta.generated_at}${ref ? ` · Reference block ${ref.block_height} (${ref.timestamp ?? 'time unavailable'})` : ''}. Contract updates may lag this indexed block and differ from daily summaries.`;
                 if (host) {
                     status.title = status.textContent;
-                    status.textContent = `${ref ? `Reference block ${ref.block_height} · ` : ''}Read ${payload.meta.generated_at.replace('T', ' ').replace(/Z$/, ' UTC')}`;
+                    status.textContent = `Updated ${payload.meta.generated_at.replace('T', ' ').replace(/Z$/, ' UTC')}`;
                 }
                 pageLabel.textContent = `Page ${page}`; previous.disabled = page === 1; next.disabled = !current.pagination.has_more;
             } catch (e) {
@@ -178,17 +178,15 @@
     window.activeContracts = { mount, api, table, link, value };
     document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('[data-active-contracts][data-kind="host"]').forEach(root => mount(root, root.dataset.identity)));
     document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('[data-contract-economics]').forEach(root => {
-        const amount = root.querySelector('[data-locked-revenue]'), status = root.querySelector('[data-locked-status]');
+        const amount = root.querySelector('[data-locked-revenue]');
         let loaded = false, raw = null;
         const draw = () => amount.replaceChildren(value(raw, 'money'));
         async function load() {
-            status.textContent = 'Loading locked revenue…';
             try {
-                const { data, meta } = await api('active', { host_public_key: root.dataset.identity, page: 1, sort: 'ending', search: '' });
+                const { data } = await api('active', { host_public_key: root.dataset.identity, page: 1, sort: 'ending', search: '' });
                 raw = data.summary.revenue_locked; draw();
-                status.textContent = `Read ${meta.generated_at}${data.reference ? ` · Reference block ${data.reference.block_height}` : ''}. Contract updates may lag this block.`;
                 window.renterCurrency.ready().then(draw);
-            } catch (_) { raw = null; draw(); status.textContent = 'Locked revenue is temporarily unavailable.'; }
+            } catch (_) { raw = null; draw(); }
         }
         const visible = () => { if (!loaded && root.getClientRects().length) { loaded = true; load(); } };
         document.addEventListener('renter:currencyready', draw);

@@ -4,7 +4,7 @@ const root = path.resolve(__dirname, '../..'), tmp = fs.mkdtempSync(path.join(os
 const wallet = 'a'.repeat(76), key = '1'.repeat(64);
 const record = {renter_wallet_address:wallet,contracted_filesize:'18446744073709551615',active_contracts:'3',active_hosts:'2',active_public_keys:'1',refundable_allowance:'9'.repeat(50),host_revenue_committed:'0',active_renewed_contracts:'0',average_contract_duration:'100.25',expiring_within_1_day:'0',expiring_within_1_week:'1',expiring_within_30_days:'3',first_seen:'2026-01-01',first_seen_height:'1',last_active:'2026-01-03',last_active_height:'3',updated_at:'2026-01-03',updated_height:'3'};
 const cases = [
-    ['detail','renter.php','js/renters.js'], ['public-key','renter.php','js/renters.js'], ['all','renter.php','js/renters.js'], ['tabs','renter.php','js/renters.js'], ['empty','renter.php','js/renters.js'], ['directory','renters.php','js/renters.js'],
+    ['detail','renter.php','js/renters.js'], ['public-key','renter.php','js/renters.js'], ['all','renter.php','js/renters.js'], ['tabs','renter.php','js/renters.js'], ['empty','renter.php','js/renters.js'], ['directory','renter_explorer.php','js/renters.js'],
     ['distribution','renter_distribution.php','js/renter-distribution.js'], ['distribution-empty','renter_distribution.php','js/renter-distribution.js'],
     ['ambiguous','renter.php','js/renters.js'], ['unmapped','renter.php','js/renters.js']
 ];
@@ -64,7 +64,7 @@ try {
         return document.documentElement.scrollWidth<=window.innerWidth && window.charts['renter-history-economics-spending'].data.labels.length===90 && window.charts['renter-history-storage-storage'].data.labels.length===365 && window.historyFetches===2 && document.querySelector('[data-history-group="economics"] [data-days="90"]').getAttribute('aria-pressed')==='true';
       })()`,
       empty: `[...document.querySelectorAll('[data-history-status]')].every(n=>n.textContent==='No renter history available yet.') && [...document.querySelectorAll('[data-chart-wrap]')].every(n=>n.hidden)`,
-      directory: `document.querySelector('#renterResults a')?.getAttribute('href').includes('address=') && document.getElementById('renterNext').disabled && document.getElementById('renterOverviewStatus').textContent.includes('not available')`,
+      directory: `document.querySelector('#renterResults a')?.getAttribute('href').includes('address=') && !document.querySelector('#renterResults .renter-copy') && !document.getElementById('renterTable').classList.contains('table-loading') && document.getElementById('renterNext').disabled && document.getElementById('renterStatus').textContent.includes('Showing 1 renters') && !document.getElementById('renterSearch') && !document.querySelector('[data-renter-tab]')`,
       distribution: `document.querySelector('#renterDistributionTableBody a')?.getAttribute('href').includes('address=') && document.getElementById('renterDistributionTableBody').textContent.includes('16.666667%') && window.lastChart.data.datasets[0].data[1]===16.666667`,
       'distribution-empty': `document.getElementById('renterDistributionChart').hidden && document.getElementById('renterDistributionStatus').textContent.includes('not available')`,
       ambiguous: `document.querySelectorAll('#renterCandidates a').length===2 && document.getElementById('renterDetail').hidden`,

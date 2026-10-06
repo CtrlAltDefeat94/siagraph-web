@@ -135,7 +135,8 @@ async function initializeDashboard(root) {
         state.panel.querySelector('.dashboard-canvas').hidden = !!message;
         const node = state.panel.querySelector('[data-chart-status]');
         node.hidden = !message; node.textContent = message;
-        state.panel.querySelector('[data-chart-retry]').hidden = !state.error && !state.retryable;
+        const retry = state.panel.querySelector('[data-chart-retry]');
+        if (retry) retry.hidden = !state.error && !state.retryable;
     }
     function tooltip(state) {
         const chart = state.graph.chart;
@@ -386,7 +387,7 @@ async function initializeDashboard(root) {
             } else if (next === 0) width = 0;
         }).observe(root);
     }
-    states.forEach(state => state.panel.querySelector('[data-chart-retry]').addEventListener('click', async event => {
+    states.forEach(state => state.panel.querySelector('[data-chart-retry]')?.addEventListener('click', async event => {
         event.target.disabled = true;
         try { await load(); } finally { event.target.disabled = false; }
     }));

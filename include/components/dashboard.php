@@ -56,7 +56,7 @@ function render_dashboard(array $page, bool $embedded = false): void
                             <p data-chart-status role="status">Loading…</p>
                             <p data-chart-warning class="dashboard-section-note" role="status" hidden></p>
                             <div class="dashboard-canvas" hidden><canvas id="dashboard-<?php echo $escape($chart['id']); ?>" role="img" aria-label="<?php echo $escape($chart['title'] ?? $section['title']); ?>"></canvas></div>
-                            <button type="button" data-chart-retry hidden>Retry history</button>
+                            <?php if (($page['showRetry'] ?? true) !== false): ?><button type="button" data-chart-retry hidden>Retry history</button><?php endif; ?>
                             <?php if (!empty($chart['table'])): ?>
                             <details><summary>View daily values as a table</summary><div class="dashboard-table"><table><thead><tr><th scope="col">Date (UTC)</th><?php foreach ($chart['metrics'] as $key): ?><th scope="col"><?php echo $escape($page['metrics'][$key]['label']); ?></th><?php endforeach; ?></tr></thead><tbody data-chart-rows></tbody></table></div></details>
                             <?php endif; ?>

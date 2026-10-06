@@ -102,9 +102,12 @@
   border-top: 1px solid var(--sg-card-border);
 }
 
-.dashboard-page .dashboard-overview-content {
-  padding-top: 0;
-  border-top: 0;
+.dashboard-page .dashboard-content.card {
+  padding: 1.35rem;
+  border: 1px solid var(--sg-card-border);
+  border-radius: var(--sg-radius-lg);
+  background: var(--sg-surface-1);
+  box-shadow: var(--sg-surface-1-edge);
 }
 
 .dashboard-page-toolbar { margin-bottom: 0; }
@@ -188,4 +191,16 @@
 
 .dashboard-content [data-dashboard-kpis] .dashboard-stat-grid {
   gap: 1.25rem;
+}
+
+.dashboard-page .dashboard-overview-content {
+  padding: 1.1rem 1.35rem;
+  border: 1px solid var(--sg-card-border);
+  border-radius: var(--sg-radius-lg);
+  background: var(--sg-surface-1);
+  box-shadow: var(--sg-surface-1-edge);
+}
+
+.dashboard-table tbody tr:hover {
+  background: var(--sg-surface-2);
 }

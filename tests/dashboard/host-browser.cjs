@@ -29,15 +29,16 @@ const check=(v,m)=>{if(!v)throw new Error(m)}, tick=()=>new Promise(r=>setTimeou
 const chart=id=>Chart.getChart(document.getElementById('dashboard-'+id));
 const tab=name=>{const r=document.getElementById('host-tab-'+name+'-radio');r.checked=true;r.dispatchEvent(new Event('change',{bubbles:true}));};
 const dashboard=id=>document.querySelector('[data-dashboard-id="host-'+id+'"]');
-check(!requests.some(u=>u.includes('scheduled_revenue')||u.includes('estimated_egress')),'lazy endpoints');
+check(requests.filter(u=>u.includes('scheduled_revenue')).length===1,'hero anticipated revenue loads once');
+check(!requests.some(u=>u.includes('estimated_egress')),'egress remains lazy');
 const ids=[...document.querySelectorAll('[id]')].map(n=>n.id);check(new Set(ids).size===ids.length,'unique IDs');
 tab('charts');await tick();const history=dashboard('history');
-check(!requests.some(u=>u.includes('scheduled_revenue')),'economics still lazy');
+check(requests.filter(u=>u.includes('scheduled_revenue')).length===1,'economics does not refetch anticipated revenue');
 check(history.querySelector('[data-range="1y"]').getAttribute('aria-pressed')==='true','history defaults to 1Y despite old URL');
 check(chart('host-egress'),'egress independent');
 if('${scenario}'==='failure'){
 check(history.querySelector('[data-dashboard-chart="host-storage"] [data-chart-status]').textContent==='History unavailable.','history failure');
-window.fail=false;history.querySelector('[data-dashboard-chart="host-storage"] [data-chart-retry]').click();await tick();check(chart('host-storage'),'retry recovers');
+check(!history.querySelector('[data-chart-retry]'),'host dashboard has no retry control');
 }else if('${scenario}'==='empty'){
 check(!chart('host-storage'),'empty daily history');
 }else{

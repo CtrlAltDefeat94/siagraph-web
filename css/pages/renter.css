@@ -1,8 +1,9 @@
 /* Renter detail follows the host detail hierarchy without inheriting host-only selectors. */
 .renter-profile :is(h2, h3)[title] { cursor: help; }
 .renter-profile :is(h2, h3)[title]::after { content: ' ⓘ'; font-size: .72em; opacity: .65; }
-.renter-directory { max-width: 1440px; padding: 1.35rem 2rem 3rem; }
-.renter-directory .card { border: 1px solid var(--sg-card-border); background: var(--sg-card-bg); box-shadow: var(--sg-card-shadow); border-radius: 1.05rem; }
+.renter-directory { max-width: 1320px; padding: 1.35rem 2rem 3rem; }
+.renter-directory .card { border: 1px solid var(--sg-card-border); background: transparent; box-shadow: none; border-radius: var(--sg-radius-lg); }
+.renter-directory .renter-hero__title { font-size: clamp(1.8rem, 3vw, 2.45rem); font-weight: 400; line-height: 1.1; color: var(--sg-text-strong); }
 .renter-directory .renter-table-wrap { border: 1px solid var(--sg-border-muted); border-radius: .55rem; max-height: none; }
 .renter-directory th { background: var(--sg-panel-bg-soft); color: var(--sg-text-soft); font-size: .72rem; }
 .renter-directory td { font-size: .78rem; }

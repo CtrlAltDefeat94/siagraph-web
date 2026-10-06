@@ -9,7 +9,7 @@ function host_dashboard(string $tab, string $dailyUrl, string $publicKey, string
             'borderColor' => $styles[$style]['borderColor'] ?? '#38bdf8'], $extra);
     };
     $money = ['bucket' => true, 'decimals' => 2, 'showNative' => true];
-    $page = ['id' => 'host-' . $tab, 'title' => ucfirst($tab), 'defaultRange' => '1y', 'persistRange' => false, 'lazy' => true, 'followCurrency' => true, 'currency' => $currency];
+    $page = ['id' => 'host-' . $tab, 'title' => ucfirst($tab), 'defaultRange' => '1y', 'persistRange' => false, 'lazy' => true, 'followCurrency' => true, 'currency' => $currency, 'showRetry' => false];
     if ($tab === 'history') {
         $page['sources'] = [
             'default' => ['kind' => 'host-daily', 'url' => $dailyUrl],

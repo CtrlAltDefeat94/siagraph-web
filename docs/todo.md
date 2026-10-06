@@ -129,7 +129,7 @@ deprecate the old logo files instead of removing them entirely.
 
 - add actions
 
-### `renters.php`
+### `renter_explorer.php`
 
 - add actions
 
