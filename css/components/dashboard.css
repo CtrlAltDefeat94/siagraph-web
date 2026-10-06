@@ -204,3 +204,20 @@
 .dashboard-table tbody tr:hover {
   background: var(--sg-surface-2);
 }
+
+/* Embedded inside a card, sections stay flat to avoid a card-in-card layer. */
+.card .dashboard-embedded .dashboard-content.card {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (max-width: 767.98px) {
+  .dashboard-page .dashboard-content.card,
+  .dashboard-page .dashboard-overview-content { padding: 1rem .85rem; }
+  .card .dashboard-embedded .dashboard-content.card { padding: 0; }
+  .dashboard-page h2 { margin-bottom: .5rem; font-size: 1.05rem; }
+  .dashboard-canvas { height: 260px; }
+}

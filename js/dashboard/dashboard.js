@@ -214,6 +214,12 @@ async function initializeDashboard(root) {
             if (['money', 'sc', 'price'].includes(firstMetric.type)) {
                 state.graph.chart.options.scales.y.ticks.callback = value => format(value, state.metrics[0]);
             }
+            if (window.matchMedia('(max-width: 767.98px)').matches) {
+                const { plugins, scales } = state.graph.chart.options;
+                plugins.legend.labels = { ...plugins.legend.labels, boxWidth: 10, boxHeight: 10, padding: 8, font: { size: 11 } };
+                Object.assign(scales.x.ticks, { maxRotation: 0, autoSkipPadding: 12, font: { size: 10 } });
+                scales.y.ticks.font = { size: 10 };
+            }
             tooltip(state);
         }
         const graph = state.graph;
@@ -222,7 +228,7 @@ async function initializeDashboard(root) {
         const x = graph.chart.options.scales.x;
         x.min = Date.parse(visible[0].date);
         x.max = Math.max(Date.parse(visible[visible.length - 1].date), x.min + ranges.day);
-        x.offset = false; x.ticks.display = state.xLabels;
+        x.offset = state.interval === 'month' && state.type === 'bar'; x.ticks.display = state.xLabels;
         x.time.unit = state.interval || ((x.max - x.min) / ranges.day <= 45 ? 'day' : 'month');
         graph.updateChart(graph.startDateIndex, graph.endDateIndex);
         graph.chart.resize();
@@ -251,7 +257,9 @@ async function initializeDashboard(root) {
             const table = state.panel.querySelector('[data-chart-rows]');
             if (table) table.replaceChildren();
             if (state.error) { status(state, 'History unavailable.'); return; }
-            const chartBounds = state.interval === 'month' ? ranges.monthlyBounds(rows, selection) : bounds;
+            // Monthly windows end at the chart's latest observed month, not the page's latest day.
+            const anchorRows = state.anchorDate ? state.rows.filter(row => row.date <= state.anchorDate) : state.rows;
+            const chartBounds = state.interval === 'month' ? ranges.monthlyBounds(anchorRows.length ? anchorRows : rows, selection) : bounds;
             const start = selection.range === 'all' ? state.rows[0]?.date : chartBounds?.start;
             const end = selection.range === 'all' || (state.includeForecast && selection.range !== 'custom') ? state.rows.at(-1)?.date : chartBounds?.end;
             const visible = chartBounds ? state.rows.filter(row => row.date >= start && row.date <= end) : [];
@@ -342,6 +350,7 @@ async function initializeDashboard(root) {
                 const source = sources[state.source || 'default'];
                 if (state.graph) { state.graph.chart.destroy(); state.graph = null; state.popup?.remove(); state.popup = null; }
                 state.rows = source?.rows || [];
+                state.anchorDate = source?.anchorDate;
                 state.error = source?.error;
                 state.retryable = source?.retryable;
                 const warning = state.panel.querySelector('[data-chart-warning]');

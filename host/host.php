@@ -790,6 +790,7 @@ Each benchmark server contributes equally to the score, regardless of how many b
             interaction: { mode: 'nearest', intersect: false },
             plugins: {
                legend: {
+                  display: false,
                   labels: {
                      color: '#d8d5cf',
                      filter: (item, data) => {

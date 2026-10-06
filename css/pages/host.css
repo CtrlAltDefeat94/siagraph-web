@@ -20,6 +20,7 @@
 
 .host-tabset {
   margin-top: 0;
+  min-width: 0;
 }
 
 .host-tab-radio {
@@ -470,6 +471,7 @@
 }
 
 #main-content .host-section-card .card__content {
+  min-width: 0;
   padding-top: 0.2rem;
 }
 
@@ -528,7 +530,7 @@
 
 #main-content .table-responsive {
   border-radius: var(--sg-radius-md);
-  overflow: hidden;
+  overflow-x: auto;
   border: 1px solid var(--sg-card-border);
 }
 
@@ -798,6 +800,16 @@
 
 /* Shared charts remain inside the host's existing tabs and desktop columns. */
 .host-tab-panel .dashboard-embedded { gap: 1.25rem; padding-top: 1rem; }
+.host-section-card .dashboard-embedded { padding-top: 0; }
+@media (max-width: 767.98px) {
+  #main-content.sg-container { padding-left: .75rem; padding-right: .75rem; }
+  .host-section-card.card,
+  .host-location-top-card.card { padding: 1rem .85rem; }
+  .host-tab-panel .dashboard-embedded { gap: .85rem; padding-top: .25rem; }
+  .benchmark-chart-wrap { min-height: 220px; }
+  .benchmark-chart-canvas { height: 220px !important; }
+  #host-tabpanel-benchmarks .row { --bs-gutter-x: 0; }
+}
 @media (min-width: 1024px) {
   .host-tab-panel .dashboard-embedded { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .host-tab-panel .dashboard-page-toolbar,
